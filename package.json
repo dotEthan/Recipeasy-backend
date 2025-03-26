@@ -1,0 +1,56 @@
+{
+  "name": "recipeasy-backend",
+  "version": "1.0.0",
+  "description": "backend for recipeasy app",
+  "main": "app.js",
+  "scripts": {
+    "start": "nodemon dist/server.js",
+    "build": "tsc",
+    "start:dev": "npm run build && npm run start",
+    "test": "test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dotEthan/Recipeasy-backend.git"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "express-session": "^1.18.1",
+    "express-validator": "^7.2.1",
+    "jsonwebtoken": "^9.0.2",
+    "mongodb": "^6.13.1",
+    "nodemon": "^3.1.9",
+    "passport": "^0.7.0",
+    "passport-local": "^1.0.0"
+  },
+  "keywords": [
+    "recipe",
+    "shopping",
+    "list"
+  ],
+  "author": "Ethan Strauss",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/dotEthan/Recipeasy-backend/issues"
+  },
+  "homepage": "https://github.com/dotEthan/Recipeasy-backend#readme",
+  "devDependencies": {
+    "@eslint/js": "^9.20.0",
+    "@types/body-parser": "^1.19.5",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.0",
+    "@types/express-session": "^1.18.1",
+    "@types/express-validator": "^2.20.33",
+    "@types/node": "^22.13.4",
+    "@types/passport": "^1.0.17",
+    "@types/passport-local": "^1.0.38",
+    "eslint": "^9.20.1",
+    "eslint-config-prettier": "^10.0.1",
+    "globals": "^15.15.0",
+    "prettier": "3.5.1",
+    "typescript-eslint": "^8.24.0"
+  }
+}
