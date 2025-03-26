@@ -1,4 +1,3 @@
-import { WithId } from 'mongodb';
 import { initialize } from './config/passport';
 import passport from 'passport';
 
@@ -10,8 +9,6 @@ import { UserController } from './controllers/usersController';
 import { AuthController } from './controllers/authController';
 import createUsersRouter from './routes/users';
 
-import { UserDocument } from './types/user';
-
 const PORT = process.env.PORT || 8080;
 
 async function startServer() {
@@ -22,14 +19,12 @@ async function startServer() {
     // Explicitly initializing after database connection
     // Timing issue with trying to use database before connecting
     
-    initialize(passport, (email: string): Promise<WithId<UserDocument> | null> => {
-      return userRepository.findOne({email: email});
-    });
-
     const userRepository = new UserRepository();
     const userService = new UserService(userRepository);
     registerRoutes(userService);
+    initialize(passport);
     
+
     app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
     });

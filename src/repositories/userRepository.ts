@@ -8,7 +8,11 @@ export class UserRepository extends BaseRepository<UserDocument> {
         super('users');
     }
 
-    async findByUid(uid: string): Promise<UserDocument | null> {
-        return this.findOne({uid} as Partial<UserDocument>)
-    }
+    async findByid(_id: string): Promise<UserDocument | null> {
+        return this.findOne({_id} as Partial<UserDocument>);
+    };
+
+    async findByemail(email: string): Promise<UserDocument | null> {
+        return this.findOne({email} as Partial<UserDocument>);
+    };
 }
