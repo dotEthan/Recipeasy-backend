@@ -6,8 +6,8 @@ import path from 'path';
 import cors from 'cors';
 
 import express, { NextFunction, Request, Response } from "express";
-// import session from 'express-session';
-// import passport from 'passport';
+import session from 'express-session';
+import passport from 'passport';
 
 import { HttpError } from "./types/error";
 
@@ -15,13 +15,13 @@ const app = express();
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
-// app.use(session({
-//   secret: process.env.SESSION_SECRET || 'secret',
-//   resave: false,
-//   saveUninitialized: false
-// }));
-// app.use(passport.initialize());
-// app.use(passport.session());
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'secret',
+  resave: false,
+  saveUninitialized: false
+}));
+app.use(passport.initialize());
+app.use(passport.session());
 
 //TODO on deploy update to production domain
 app.use(cors({

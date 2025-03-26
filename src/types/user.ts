@@ -1,4 +1,6 @@
+import 'express';
 import { Document } from "mongodb";
+
 import { Recipe } from "./recipe"
 import { ShoppingList } from "./shopping-list"
 
@@ -22,4 +24,4 @@ export type UserPreferences = {
   lightMode: boolean;
 }
 
-export interface UserDocument extends User, Document{}
+export interface UserDocument extends User, Document{};
