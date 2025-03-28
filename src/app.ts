@@ -4,31 +4,63 @@ if(process.env.NODE_ENV !== 'production') {
 };
 import path from 'path';
 import cors from 'cors';
-
 import express, { NextFunction, Request, Response } from "express";
 import session from 'express-session';
 import passport from 'passport';
+import helmet from 'helmet';
 
 import { HttpError } from "./types/error";
+import MongoStore from 'connect-mongo';
+import { csrfErrorHandler, csrfProtection } from './middleware/csrf';
+import cookieParser from 'cookie-parser';
 
 const app = express();
 
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      imgSrc: ["'self'", "data:", "https:"]
+    }
+  }
+}));
+app.use(cookieParser())
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(session({
   secret: process.env.SESSION_SECRET || 'secret',
+  name: 'recipeasy.sid',
   resave: false,
-  saveUninitialized: false
+  saveUninitialized: false,
+  store: MongoStore.create({
+    mongoUrl: process.env.MONGODB_URI,
+    collectionName: 'sessions',
+    ttl: 7 * 24 * 60 * 60,
+    touchAfter: 24 * 3600,
+  }),
+  cookie: {
+    httpOnly: true,
+    secure: true,
+    sameSite: 'strict',
+    maxAge: 1000 * 60 * 60 * 24 * 7,
+    domain: 'localhost'
+  }
 }));
 app.use(passport.initialize());
 app.use(passport.session());
 
+app.use(csrfProtection);
+app.use(csrfErrorHandler);
+
 //TODO on deploy update to production domain
 app.use(cors({
-  origin: 'http://localhost:5173', //process.env.CORS_ORIGIN
-  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
-  allowedHeaders: ['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'],
-  credentials: true
+  origin: 'https://localhost:5173', //process.env.CORS_ORIGIN
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization', 'x-csrf-token'],
+  credentials: true,
+  exposedHeaders: ['Set-Cookie']
 }));
 
 // adding in server.ts due to database connection timing issue

@@ -45,6 +45,7 @@ export class AuthController {
     }
     
     public async login(req: Request, res: Response, next: NextFunction): Promise<void> {
+        console.log('loging in')
         passport.authenticate('local', (err: Error, user: User, info: { message: string}) => {
             if (err) return next(err);
             if (!user) return res.status(401).json({ message: info.message });
@@ -57,9 +58,27 @@ export class AuthController {
                     verified: user.verified
                 });
             });
+            console.log('sessionid: ', req.session.id)
 
         })(req, res, next);
     }
 
-    // TODO PASSPORT Logout steps
+    public async logout(req: Request, res: Response, next: NextFunction): Promise<void> {
+        req.logOut((err) => {
+            if (err) return next(err);
+            console.log('sessionid: ', req.session.id)
+            res.clearCookie('recipeasy.sid');
+
+            req.session.destroy((err) => {
+                if (err) return next(err);
+                console.log('user logged out')
+                return res.json({
+                    success: true,
+                    message: "User Logged Out"
+                });
+            });
+        })
+    }
+
+    // REWRITE with AXIOS and get csrf working
 }

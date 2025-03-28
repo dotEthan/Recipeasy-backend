@@ -6,7 +6,7 @@ export class Database {
     private db?: Db;
 
     constructor() {
-        const dbUrl = process.env.MONGODB_URI || 'mongodb+srv://estrauss:[PASSWORD]@cluster0.8lmxv.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0';
+        const dbUrl = process.env.MONGODB_URI || 'default';
         this.client = new MongoClient(dbUrl);
     }
 
@@ -23,7 +23,7 @@ export class Database {
             console.log('Connecting to Database')
             await this.client.connect();
             console.log('Database Connected')
-            this.db = this.client.db(process.env.DB_NAME || 'recipeasy');
+            this.db = this.client.db();
         } catch(err) {
             console.error('Database Connection error: ', err)
             throw err;

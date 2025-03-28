@@ -15,4 +15,9 @@ export class UserRepository extends BaseRepository<UserDocument> {
     async findByemail(email: string): Promise<UserDocument | null> {
         return this.findOne({email} as Partial<UserDocument>);
     };
+
+    // For Admin Dashboard
+    async deleteUser(id: string) {
+        return this.delete({_id: id})
+    }
 }

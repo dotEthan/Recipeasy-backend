@@ -1,4 +1,4 @@
-import { Collection, Document, OptionalUnlessRequiredId, WithId, Filter } from "mongodb";
+import { Collection, Document, OptionalUnlessRequiredId, WithId, Filter, DeleteResult } from "mongodb";
 import { Database } from "../config/database";
 
 
@@ -26,5 +26,12 @@ export abstract class BaseRepository<T extends Document> {
         const response = await this.collection.insertOne(insertingDocument);
 
         return { ...insertingDocument, _id: response.insertedId} as T;
+    }
+
+    // TODO Do properly.
+    async delete(toDeleteData: Partial<T>): Promise<DeleteResult> {
+        const response = this.collection.deleteOne(toDeleteData._id);
+        console.log(response);
+        return response;
     }
 }

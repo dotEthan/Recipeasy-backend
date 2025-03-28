@@ -7,3 +7,8 @@ export class HttpError extends Error {
     this.name = "HttpError";
   }
 }
+
+export type CsurfError = {
+  message: string;
+  code: string
+}
