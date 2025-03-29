@@ -9,7 +9,7 @@ import session from 'express-session';
 import passport from 'passport';
 import helmet from 'helmet';
 
-import { HttpError } from "./types/error";
+import { HttpError } from "./errors/index";
 import MongoStore from 'connect-mongo';
 import { csrfErrorHandler, csrfProtection } from './middleware/csrf';
 import cookieParser from 'cookie-parser';
@@ -42,10 +42,9 @@ app.use(session({
   }),
   cookie: {
     httpOnly: true,
-    secure: true,
-    sameSite: 'strict',
+    secure: false,
+    sameSite: 'lax',
     maxAge: 1000 * 60 * 60 * 24 * 7,
-    domain: 'localhost'
   }
 }));
 app.use(passport.initialize());

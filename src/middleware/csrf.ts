@@ -1,11 +1,11 @@
 import csurf from 'csurf';
 import { Request, Response, NextFunction } from 'express';
-import { CsurfError } from '../types/error';
+import { CsurfErrorType } from '../types/error';
 
 export const csrfProtection = csurf({ cookie: true });
 
 // TODO figure out err real type or build in /types once 
-export const csrfErrorHandler = (err: CsurfError, req: Request, res: Response, next: NextFunction) => {
+export const csrfErrorHandler = (err: CsurfErrorType, req: Request, res: Response, next: NextFunction) => {
     console.log('csrf protection HO!', JSON.stringify(err))
   if (err.code !== 'EBADCSRFTOKEN') return next(err);
 

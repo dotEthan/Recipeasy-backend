@@ -1,8 +1,11 @@
 import { NextFunction, Request, Response } from "express";
-import { UserService } from "../services/userService";
 import bcrypt from 'bcryptjs';
-import passport from "passport";
+import passport, { AuthenticateOptions } from "passport";
+
+import { UserService } from "../services/userService";
+
 import { User } from "../types/user";
+import { UnauthorizedError } from "../errors";
 
 export class AuthController {
     private userService: UserService;
@@ -15,7 +18,6 @@ export class AuthController {
 
     
     public async register(req: Request, res: Response): Promise<void> {
-        console.log('Registering User')
         try {
             const {displayName, email, password} = req.body;
 
@@ -31,10 +33,8 @@ export class AuthController {
             res.status(201).json({ success: true, data: userData });
 
         } catch(error: unknown) {
-            console.log('Error Creating User: ', error);
-            // Todo Look into which errors wont be an instance of error and address here
+            // Todo Global Error Handling
             const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-            // TODO proper error handling
             if (errorMessage === 'User already exists') {
                 res.status(409).json({ success: false, message: errorMessage});
                 return;
@@ -45,33 +45,52 @@ export class AuthController {
     }
     
     public async login(req: Request, res: Response, next: NextFunction): Promise<void> {
-        console.log('loging in')
-        passport.authenticate('local', (err: Error, user: User, info: { message: string}) => {
-            if (err) return next(err);
-            if (!user) return res.status(401).json({ message: info.message });
-            req.logIn(user, (loginErr: Error | null) => {
-                if (loginErr) return next(loginErr);
-                console.log('user Logged In:', user)
-                return res.json({
-                    _id: user._id,
-                    email: user.email,
-                    verified: user.verified
-                });
+        try {
+            const response = await this.authenticateUser(req, res);
+            res.json({
+                _id: response._id,
+                email: response.email,
+                verified: response.verified
             });
-            console.log('sessionid: ', req.session.id)
+            await this.userService.logLoginAttempt(req, true);
+        } catch(err) {
+            const errorMessage = ((err instanceof UnauthorizedError) ? err.message : err) as string;
+            await this.userService.logLoginAttempt(req, false, errorMessage);
+            next(err);
+        }
+    }
 
-        })(req, res, next);
+    private authenticateUser(req: Request, res: Response): Promise<User>  {
+        const passportOptions = {
+            failureWithError: true
+        } as AuthenticateOptions;
+        return new Promise((resolve, reject) => {
+            passport.authenticate('local', passportOptions, (err: Error, user: User, info: { message: string}) => {
+                if (err) {
+                    return reject(err);
+                }
+                if (!user) {
+                    return reject(new UnauthorizedError(info.message));
+                }
+
+                req.logIn(user, (loginErr: Error | null) => {
+                    if (loginErr) {
+                        return reject(loginErr);
+                    }
+
+                    resolve(user); 
+                });
+            })(req, res);
+        })
     }
 
     public async logout(req: Request, res: Response, next: NextFunction): Promise<void> {
         req.logOut((err) => {
             if (err) return next(err);
-            console.log('sessionid: ', req.session.id)
             res.clearCookie('recipeasy.sid');
 
             req.session.destroy((err) => {
                 if (err) return next(err);
-                console.log('user logged out')
                 return res.json({
                     success: true,
                     message: "User Logged Out"
@@ -80,5 +99,5 @@ export class AuthController {
         })
     }
 
-    // REWRITE with AXIOS and get csrf working
 }
+// TODO RIP OUT PASSPORT.

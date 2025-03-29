@@ -23,7 +23,7 @@ It's spun up and working with passportjs for authorization.
 
 - Server runs and connects to MongoDB 
 - User registration
-- User Login
+- User Register/Login/logout
 - CSRF, Helmet working
 
 ### Not Working
@@ -32,11 +32,14 @@ It's spun up and working with passportjs for authorization.
 
 ### Working on Now:
 
-- User logout
+- Email verificaiton & password resets
 
 ### To Come:
 
 - Recipe CRUD
+- Recipe Search
+- User Admin (update/delete)
+- Passportjs linked code refactor - ensure proper structure and only needed config values (Config pains - went through numerous versions)
 - Functional testing
 - Pentesting
 - Documentation

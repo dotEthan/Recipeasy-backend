@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 
-import { HttpError } from "../types/error";
+import { HttpError } from "../errors";
 import { Recipe } from "../types/recipe";
 
 // type RequestBody = {

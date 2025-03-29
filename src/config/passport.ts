@@ -20,6 +20,7 @@ export async function initialize(passport: PassportStatic) {
             if (await bcrypt.compare(password, user.password)) {
                 return done(null, user);
             } else {
+                console.log('inside passport.ts PW incorrect')
                 return done(null, false, { message: 'Password incorrect'});
             };
         } catch(error: unknown) {
