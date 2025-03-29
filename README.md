@@ -22,15 +22,24 @@ It's spun up and working with passportjs for authorization.
 ### Working (not feature complete, full design still in progress):
 
 - Server runs and connects to MongoDB 
-- User registration working
+- User registration
+- User Register/Login/logout
+- CSRF, Helmet working
+
+### Not Working
+
+- Browser not auto saving passportjs cookie for sessions, Look into why tomorrow. 
 
 ### Working on Now:
 
-- User Login
+- Email verificaiton & password resets
 
 ### To Come:
 
 - Recipe CRUD
+- Recipe Search
+- User Admin (update/delete)
+- Passportjs linked code refactor - ensure proper structure and only needed config values (Config pains - went through numerous versions)
 - Functional testing
 - Pentesting
 - Documentation
@@ -43,6 +52,8 @@ It's spun up and working with passportjs for authorization.
 - TypeScript
 - Passportjs
 - bCrypt
+- Helmet
+- csrf
 
 ## Author
 

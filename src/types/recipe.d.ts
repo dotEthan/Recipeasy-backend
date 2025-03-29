@@ -1,3 +1,7 @@
+import { Document } from "mongodb"
+
+export interface RecipeDocument extends Recipe, Document{};
+
 export interface Recipe {
   id: string
   creatorId: string

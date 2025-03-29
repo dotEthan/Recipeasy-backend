@@ -6,8 +6,9 @@ import { validateRequestBody } from "../middleware/requestValidation";
 
 export default function createUsersRouter(userController: UserController, authController: AuthController) {
   const router = Router();
-  router.patch("/user", userController.updateUser);
+  router.patch("/user", validateRequestBody, userController.updateUser);
   router.post("/register", validateRequestBody,  authController.register);
   router.post("/login", validateRequestBody, authController.login);
+  router.post("/logout", authController.logout);
   return router;
 }
