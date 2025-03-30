@@ -5,6 +5,7 @@ import bcrypt from 'bcryptjs';
 
 import { VerifiedUserOrErrorFunc } from '../types/passport';
 import { UserRepository } from '../repositories/userRepository';
+import { ObjectId } from 'mongodb';
 
 
 export async function initialize(passport: PassportStatic) {
@@ -32,10 +33,10 @@ export async function initialize(passport: PassportStatic) {
         }
     }
     passport.use(new Strategy({ usernameField: 'email' }, authenticateUser));
-    passport.serializeUser((user: Express.User, done: (err: Error | null, id?: string | undefined) => void) => {
+    passport.serializeUser((user: Express.User, done: (err: Error | null, id?: ObjectId | undefined) => void) => {
         done(null, user._id);
       });
-    passport.deserializeUser(async (id: string, done) => {
+    passport.deserializeUser(async (id: ObjectId, done) => {
         try {
             const user = await userRepository.findByid(id);
             done(null, user);

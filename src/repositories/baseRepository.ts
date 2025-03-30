@@ -11,8 +11,7 @@ export abstract class BaseRepository<T extends Document> {
     }
 
     async findOne(findByData: Partial<T>): Promise<WithId<T> | null> {
-        console.log('finding one: ')
-        return this.collection.findOne(findByData as Filter<T>);
+        return await this.collection.findOne(findByData as Filter<T>);
     }
 
     async create(data: Omit<T, '_id'>): Promise<T> {
@@ -33,14 +32,14 @@ export abstract class BaseRepository<T extends Document> {
             ...updatedData,
             updatedAt: new Date()
         }
-        const response = this.collection.updateOne(filter, {$set: insertingDocument});
+        const response = await this.collection.updateOne(filter, {$set: insertingDocument});
         console.log(response);
         return response;
     }
 
     // TODO Do properly.
     async delete(toDeleteData: Partial<T>): Promise<DeleteResult> {
-        const response = this.collection.deleteOne(toDeleteData._id);
+        const response = await this.collection.deleteOne(toDeleteData._id);
         console.log(response);
         return response;
     }

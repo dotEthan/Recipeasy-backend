@@ -6,6 +6,8 @@ export class UserController {
 
     constructor(userService: UserService) {
         this.userService = userService;
+        this.getUser = this.getUser.bind(this);
+        this.updateUser = this.updateUser.bind(this);
     }
 
 
