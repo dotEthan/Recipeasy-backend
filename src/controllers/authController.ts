@@ -8,6 +8,7 @@ import { UserService } from "../services/userService";
 import { User } from "../types/user";
 import { UnauthorizedError } from "../errors";
 import { AuthService } from "../services/authService";
+import { ObjectId } from "mongodb";
 
 export class AuthController {
     private userService: UserService;
@@ -19,6 +20,7 @@ export class AuthController {
         this.register = this.register.bind(this);
         this.login = this.login.bind(this);
         this.logout = this.logout.bind(this);
+        this.verifyCode = this.verifyCode.bind(this);
     }
 
     
@@ -37,6 +39,7 @@ export class AuthController {
             }
             const verificationSetAndSent = await this.authService.setAndSendVerificationCode(email, displayName,userData._id );
             console.log('email sent: ', verificationSetAndSent)
+            req.session.unverifiedUserId = userResponse._id;
             res.status(201).json({ success: true, data: { userData, verificationSetAndSent }});
 
         } catch(error: unknown) {
@@ -54,10 +57,17 @@ export class AuthController {
     public async login(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
             const response = await this.authenticateUser(req, res);
+            let newEmailVerifyCodeCreated = false;
+            if (!response.verified) {
+                newEmailVerifyCodeCreated = await this.authService.setAndSendVerificationCode(response.email, response.displayName, response._id)
+            }
             res.json({
-                _id: response._id,
-                email: response.email,
-                verified: response.verified
+                user: {
+                    _id: response._id,
+                    email: response.email,
+                    verified: response.verified,
+                },
+                newEmailVerifyCodeCreated,
             });
             await this.authService.logLoginAttempt(req, true);
         } catch(err) {
@@ -84,11 +94,16 @@ export class AuthController {
 
     public async verifyCode(req: Request, res: Response): Promise<void> {
         try {
-            if (!req.user?._id) {
-                throw new Error('No User To Verify');
+            const userId = new ObjectId(req.session.unverifiedUserId || req.session.userId);
+            if (!userId) throw new Error('User Session Ended, please log in again');
+            const verified = await this.authService.checkVerificationCode(userId, req.body.code);
+            if (!verified) {
+                console.log('verification failed');
+                // 3 retries, update object to track retries
             }
-            const verified = await this.authService.checkVerificationCode(req.user?._id, req.body.code);
-
+            console.log('was verified: ', verified)
+            this.userService.setUserVerified(userId);
+            // Delete code
             res.json({ codeVerfied: verified }); 
         } catch (err) {
             console.log('getVerifCode err', err);

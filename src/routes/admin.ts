@@ -14,7 +14,7 @@ import { AuthController } from "../controllers/authController";
         res.json({ csrfToken: req.csrfToken() }); 
     });
 
-    router.get('/verification-code', authController.verifyCode);
+    router.post('/verification-code', authController.verifyCode);
 
     return router;
   }

@@ -5,6 +5,7 @@ import nodemailer from 'nodemailer';
 import { LoginAttempt } from "../types/auth";
 import { UserRepository } from "../repositories/userRepository";
 import {AuthVerificationCodesRepository, AuthLoginAttemptRepository} from "../repositories/authRespository";
+import { ObjectId } from "mongodb";
 
 export class AuthService {
     private AuthLoginAttemptRepository: AuthLoginAttemptRepository;
@@ -26,7 +27,7 @@ export class AuthService {
         // TODO test req.ip is working in production
         console.log('errormsg:', errorMessage)
         const loginData: LoginAttempt = {
-            userId: req.user?._id,
+            userId: new ObjectId(req.user?._id),
             ipAddress: req.ip,
             userAgent: req.headers['user-agent'],
             timestamp: new Date(),
@@ -42,7 +43,7 @@ export class AuthService {
         }
     }
 
-    async setAndSendVerificationCode(email: string, displayName: string, userId: string): Promise<boolean> {
+    async setAndSendVerificationCode(email: string, displayName: string, userId: ObjectId): Promise<boolean> {
         const verificationCode = Math.floor(100000 + Math.random() * 900000);
         console.log(`sending email: ${email} for ${displayName}`)
 
@@ -78,11 +79,15 @@ export class AuthService {
         }
     }
 
-    async checkVerificationCode(userId: string, code: string): Promise<boolean> {
+    async checkVerificationCode(userId: ObjectId, code: string): Promise<boolean> {
         let isVerified = false;
-        const vCode = await this.AuthVerificationCodesRepository.findOne({'userId': userId});
-        console.log('verifyCode: ', vCode);
-        if (vCode && code === vCode.verificationCode) isVerified = true;
+        try {
+            const vCode = await this.AuthVerificationCodesRepository.findOne({userId: userId});
+            if (vCode?.verificationCode && parseInt(code) === vCode.verificationCode) isVerified = true;
+            console.log('isVerfied: ', isVerified);
+        } catch(err) {
+            console.log('check verfication code Err', err);
+        };
         return isVerified;
     }
 }

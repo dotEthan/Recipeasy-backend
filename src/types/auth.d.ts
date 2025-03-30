@@ -1,7 +1,7 @@
-import { Document } from "mongodb";
+import { Document, ObjectId } from "mongodb";
 
 export type LoginAttempt = {
-    userId?: string,
+    userId?: ObjectId,
     ipAddress?: string,
     userAgent?: string,
     timestamp?: Date,
@@ -13,7 +13,7 @@ export interface LoginAttemptDocument extends LoginAttempt, Document{};
 
 
 export type VerificationCode = {
-    userId?: string,
+    userId?: ObjectId,
     code: string,
     createdAt: date,
 }

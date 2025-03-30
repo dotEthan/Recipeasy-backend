@@ -1,11 +1,11 @@
 import 'express';
-import { Document } from "mongodb";
+import { Document, ObjectId } from "mongodb";
 
 import { Recipe } from "./recipe"
 import { ShoppingList } from "./shopping-list"
 
 export type User = {
-  _id: string;
+  _id: ObjectId;
   uid: string;
   firstName?: string;
   lastName?: string;
