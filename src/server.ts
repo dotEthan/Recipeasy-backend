@@ -9,7 +9,8 @@ import { UserController } from './controllers/usersController';
 import { AuthController } from './controllers/authController';
 import createUsersRouter from './routes/users';
 import createAdminRouter from './routes/admin';
-import { LoginAttemptRepository } from './repositories/loginAttemptsRepository';
+import { AuthLoginAttemptRepository, AuthVerificationCodesRepository } from './repositories/authRespository';
+import { AuthService } from './services/authService';
 
 const PORT = process.env.PORT || 8080;
 
@@ -22,9 +23,17 @@ async function startServer() {
     // Timing issue with trying to use database before connecting
     
     const userRepository = new UserRepository();
-    const loginAttemptRepository = new LoginAttemptRepository();
-    const userService = new UserService(userRepository, loginAttemptRepository);
-    registerRoutes(userService);
+    const authLoginAttemptRepository = new AuthLoginAttemptRepository();
+    const authVerificationCodesRepository = new AuthVerificationCodesRepository();
+    const userService = new UserService(userRepository);
+    const authService = new AuthService(
+      userRepository, 
+      authLoginAttemptRepository, 
+      authVerificationCodesRepository
+    );
+
+    registerRoutes(userService, authService);
+    
     initialize(passport);
     
 
@@ -40,11 +49,11 @@ async function startServer() {
 startServer();
 
 
-export function registerRoutes(userService: UserService) {
+export function registerRoutes(userService: UserService, authService: AuthService) {
   const userController = new UserController(userService);
-  const authController = new AuthController(userService);
+  const authController = new AuthController(userService, authService);
   const usersRouter = createUsersRouter(userController, authController);
-  const adminRouter = createAdminRouter();
+  const adminRouter = createAdminRouter(authController);
   app.use('/api', usersRouter);
   app.use('/api', adminRouter);
 }

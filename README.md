@@ -25,17 +25,17 @@ It's spun up and working with passportjs for authorization.
 - User registration
 - User Register/Login/logout
 - CSRF, Helmet working
+- Email Verification
 
 ### Not Working
 
-- Browser not auto saving passportjs cookie for sessions, Look into why tomorrow. 
-
 ### Working on Now:
 
-- Email verificaiton & password resets
+- password resets
 
 ### To Come:
 
+- Schema Creation
 - Recipe CRUD
 - Recipe Search
 - User Admin (update/delete)

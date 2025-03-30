@@ -27,6 +27,7 @@
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.2",
     "mongodb": "^6.13.1",
+    "nodemailer": "^6.10.0",
     "nodemon": "^3.1.9",
     "passport": "^0.7.0",
     "passport-local": "^1.0.0"
@@ -52,6 +53,7 @@
     "@types/express-validator": "^2.20.33",
     "@types/helmet": "^0.0.48",
     "@types/node": "^22.13.4",
+    "@types/nodemailer": "^6.4.17",
     "@types/passport": "^1.0.17",
     "@types/passport-local": "^1.0.38",
     "eslint": "^9.20.1",
