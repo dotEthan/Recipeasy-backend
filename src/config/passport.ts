@@ -31,14 +31,17 @@ export async function initialize(passport: PassportStatic) {
 
             return done(new Error(String(error)));
         }
-    }
+    };
+
     passport.use(new Strategy({ usernameField: 'email' }, authenticateUser));
-    passport.serializeUser((user: Express.User, done: (err: Error | null, id?: ObjectId | undefined) => void) => {
-        done(null, user._id);
-      });
-    passport.deserializeUser(async (id: ObjectId, done) => {
+
+    passport.serializeUser((user: Express.User, done: (err: Error | null, id?: string | undefined) => void) => {
+        done(null, user._id.toString());
+    });
+
+    passport.deserializeUser(async (id: string, done) => {
         try {
-            const user = await userRepository.findByid(id);
+            const user = await userRepository.findByid(new ObjectId(id));
             done(null, user);
         } catch (error: unknown) {
             done(error);
