@@ -25,7 +25,7 @@ It's spun up and working with passportjs for authorization.
 - User registration
 - User Register/Login/logout
 - CSRF, Helmet working
-- Email Verification
+- Email Verification (register and login)
 
 ### Not Working
 
@@ -38,6 +38,8 @@ It's spun up and working with passportjs for authorization.
 - Schema Creation
 - Recipe CRUD
 - Recipe Search
+- Testing
+- Full Documentation
 - User Admin (update/delete)
 - Passportjs linked code refactor - ensure proper structure and only needed config values (Config pains - went through numerous versions)
 - Functional testing

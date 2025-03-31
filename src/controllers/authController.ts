@@ -1,7 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import bcrypt from 'bcryptjs';
 import passport, { AuthenticateOptions } from "passport";
-// import nodemailer from 'nodemailer';
 
 import { UserService } from "../services/userService";
 
@@ -61,6 +60,7 @@ export class AuthController {
             if (!response.verified) {
                 newEmailVerifyCodeCreated = await this.authService.setAndSendVerificationCode(response.email, response.displayName, response._id)
             }
+            
             res.json({
                 user: {
                     _id: response._id,
@@ -94,16 +94,23 @@ export class AuthController {
 
     public async verifyCode(req: Request, res: Response): Promise<void> {
         try {
-            const userId = new ObjectId(req.session.unverifiedUserId || req.session.userId);
-            if (!userId) throw new Error('User Session Ended, please log in again');
+
+            const currentUserId = req.session.unverifiedUserId || req.user?._id;
+            if (!currentUserId) throw new Error('User Session Ended, please log in again');
+
+            const userId = new ObjectId(currentUserId);
+
             const verified = await this.authService.checkVerificationCode(userId, req.body.code);
+
             if (!verified) {
                 console.log('verification failed');
-                // 3 retries, update object to track retries
+                // TODO 3 retries, update object to track retries
             }
+
             console.log('was verified: ', verified)
             this.userService.setUserVerified(userId);
-            // Delete code
+            this.authService.deleteVerificationCode(userId);
+
             res.json({ codeVerfied: verified }); 
         } catch (err) {
             console.log('getVerifCode err', err);

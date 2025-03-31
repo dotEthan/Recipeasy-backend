@@ -90,4 +90,12 @@ export class AuthService {
         };
         return isVerified;
     }
+
+    async deleteVerificationCode(userId: ObjectId) {
+        try {
+            await this.AuthVerificationCodesRepository.delete(userId);
+        } catch (err: unknown) {
+            console.log('deleting verification Code err: ', err);
+        }
+    }
 }
