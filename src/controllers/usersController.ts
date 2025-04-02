@@ -7,7 +7,7 @@ export class UserController {
     constructor(userService: UserService) {
         this.userService = userService;
         this.getUser = this.getUser.bind(this);
-        this.updateUser = this.updateUser.bind(this);
+        this.updateUserPassword = this.updateUserPassword.bind(this);
     }
 
 
@@ -28,10 +28,13 @@ export class UserController {
         }
     }
 
-    public async updateUser(req: Request, res: Response): Promise<void> {
+    public async updateUserPassword(req: Request, res: Response): Promise<void> {
         try {
+            const token = req.body.token;
+            const newPassword = req.body.password;
+            await this.userService.updateUserPassword(newPassword, token);
             console.log('getting User Body: ', req.body);
-            return req.body;
+            res.json({success: true});
         } catch(error: unknown) {
             console.log('Error Updating User: ', error);
             // Todo Look into which errors wont be an instance of error and address here

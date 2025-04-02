@@ -16,5 +16,9 @@ import { AuthController } from "../controllers/authController";
 
     router.post('/verification-code', authController.verifyCode);
 
+    router.post('/reset-password', authController.resetPassword);
+
+    router.post('/validate-password-token', authController.validatePasswordToken);
+
     return router;
   }

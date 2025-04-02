@@ -1,4 +1,4 @@
-import { VerificationCodeDocument } from "../types/auth";
+import { AuthCodeDocument } from "../types/auth";
 import { LoginAttemptDocument } from "../types/auth";
 import { BaseRepository } from "./baseRepository";
 /**
@@ -12,9 +12,14 @@ export class AuthLoginAttemptRepository extends BaseRepository<LoginAttemptDocum
     }
 }
 
-export class AuthVerificationCodesRepository extends BaseRepository<VerificationCodeDocument> {
+export class AuthVerificationCodesRepository extends BaseRepository<AuthCodeDocument> {
     constructor() {
         super('auth_verification_codes');
     }
+}
 
+export class AuthPwResetCodesRepository extends BaseRepository<AuthCodeDocument> {
+    constructor() {
+        super('auth_pw_reset_codes');
+    }
 }
