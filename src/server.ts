@@ -9,8 +9,13 @@ import { UserController } from './controllers/usersController';
 import { AuthController } from './controllers/authController';
 import createUsersRouter from './routes/users';
 import createAdminRouter from './routes/admin';
-import { AuthLoginAttemptRepository, AuthVerificationCodesRepository } from './repositories/authRespository';
+import {
+  AuthLoginAttemptRepository,
+  AuthPwResetCodesRepository,
+  AuthVerificationCodesRepository
+} from './repositories/authRespository';
 import { AuthService } from './services/authService';
+import { EmailService } from './services/emailService';
 
 const PORT = process.env.PORT || 8080;
 
@@ -22,17 +27,30 @@ async function startServer() {
     // Explicitly initializing after database connection
     // Timing issue with trying to use database before connecting
     
-    const userRepository = new UserRepository();
-    const authLoginAttemptRepository = new AuthLoginAttemptRepository();
     const authVerificationCodesRepository = new AuthVerificationCodesRepository();
-    const userService = new UserService(userRepository);
+    const authLoginAttemptRepository = new AuthLoginAttemptRepository();
+    const authPwResetCodesRepository = new AuthPwResetCodesRepository();
+    const userRepository = new UserRepository();
+    const emailService = new EmailService();
     const authService = new AuthService(
-      userRepository, 
       authLoginAttemptRepository, 
-      authVerificationCodesRepository
+      authVerificationCodesRepository,
+      emailService,
+      authPwResetCodesRepository,
+      userRepository
+    );
+    const userService = new UserService(
+      userRepository, 
+      emailService, 
+      authPwResetCodesRepository,
+      authService
     );
 
-    registerRoutes(userService, authService);
+    registerRoutes(
+      userService, 
+      authService, 
+      authPwResetCodesRepository
+    );
     
     initialize(passport);
     
@@ -49,9 +67,17 @@ async function startServer() {
 startServer();
 
 
-export function registerRoutes(userService: UserService, authService: AuthService) {
+export function registerRoutes(
+  userService: UserService, 
+  authService: AuthService, 
+  authPwResetCodesRepository: AuthPwResetCodesRepository
+) {
   const userController = new UserController(userService);
-  const authController = new AuthController(userService, authService);
+  const authController = new AuthController(
+    userService, 
+    authService, 
+    authPwResetCodesRepository
+  );
   const usersRouter = createUsersRouter(userController, authController);
   const adminRouter = createAdminRouter(authController);
   app.use('/api', usersRouter);

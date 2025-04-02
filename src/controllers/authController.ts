@@ -8,18 +8,27 @@ import { User } from "../types/user";
 import { UnauthorizedError } from "../errors";
 import { AuthService } from "../services/authService";
 import { ObjectId } from "mongodb";
+import { AuthPwResetCodesRepository } from "../repositories/authRespository";
 
 export class AuthController {
     private userService: UserService;
     private authService : AuthService;
+    private authPwResetCodesRepository: AuthPwResetCodesRepository;
 
-    constructor(userService: UserService, authService: AuthService) {
+    constructor(
+        userService: UserService, 
+        authService: AuthService,
+        authPwResetCodesRepository: AuthPwResetCodesRepository
+    ) {
+        this.authPwResetCodesRepository = authPwResetCodesRepository;
         this.userService = userService;
         this.authService = authService;
         this.register = this.register.bind(this);
         this.login = this.login.bind(this);
         this.logout = this.logout.bind(this);
         this.verifyCode = this.verifyCode.bind(this);
+        this.resetPassword = this.resetPassword.bind(this);
+        this.validatePasswordToken = this.validatePasswordToken.bind(this);
     }
 
     
@@ -28,7 +37,7 @@ export class AuthController {
             const {displayName, email, password} = req.body;
 
             const hashedPassword = await bcrypt.hash(password, 12);
-            const userResponse = await this.userService.createUser(displayName, email, hashedPassword);
+            const userResponse = await this.userService.createNewUser(displayName, email, hashedPassword);
 
             const userData = {
                 email: userResponse.email,
@@ -36,13 +45,12 @@ export class AuthController {
                 _id: userResponse._id,
                 verified: false,
             }
-            const verificationSetAndSent = await this.authService.setAndSendVerificationCode(email, displayName,userData._id );
-            console.log('email sent: ', verificationSetAndSent)
             req.session.unverifiedUserId = userResponse._id;
-            res.status(201).json({ success: true, data: { userData, verificationSetAndSent }});
+            res.status(201).json({ success: true, data: { userData }});
 
         } catch(error: unknown) {
             // Todo Global Error Handling
+            console.log('Register Failed: ', error);
             const errorMessage = error instanceof Error ? error.message : 'Unknown error';
             if (errorMessage === 'User already exists') {
                 res.status(409).json({ success: false, message: errorMessage});
@@ -114,6 +122,30 @@ export class AuthController {
             res.json({ codeVerfied: verified }); 
         } catch (err) {
             console.log('getVerifCode err', err);
+        }
+    }
+
+    public async resetPassword(req: Request, res: Response): Promise<void> {
+        console.log('resetting started: ', req.body)
+        try {
+            const email: string = req.body.email;
+            console.log('email: ', email);
+            const passwordReset = await this.userService.emailUserToken(email);
+            console.log('is password reset: ', passwordReset);
+            res.json(passwordReset); 
+        } catch(error) {
+            console.log('reset password error: ', error);
+        }
+    }
+
+    public async validatePasswordToken(req: Request, res: Response) {
+        try {
+            const token = req.body.token;
+            console.log('validate token: ', token);
+            const isValid = await this.authService.validatePasswordToken(token);
+            res.json(isValid)
+        } catch (error) {
+            console.log('validating password token error: ', error);
         }
     }
 

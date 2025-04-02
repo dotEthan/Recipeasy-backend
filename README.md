@@ -26,18 +26,22 @@ It's spun up and working with passportjs for authorization.
 - User Register/Login/logout
 - CSRF, Helmet working
 - Email Verification (register and login)
+- password resets
 
 ### Not Working
 
 ### Working on Now:
 
-- password resets
+- Schema Creation
 
 ### To Come:
 
-- Schema Creation
 - Recipe CRUD
+- middleware security checks and limiters
+- Middle ware validation
+- Global Error Handler (structure w/ pinia)
 - Recipe Search
+- Global Error Handler (site refactor)
 - Testing
 - Full Documentation
 - User Admin (update/delete)

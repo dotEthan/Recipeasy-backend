@@ -1,25 +1,36 @@
 import { Request } from "express";
-import nodemailer from 'nodemailer';
-
+import jwt, { JwtPayload } from 'jsonwebtoken';
 
 import { LoginAttempt } from "../types/auth";
-import { UserRepository } from "../repositories/userRepository";
-import {AuthVerificationCodesRepository, AuthLoginAttemptRepository} from "../repositories/authRespository";
+import {
+    AuthVerificationCodesRepository,
+    AuthLoginAttemptRepository,
+    AuthPwResetCodesRepository
+} from "../repositories/authRespository";
+import { EmailService } from "./emailService";
 import { ObjectId } from "mongodb";
+import { UserRepository } from "../repositories/userRepository";
+import { StandardResponse } from "../types/responses";
 
 export class AuthService {
-    private AuthLoginAttemptRepository: AuthLoginAttemptRepository;
-    private AuthVerificationCodesRepository: AuthVerificationCodesRepository;
+    private authLoginAttemptRepository: AuthLoginAttemptRepository;
+    private authVerificationCodesRepository: AuthVerificationCodesRepository;
+    private authPwResetCodesRepository: AuthPwResetCodesRepository;
+    private emailService: EmailService;
     private userRepository: UserRepository;
 
     constructor(
-        userRepository: UserRepository,
         AuthLoginAttemptRepository: AuthLoginAttemptRepository,
-        AuthVerificationCodesRepository: AuthVerificationCodesRepository
+        AuthVerificationCodesRepository: AuthVerificationCodesRepository,
+        EmailService: EmailService,
+        AuthPwResetCodesRepository: AuthPwResetCodesRepository,
+        UserRepository: UserRepository,
     ) {
-        this.AuthVerificationCodesRepository = AuthVerificationCodesRepository;
-        this.AuthLoginAttemptRepository = AuthLoginAttemptRepository;
-        this.userRepository = userRepository;
+        this.authVerificationCodesRepository = AuthVerificationCodesRepository;
+        this.authPwResetCodesRepository = AuthPwResetCodesRepository;
+        this.authLoginAttemptRepository = AuthLoginAttemptRepository;
+        this.emailService = EmailService;
+        this.userRepository = UserRepository;
     }
 
 
@@ -34,68 +45,50 @@ export class AuthService {
             success,
             errorMessage: success ? undefined : errorMessage,
         };
-        try {
-            await this.AuthLoginAttemptRepository.create(loginData);
-            return;
-        } catch(error: unknown) {
-            // global error handle, log but don't stop flow
-            console.log(error);
-        }
+        await this.authLoginAttemptRepository.create(loginData);
+        return;
     }
 
     async setAndSendVerificationCode(email: string, displayName: string, userId: ObjectId): Promise<boolean> {
         const verificationCode = Math.floor(100000 + Math.random() * 900000);
         console.log(`sending email: ${email} for ${displayName}`)
 
-        const transporter = nodemailer.createTransport({
-            host: process.env.SMTP_HOST || 'smtp.ethereal.email',
-            port: 587,
-            secure: false, // true for port 465, false for other ports
-            auth: {
-                user: 'meggie95@ethereal.email', // Auto-generated
-                pass: 'nXCbfzUBxW1ynTUkuk', // Auto-generated
-            },
+        const info = await this.emailService.sendEmailToUser('emailVerificationCode', displayName, email, 'test');
+        if (!info) throw Error('email sending failed');
+        console.log("Message sent: %s", info.messageId);
+        const response = await this.authVerificationCodesRepository.create({ 
+            userId,
+            verificationCode,
+            createdAt: new Date(),
         });
-
-        try{
-            const info = await transporter.sendMail({
-                from: '"Recipeasy Admin" <dotethan@ethanstrauss.com>',
-                to: email,
-                subject: "Hello ✔",
-                text: `Hello ${displayName}, your Recipeasy Verification Code is ${verificationCode}`,
-                html: `<b>Hello ${displayName}!</b> Your recipeasy Verification Code is ${verificationCode}`,
-            });
-            
-            console.log("Message sent: %s", info.messageId);
-            await this.AuthVerificationCodesRepository.create({ 
-                userId,
-                verificationCode,
-                createdAt: new Date(),
-            });
-            return true;
-        } catch(err) {
-            console.log('Sending Email err:', err);
-            return false
-        }
+        // TODO Look at this, and what to send back, or all
+        console.log('set and send verificationCode response: ', response);
+        return true;
     }
 
     async checkVerificationCode(userId: ObjectId, code: string): Promise<boolean> {
         let isVerified = false;
-        try {
-            const vCode = await this.AuthVerificationCodesRepository.findOne({userId: userId});
-            if (vCode?.verificationCode && parseInt(code) === vCode.verificationCode) isVerified = true;
-            console.log('isVerfied: ', isVerified);
-        } catch(err) {
-            console.log('check verfication code Err', err);
-        };
+        const vCode = await this.authVerificationCodesRepository.findOne({userId: userId});
+        if (vCode?.verificationCode && parseInt(code) === vCode.verificationCode) isVerified = true;
+        console.log('isVerfied: ', isVerified);
+
         return isVerified;
     }
-
     async deleteVerificationCode(userId: ObjectId) {
-        try {
-            await this.AuthVerificationCodesRepository.delete(userId);
-        } catch (err: unknown) {
-            console.log('deleting verification Code err: ', err);
-        }
+        await this.authVerificationCodesRepository.delete(userId);
+        console.log('deleted email verifciation code')
+    }
+
+    async validatePasswordToken(token: string): Promise<StandardResponse> {
+        const secret = (process.env.NODE_ENV !== 'prod') ? process.env.JWT_SECRET_PROD : process.env.JWT_SECRET_DEV;
+        if (!secret) throw new Error('Env JWT_SECRET_PROD/DEV not set');
+
+        const decoded = await jwt.verify(token, secret) as JwtPayload;
+        const userId = decoded.userId;
+
+        const user = await this.userRepository.findByid(new ObjectId(userId));
+        if(!user) throw new Error('No user found validating password token');
+
+        return {success: true}
     }
 }

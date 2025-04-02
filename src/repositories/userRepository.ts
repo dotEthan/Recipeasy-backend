@@ -10,19 +10,24 @@ export class UserRepository extends BaseRepository<UserDocument> {
     }
 
     async findByid(_id: ObjectId): Promise<UserDocument | null> {
-        return this.findOne({_id} as Partial<UserDocument>);
+        return await this.findOne({_id} as Partial<UserDocument>);
     };
 
     async findByemail(email: string): Promise<UserDocument | null> {
-        return this.findOne({email} as Partial<UserDocument>);
+        return await this.findOne({email} as Partial<UserDocument>);
+    };
+
+    async findIdByemail(email: string): Promise<ObjectId | undefined> {
+        const user = await this.findOne({email} as Partial<UserDocument>);
+        return user?._id;
     };
 
     async updateById(_id: ObjectId, updatedData: Partial<UserDocument>): Promise<UpdateResult | null> {
-        return this.updateOne({_id}, updatedData);
+        return await this.updateOne({_id}, updatedData);
     };
 
     // For Admin Dashboard
     async deleteUser(_id: ObjectId) {
-        return this.delete({_id})
+        return await this.delete({_id})
     }
 }

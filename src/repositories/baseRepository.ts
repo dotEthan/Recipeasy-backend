@@ -11,6 +11,7 @@ export abstract class BaseRepository<T extends Document> {
     }
 
     async findOne(findByData: Partial<T>): Promise<WithId<T> | null> {
+        console.log('finding one: ', findByData)
         return await this.collection.findOne(findByData as Filter<T>);
     }
 
