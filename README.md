@@ -27,18 +27,17 @@ It's spun up and working with passportjs for authorization. Full Authorization f
 - CSRF, Helmet working
 - Email Verification (register and login)
 - password resets
-- Schema Creation for Authorization flows and DB inserts
+- Schema Creation & Validation for Incoming, DB saves, and Outgoing data
 
 ### Not Working
 
 ### Working on Now:
 
-- Schema Creation - res.json() verification needed)
-
+- Recipe CRUD
 ### To Come:
 
-- Recipe CRUD
 - Global Error Handler (structure w/ pinia)
+- Remove console.logs and look at TODOs
 - Deploy: 
     - sameSite: 'strict/lax', httpOnly: true, secure: true, 
     - ensure middleware security checks and limiters(readd). 

@@ -8,6 +8,8 @@ import { User } from "../types/user";
 import { UnauthorizedError } from "../errors";
 import { AuthService } from "../services/authService";
 import { ObjectId } from "mongodb";
+import { FeUserSchema, LoginResSchema } from "../schemas/user.schema";
+import { SuccessFailResSchema } from "../schemas/generic.schema";
 
 export class AuthController {
     private userService: UserService;
@@ -30,22 +32,15 @@ export class AuthController {
     
     public async register(req: Request, res: Response): Promise<void> {
         try {
-            console.log('registering')
             const {displayName, email, password} = req.body;
 
-            console.log('registering')
             const hashedPassword = await bcrypt.hash(password, 12);
-            console.log('registering')
             const userResponse = await this.userService.createNewUser(displayName, email, hashedPassword);
-            console.log('registering create rseponse: ', userResponse);
-            const userData = {
-                email: userResponse.email,
-                displayName: userResponse.displayName,
-                _id: userResponse._id,
-                verified: false,
-            }
+
             req.session.unverifiedUserId = userResponse._id;
-            res.status(201).json({ success: true, data: { userData }});
+            console.log('Registered User: ', userResponse);
+            FeUserSchema.parse(userResponse)
+            res.status(201).json({success: true, data: userResponse});
 
         } catch(error: unknown) {
             // Todo Global Error Handling
@@ -63,23 +58,22 @@ export class AuthController {
     public async login(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
             console.log('logging in')
-            const response = await this.authenticateUser(req, res);
+            const autheticateResponse = await this.authenticateUser(req, res);
             console.log('authenticated')
             let newEmailVerifyCodeCreated = false;
-            if (!response.verified) {
+            if (!autheticateResponse.verified) {
                 console.log('autheticated by not verified')
-                newEmailVerifyCodeCreated = await this.authService.setAndSendVerificationCode(response.email, response.displayName, response._id)
+                newEmailVerifyCodeCreated = await this.authService.setAndSendVerificationCode(autheticateResponse.email, autheticateResponse.displayName, autheticateResponse._id)
             }
+            const responseData = {
+                user: autheticateResponse,
+                newEmailVerifyCodeCreated
+            }
+            console.log('autheticated and verified user: ', responseData);
             
-            console.log('autheticated and verified')
-            res.json({
-                user: {
-                    _id: response._id,
-                    email: response.email,
-                    verified: response.verified,
-                },
-                newEmailVerifyCodeCreated,
-            });
+            LoginResSchema.parse(responseData);
+            res.json(responseData);
+
             console.log('logging attempt')
             await this.authService.logLoginAttempt(req, true);
         } catch(err) {
@@ -123,7 +117,10 @@ export class AuthController {
             this.userService.setUserVerified(userId);
             this.authService.deleteVerificationCode(userId);
 
-            res.json({ codeVerfied: verified }); 
+            const verifyRes = {success: verified};
+            SuccessFailResSchema.parse(verifyRes);
+            
+            res.json(verifyRes); 
         } catch (err) {
             console.log('getVerifCode err', err);
         }
@@ -136,6 +133,7 @@ export class AuthController {
             console.log('email: ', email);
             const passwordReset = await this.userService.emailUserToken(email);
             console.log('is password reset: ', passwordReset);
+            SuccessFailResSchema.parse(passwordReset)
             res.json(passwordReset); 
         } catch(error) {
             console.log('reset password error: ', error);
@@ -144,9 +142,10 @@ export class AuthController {
 
     public async validatePasswordToken(req: Request, res: Response) {
         try {
-            const token = req.body.token;
+            const token = req.body.code;
             console.log('validate token: ', token);
             const isValid = await this.authService.validatePasswordToken(token);
+            SuccessFailResSchema.parse(isValid)
             res.json(isValid)
         } catch (error) {
             console.log('validating password token error: ', error);

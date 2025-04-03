@@ -33,7 +33,7 @@ export abstract class BaseRepository<T extends Document> {
         } as unknown as OptionalUnlessRequiredId<T>;
 
         const response = await this.collection.insertOne(insertingDocument);
-
+        console.log('create user respponse: ', response)
         return { ...insertingDocument, _id: response.insertedId};
     }
 
