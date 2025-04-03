@@ -5,51 +5,47 @@ import jwt, { JwtPayload } from 'jsonwebtoken';
 import { UserRepository } from "../repositories/userRepository";
 import { EmailService } from "./emailService";
 
-import { User, UserDocument } from "../types/user";
-import { StandardResponse } from "../types/responses";
-import { AuthPwResetCodesRepository } from "../repositories/authRespository";
+import { NewUserNoId, UserDocument } from "../types/user";
+import { CreatedDataResponse, StandardResponse } from "../types/responses";
 import { AuthService } from "./authService";
+import { createNewUserUtility } from "../util";
 
 export class UserService {
     private userRepository: UserRepository;
     private emailService: EmailService;
-    private authPwResetCodesRepository: AuthPwResetCodesRepository;
     private authService: AuthService;
 
-    constructor(userRepository: UserRepository, emailService: EmailService, AuthPwResetCodesRepository: AuthPwResetCodesRepository, AuthService: AuthService) {
+    constructor(userRepository: UserRepository, emailService: EmailService, AuthService: AuthService) {
         this.userRepository = userRepository;
         this.emailService = emailService;
-        this.authPwResetCodesRepository = AuthPwResetCodesRepository;
         this.authService = AuthService;
     }
 
-    async createNewUser(displayName: string, email: string, hashedPassword: string): Promise<UserDocument> {
-        const user =  await this.createUser(displayName, email, hashedPassword);
-        
-        const verificationSetAndSent = await this.authService.setAndSendVerificationCode(email, displayName,user._id );
+    async createNewUser(displayName: string, email: string, hashedPassword: string): Promise<CreatedDataResponse<UserDocument>> {
+        console.log('createNewUser about to save')
+        const newUserData = createNewUserUtility(displayName, email, hashedPassword);
+        console.log('createNewUser about to save')
+        const savedUserResults =  await this.saveUser(newUserData);
+        if (!savedUserResults) throw Error('No User Created');
+
+        const verificationSetAndSent = await this.authService.setAndSendVerificationCode(email, displayName,savedUserResults._id );
         console.log('email sent: ', verificationSetAndSent)
-        return user;
+        return savedUserResults;
     }
 
-    private async createUser(displayName: string, email: string, hashedPassword: string): Promise<User> {
-        const hasUser = await this.userRepository.findOne({'email': email})
+    private async saveUser(newUserData: NewUserNoId): Promise<CreatedDataResponse<UserDocument>> {
+        const hasUser = await this.userRepository.findOne({'email': newUserData.email})
         if (hasUser) {
             throw new Error('Email already in use');
         }
 
-        const userData = {
-            displayName,
-            email,
-            password: hashedPassword,
-            verified: false,
-        }
-        console.log('Created User: ', userData)
-        return this.userRepository.create(userData);
+        console.log('Created User: ', newUserData);
+        return this.userRepository.createUser(newUserData);
     }
 
     async setUserVerified(_id: ObjectId): Promise<StandardResponse> {
         console.log('setting verified userID: ', typeof _id);
-        const hasUser = await this.userRepository.findByid(_id)
+        const hasUser = await this.userRepository.findById(_id)
         console.log('setting verified user exists: ', hasUser);
         if (!hasUser) {
             throw new Error('User Not Found, try logging in again');
@@ -61,7 +57,7 @@ export class UserService {
     }
 
     async emailUserToken(email: string): Promise<StandardResponse> {
-        const userId = await this.userRepository.findIdByemail(email);
+        const userId = await this.userRepository.findIdByEmail(email);
         if (!userId) {
             throw Error('User Not Found');
         }

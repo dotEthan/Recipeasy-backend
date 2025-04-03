@@ -5,8 +5,7 @@ import { LoginAttempt } from "../types/auth";
 import {
     AuthVerificationCodesRepository,
     AuthLoginAttemptRepository,
-    AuthPwResetCodesRepository
-} from "../repositories/authRespository";
+} from "../repositories/authRepository";
 import { EmailService } from "./emailService";
 import { ObjectId } from "mongodb";
 import { UserRepository } from "../repositories/userRepository";
@@ -15,7 +14,6 @@ import { StandardResponse } from "../types/responses";
 export class AuthService {
     private authLoginAttemptRepository: AuthLoginAttemptRepository;
     private authVerificationCodesRepository: AuthVerificationCodesRepository;
-    private authPwResetCodesRepository: AuthPwResetCodesRepository;
     private emailService: EmailService;
     private userRepository: UserRepository;
 
@@ -23,11 +21,9 @@ export class AuthService {
         AuthLoginAttemptRepository: AuthLoginAttemptRepository,
         AuthVerificationCodesRepository: AuthVerificationCodesRepository,
         EmailService: EmailService,
-        AuthPwResetCodesRepository: AuthPwResetCodesRepository,
         UserRepository: UserRepository,
     ) {
         this.authVerificationCodesRepository = AuthVerificationCodesRepository;
-        this.authPwResetCodesRepository = AuthPwResetCodesRepository;
         this.authLoginAttemptRepository = AuthLoginAttemptRepository;
         this.emailService = EmailService;
         this.userRepository = UserRepository;
@@ -56,9 +52,10 @@ export class AuthService {
         const info = await this.emailService.sendEmailToUser('emailVerificationCode', displayName, email, 'test');
         if (!info) throw Error('email sending failed');
         console.log("Message sent: %s", info.messageId);
-        const response = await this.authVerificationCodesRepository.create({ 
+        console.log('verificationCode: ', verificationCode.toString())
+        const response = await this.authVerificationCodesRepository.createVerificationCOde({ 
             userId,
-            verificationCode,
+            code: verificationCode.toString(),
             createdAt: new Date(),
         });
         // TODO Look at this, and what to send back, or all
@@ -68,14 +65,14 @@ export class AuthService {
 
     async checkVerificationCode(userId: ObjectId, code: string): Promise<boolean> {
         let isVerified = false;
-        const vCode = await this.authVerificationCodesRepository.findOne({userId: userId});
+        const vCode = await this.authVerificationCodesRepository.findVerificationCode(userId);
         if (vCode?.verificationCode && parseInt(code) === vCode.verificationCode) isVerified = true;
         console.log('isVerfied: ', isVerified);
 
         return isVerified;
     }
     async deleteVerificationCode(userId: ObjectId) {
-        await this.authVerificationCodesRepository.delete(userId);
+        await this.authVerificationCodesRepository.deleteVerificationCode(userId);
         console.log('deleted email verifciation code')
     }
 
@@ -86,7 +83,7 @@ export class AuthService {
         const decoded = await jwt.verify(token, secret) as JwtPayload;
         const userId = decoded.userId;
 
-        const user = await this.userRepository.findByid(new ObjectId(userId));
+        const user = await this.userRepository.findById(new ObjectId(userId));
         if(!user) throw new Error('No user found validating password token');
 
         return {success: true}

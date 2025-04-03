@@ -11,9 +11,8 @@ import createUsersRouter from './routes/users';
 import createAdminRouter from './routes/admin';
 import {
   AuthLoginAttemptRepository,
-  AuthPwResetCodesRepository,
   AuthVerificationCodesRepository
-} from './repositories/authRespository';
+} from './repositories/authRepository';
 import { AuthService } from './services/authService';
 import { EmailService } from './services/emailService';
 
@@ -29,27 +28,23 @@ async function startServer() {
     
     const authVerificationCodesRepository = new AuthVerificationCodesRepository();
     const authLoginAttemptRepository = new AuthLoginAttemptRepository();
-    const authPwResetCodesRepository = new AuthPwResetCodesRepository();
     const userRepository = new UserRepository();
     const emailService = new EmailService();
     const authService = new AuthService(
       authLoginAttemptRepository, 
       authVerificationCodesRepository,
       emailService,
-      authPwResetCodesRepository,
       userRepository
     );
     const userService = new UserService(
       userRepository, 
       emailService, 
-      authPwResetCodesRepository,
       authService
     );
 
     registerRoutes(
       userService, 
       authService, 
-      authPwResetCodesRepository
     );
     
     initialize(passport);
@@ -70,13 +65,11 @@ startServer();
 export function registerRoutes(
   userService: UserService, 
   authService: AuthService, 
-  authPwResetCodesRepository: AuthPwResetCodesRepository
 ) {
   const userController = new UserController(userService);
   const authController = new AuthController(
     userService, 
     authService, 
-    authPwResetCodesRepository
   );
   const usersRouter = createUsersRouter(userController, authController);
   const adminRouter = createAdminRouter(authController);
