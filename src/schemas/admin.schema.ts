@@ -1,15 +1,8 @@
 import { ObjectId } from 'mongodb';
 import { z } from 'zod';
 
+// TODO this or the one in SaveLoginAttemptDataSchema
 const ObjectIdSchema = z.custom<ObjectId>((val) => {
-    console.log('validation Input: ', {
-        val: val,
-        type: typeof val,
-        constructor: val?.constructor?.name,
-        isObjectId: val instanceof ObjectId,
-        isValidString: typeof val === 'string' && ObjectId.isValid(val),
-        isValidAny: ObjectId.isValid(val)
-    })
     return val instanceof ObjectId || ObjectId.isValid(val);
 }, {
     message: "Invalid MongoDB ObjectId"

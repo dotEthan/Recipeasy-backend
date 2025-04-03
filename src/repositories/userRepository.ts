@@ -19,12 +19,10 @@ export class UserRepository extends BaseRepository<UserDocument> {
 
     async createUser(data: Omit<UserDocument, '_id'>): Promise<CreatedDataResponse<UserDocument>> {
         BeCreateUserSchema.parse(data);
-
         return await this.create(data);
     }
 
     async findById(_id: ObjectId): Promise<UserDocument | null> {
-        console.log('why we here: ', _id instanceof ObjectId)
         FindByIdSchema.parse({_id});
         return await this.findOne({_id} as Partial<UserDocument>);
     };

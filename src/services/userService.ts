@@ -21,7 +21,7 @@ export class UserService {
         this.authService = AuthService;
     }
 
-    async createNewUser(displayName: string, email: string, hashedPassword: string): Promise<CreatedDataResponse<UserDocument>> {
+    public async createNewUser(displayName: string, email: string, hashedPassword: string): Promise<CreatedDataResponse<UserDocument>> {
         console.log('createNewUser about to save')
         const newUserData = createNewUserUtility(displayName, email, hashedPassword);
         console.log('createNewUser about to save')
@@ -33,17 +33,7 @@ export class UserService {
         return savedUserResults;
     }
 
-    private async saveUser(newUserData: NewUserNoId): Promise<CreatedDataResponse<UserDocument>> {
-        const hasUser = await this.userRepository.findOne({'email': newUserData.email})
-        if (hasUser) {
-            throw new Error('Email already in use');
-        }
-
-        console.log('Created User: ', newUserData);
-        return this.userRepository.createUser(newUserData);
-    }
-
-    async setUserVerified(_id: ObjectId): Promise<StandardResponse> {
+    public async setUserVerified(_id: ObjectId): Promise<StandardResponse> {
         console.log('setting verified userID: ', typeof _id);
         const hasUser = await this.userRepository.findById(_id)
         console.log('setting verified user exists: ', hasUser);
@@ -56,7 +46,7 @@ export class UserService {
         return {success: true};
     }
 
-    async emailUserToken(email: string): Promise<StandardResponse> {
+    public async emailUserToken(email: string): Promise<StandardResponse> {
         const userId = await this.userRepository.findIdByEmail(email);
         if (!userId) {
             throw Error('User Not Found');
@@ -82,7 +72,7 @@ export class UserService {
         return {success: emailSent};
     }
 
-    async updateUserPassword(password: string, token: string) {
+    public async updateUserPassword(password: string, token: string) {
         const secret = (process.env.NODE_ENV !== 'prod') ? process.env.JWT_SECRET_PROD : process.env.JWT_SECRET_DEV;
         if (!secret) throw new Error('Env JWT_SECRET_PROD/DEV not set');
 
@@ -104,5 +94,15 @@ export class UserService {
             throw new Error('Document Not Modified')
         }
         return updateResponse;
+    }
+
+    private async saveUser(newUserData: NewUserNoId): Promise<CreatedDataResponse<UserDocument>> {
+        const hasUser = await this.userRepository.findOne({'email': newUserData.email})
+        if (hasUser) {
+            throw new Error('Email already in use');
+        }
+
+        console.log('Created User: ', newUserData);
+        return this.userRepository.createUser(newUserData);
     }
 }

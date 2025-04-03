@@ -29,7 +29,9 @@ export const FeUserSchema = z
     recipes: z.array(z.string()),
     shoppingLists: z.array(ShoppingListSchema),
     preferences: PreferencesSchema.optional(),
-    createdAt: z.date()
+    createdAt: z.date(),
+    updatedAt: z.date(),
+    passwordResetInProgress: z.boolean().default(false)
   })
   .strict();
 
@@ -52,6 +54,7 @@ export const BeUserSchema = z
     shoppingLists: z.array(ShoppingListSchema),
     preferences: PreferencesSchema.optional(),
     createdAt: z.date(),
+    updatedAt: z.date(),
     passwordResetInProgress: z.boolean().default(false)
 });
 
@@ -68,8 +71,13 @@ export const LoginSchema = z.object({
     password: z.string().min(AUTH_PASSWORD_MIN)
 })
 
+export const LoginResSchema = z.object({
+    user: FeUserSchema,
+    newEmailVerifyCodeCreated: z.boolean()
+})
+
 export const SetPasswordSchema = z.object({
-    email: z.string().email(),
+    code: z.string(),
     password: z.string().min(AUTH_PASSWORD_MIN)
 })
 
