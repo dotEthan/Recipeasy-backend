@@ -6,7 +6,6 @@ import { ShoppingList } from "./shopping-list"
 
 export type User = {
   _id: ObjectId;
-  uid: string;
   firstName?: string;
   lastName?: string;
   displayName: string;
@@ -18,6 +17,8 @@ export type User = {
   preferences? : UserPreferences;
   createdAt?: Date;
 }
+
+export type NewUserNoId = Omit<User, '_id'>;
 
 export type UserPreferences = {
   personalFilters?: string[];

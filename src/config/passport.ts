@@ -12,8 +12,9 @@ export async function initialize(passport: PassportStatic) {
     const userRepository = new UserRepository();
     
     const authenticateUser = async (email: string, password: string, done: VerifiedUserOrErrorFunc) => {
+        console.log('authetication: ', email)
         try {
-            const user = await userRepository.findByemail(email);
+            const user = await userRepository.findByEmail(email);
             if (user == null) {
                 // (error, user, message)
                 return done(null, false, { message: 'No user with that email'});
@@ -21,10 +22,10 @@ export async function initialize(passport: PassportStatic) {
             if (await bcrypt.compare(password, user.password)) {
                 return done(null, user);
             } else {
-                console.log('inside passport.ts PW incorrect')
                 return done(null, false, { message: 'Password incorrect'});
             };
         } catch(error: unknown) {
+            console.log('authetication error: ', error);
             if (error instanceof Error) {
                 return done(error);
             };
@@ -36,12 +37,14 @@ export async function initialize(passport: PassportStatic) {
     passport.use(new Strategy({ usernameField: 'email' }, authenticateUser));
 
     passport.serializeUser((user: Express.User, done: (err: Error | null, id?: string | undefined) => void) => {
+        console.log('serialization: ', user._id)
         done(null, user._id.toString());
     });
 
     passport.deserializeUser(async (id: string, done) => {
+        console.log('deserialization: ', id)
         try {
-            const user = await userRepository.findByid(new ObjectId(id));
+            const user = await userRepository.findById(new ObjectId(id));
             done(null, user);
         } catch (error: unknown) {
             done(error);

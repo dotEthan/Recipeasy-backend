@@ -1,6 +1,14 @@
 import { ObjectId, UpdateResult } from "mongodb";
 import { UserDocument } from "../types/user";
 import { BaseRepository } from "./baseRepository";
+import { CreatedDataResponse } from "../types/responses";
+import { 
+    BeCreateUserSchema,
+    DeleteUserByIdSchema,
+    FindByEmailSchema, 
+    FindByIdSchema, 
+    UpdateByIdSchema 
+} from "../schemas/user.schema";
 
 
 export class UserRepository extends BaseRepository<UserDocument> {
@@ -9,25 +17,37 @@ export class UserRepository extends BaseRepository<UserDocument> {
         super('users');
     }
 
-    async findByid(_id: ObjectId): Promise<UserDocument | null> {
+    async createUser(data: Omit<UserDocument, '_id'>): Promise<CreatedDataResponse<UserDocument>> {
+        BeCreateUserSchema.parse(data);
+
+        return await this.create(data);
+    }
+
+    async findById(_id: ObjectId): Promise<UserDocument | null> {
+        console.log('why we here: ', _id instanceof ObjectId)
+        FindByIdSchema.parse({_id});
         return await this.findOne({_id} as Partial<UserDocument>);
     };
 
-    async findByemail(email: string): Promise<UserDocument | null> {
+    async findByEmail(email: string): Promise<UserDocument | null> {
+        FindByEmailSchema.parse({email});
         return await this.findOne({email} as Partial<UserDocument>);
     };
 
-    async findIdByemail(email: string): Promise<ObjectId | undefined> {
+    async findIdByEmail(email: string): Promise<ObjectId | undefined> {
+        FindByEmailSchema.parse({email});
         const user = await this.findOne({email} as Partial<UserDocument>);
         return user?._id;
     };
 
     async updateById(_id: ObjectId, updatedData: Partial<UserDocument>): Promise<UpdateResult | null> {
+        UpdateByIdSchema.parse({_id, updatedData});
         return await this.updateOne({_id}, updatedData);
     };
 
     // For Admin Dashboard
     async deleteUser(_id: ObjectId) {
+        DeleteUserByIdSchema.parse({_id});
         return await this.delete({_id})
     }
 }

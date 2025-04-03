@@ -8,19 +8,15 @@ import { User } from "../types/user";
 import { UnauthorizedError } from "../errors";
 import { AuthService } from "../services/authService";
 import { ObjectId } from "mongodb";
-import { AuthPwResetCodesRepository } from "../repositories/authRespository";
 
 export class AuthController {
     private userService: UserService;
     private authService : AuthService;
-    private authPwResetCodesRepository: AuthPwResetCodesRepository;
 
     constructor(
         userService: UserService, 
         authService: AuthService,
-        authPwResetCodesRepository: AuthPwResetCodesRepository
     ) {
-        this.authPwResetCodesRepository = authPwResetCodesRepository;
         this.userService = userService;
         this.authService = authService;
         this.register = this.register.bind(this);
@@ -34,11 +30,14 @@ export class AuthController {
     
     public async register(req: Request, res: Response): Promise<void> {
         try {
+            console.log('registering')
             const {displayName, email, password} = req.body;
 
+            console.log('registering')
             const hashedPassword = await bcrypt.hash(password, 12);
+            console.log('registering')
             const userResponse = await this.userService.createNewUser(displayName, email, hashedPassword);
-
+            console.log('registering create rseponse: ', userResponse);
             const userData = {
                 email: userResponse.email,
                 displayName: userResponse.displayName,
@@ -63,12 +62,16 @@ export class AuthController {
     
     public async login(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
+            console.log('logging in')
             const response = await this.authenticateUser(req, res);
+            console.log('authenticated')
             let newEmailVerifyCodeCreated = false;
             if (!response.verified) {
+                console.log('autheticated by not verified')
                 newEmailVerifyCodeCreated = await this.authService.setAndSendVerificationCode(response.email, response.displayName, response._id)
             }
             
+            console.log('autheticated and verified')
             res.json({
                 user: {
                     _id: response._id,
@@ -77,6 +80,7 @@ export class AuthController {
                 },
                 newEmailVerifyCodeCreated,
             });
+            console.log('logging attempt')
             await this.authService.logLoginAttempt(req, true);
         } catch(err) {
             const errorMessage = ((err instanceof UnauthorizedError) ? err.message : err) as string;
@@ -102,7 +106,7 @@ export class AuthController {
 
     public async verifyCode(req: Request, res: Response): Promise<void> {
         try {
-
+            console.log('verifying Code')
             const currentUserId = req.session.unverifiedUserId || req.user?._id;
             if (!currentUserId) throw new Error('User Session Ended, please log in again');
 
@@ -167,10 +171,10 @@ export class AuthController {
                         return reject(loginErr);
                     }
 
+                    console.log('login: ', user)
                     resolve(user); 
                 });
             })(req, res);
         })
     }
-    
 }

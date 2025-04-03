@@ -1,5 +1,14 @@
-import { Collection, Document, OptionalUnlessRequiredId, WithId, Filter, DeleteResult, UpdateResult } from "mongodb";
+import {
+    Collection,
+    Document,
+    OptionalUnlessRequiredId,
+    WithId,
+    Filter,
+    DeleteResult,
+    UpdateResult
+} from "mongodb";
 import { Database } from "../config/database";
+import { CreatedDataResponse } from "../types/responses";
 
 
 export abstract class BaseRepository<T extends Document> {
@@ -15,7 +24,7 @@ export abstract class BaseRepository<T extends Document> {
         return await this.collection.findOne(findByData as Filter<T>);
     }
 
-    async create(data: Omit<T, '_id'>): Promise<T> {
+    async create(data: Omit<T, '_id'>):  Promise<CreatedDataResponse<T>> {
         const now = new Date();
         const insertingDocument = {
             ...data,
@@ -25,7 +34,7 @@ export abstract class BaseRepository<T extends Document> {
 
         const response = await this.collection.insertOne(insertingDocument);
 
-        return { ...insertingDocument, _id: response.insertedId} as T;
+        return { ...insertingDocument, _id: response.insertedId};
     }
 
     async updateOne(filter: Filter<T>, updatedData: Partial<T>): Promise<UpdateResult> {

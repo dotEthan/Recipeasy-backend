@@ -12,11 +12,10 @@ export type LoginAttempt = {
 export interface LoginAttemptDocument extends LoginAttempt, Document{};
 
 
-export type AuthCode = {
+export type EmailAuthCode = {
     userId?: ObjectId,
     code: string,
     createdAt: date,
-    expiresAt: Date,
 }
 
-export interface AuthCodeDocument extends AuthCode, Document{};
+export interface EmailAuthCodeDocument extends EmailAuthCode, Document{};
