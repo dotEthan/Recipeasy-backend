@@ -8,7 +8,7 @@ import { AnyZodObject, ZodError } from "zod";
 export const validateRequestBodyData = (schema: AnyZodObject) => 
   (req: Request, res: Response, next: NextFunction) => {
     try {
-      console.log('validating response by Schema: ', req.body)
+      console.log('validating Request Data Middleware: ')
       schema.parse(req.body);
       next();
     } catch (err) {

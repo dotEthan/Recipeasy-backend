@@ -1,60 +1,32 @@
 import { NextFunction, Request, Response } from "express";
 
 import { HttpError } from "../errors";
-import { Recipe } from "../types/recipe";
+import { RecipeService } from "../services/recipeService";
 
-// type RequestBody = {
-//   text: string;
-// };
 
-type RequestParams = {
-  recipeId: string;
-};
+export class RecipeController {
+  private recipeService: RecipeService;
 
-class RecipeController {
-  recipes: Recipe[];
-
-  constructor() {
-    this.recipes = [];
-    this.getAllRecipes = this.getAllRecipes.bind(this);
-    this.createRecipe = this.createRecipe.bind(this);
-    this.updateRecipe = this.updateRecipe.bind(this);
-    this.deleteRecipe = this.deleteRecipe.bind(this);
+  constructor(recipeService: RecipeService) {
+    this.recipeService = recipeService;
+    this.saveRecipes = this.saveRecipes.bind(this);
+    this.getPublicRecipes = this.getPublicRecipes.bind(this);
   }
 
-  public async getAllRecipes(
-    req: Request,
-    res: Response,
-    next: NextFunction,
-  ): Promise<void> {
-    try {
-      console.log("recipes: ", this.recipes);
-      res.status(200).json({ message: "recipes got", recipes: this.recipes });
-    } catch (err) {
-      const message =
-        err instanceof Error ? err.message : "Failed to Get Recipes";
-      next(new HttpError(500, message));
-    }
-  }
-
-  public async createRecipe(
+  // originally created just to get existing recipes into database, update when bulk inserts needed for offline functionality
+  public async saveRecipes(
     req: Request,
     res: Response,
     next: NextFunction,
   ): Promise<void> {
     // const body = req.body as RequestBody;
     try {
-      // const newRecipe: Recipe = {
-      //   id: "id2",
-      //   title: body.text,
-      // };
-      // this.recipes.push(newRecipe);
-      console.log(this.recipes);
-      res
-        .status(200)
+      const recipes = req.body;
+      this.recipeService.saveRecipes(req.body.recipes);
+      res.status(201)
         .json({
           message: "recipe Added: ",
-          recipes: this.recipes,
+          recipes: recipes,
         });
     } catch (err) {
       const message =
@@ -63,63 +35,17 @@ class RecipeController {
     }
   }
 
-  public async updateRecipe(
-    req: Request,
-    res: Response,
-    next: NextFunction,
-  ): Promise<void> {
-    const params = req.params as RequestParams;
-    const recipeId = params.recipeId;
-    // const body = req.body as RequestBody;
-    console.log("updating");
+  public async getPublicRecipes(req: Request, res: Response) {
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 25;
+    const skip = (page - 1 ) * limit;
     try {
-      const recipeIndex = this.recipes.findIndex(
-        (recipe) => recipe.id === recipeId,
-      );
-      if (recipeIndex !== -1) {
-        // this.recipes[recipeIndex] = {
-        //   id: this.recipes[recipeIndex].id,
-        //   title: body.text,
-        // };
-        res
-          .status(200)
-          .json({
-            message: "updated Recipe:" + this.recipes,
-            recipes: this.recipes,
-          });
-        return;
-      }
-      res.status(404).json({ message: "Could not find Recipe to Update" });
-    } catch (err) {
-      const message =
-        err instanceof Error ? err.message : "Failed to update Recipe";
-      next(new HttpError(500, message));
-    }
-  }
+      console.log('getting limit: ', limit);
+      const response = await this.recipeService.getPublicRecipes(limit, skip);
 
-  public async deleteRecipe(
-    req: Request,
-    res: Response,
-    next: NextFunction,
-  ): Promise<void> {
-    const params = req.params as RequestParams;
-    try {
-      this.recipes = this.recipes.filter(
-        (recipe) => recipe.id !== params.recipeId,
-      );
-      res
-        .status(200)
-        .json({
-          message: "Recipe Deleted",
-          deletedRecipeId: params.recipeId,
-          recipes: this.recipes,
-        });
-    } catch (err) {
-      const message =
-        err instanceof Error ? err.message : "Failed to delete Recipes";
-      next(new HttpError(500, message));
+      res.json(response?.data);
+    } catch(error) {
+      console.log('getting public recipes err: ', error);
     }
   }
 }
-
-export const recipeController = new RecipeController();

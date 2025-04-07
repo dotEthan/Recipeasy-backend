@@ -1,4 +1,5 @@
 import { Db, MongoClient } from 'mongodb';
+import { DbIndexManager } from './dbIndexManager';
 
 export class Database {
     private static instance: Database;
@@ -35,6 +36,11 @@ export class Database {
             throw new Error('Database Not Initialized, Must Connect() first.')
         }
         return this.db;
+    }
+
+    public async initializeIndexes(): Promise<void> {
+      if (!this.db) throw new Error('Connect first');
+      await DbIndexManager.initialize(this.db);
     }
 
     public async close(): Promise<void> {

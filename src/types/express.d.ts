@@ -16,3 +16,9 @@ declare module 'express-session' {
     userId?: ObjectId;
   }
 }
+
+interface PaginationOptions {
+  sort?: Record<string, 1 | -1>; 
+  skip?: number;
+  limit?: number;
+}

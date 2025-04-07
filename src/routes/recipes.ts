@@ -1,15 +1,14 @@
 import { Router } from "express";
 
-import { recipeController } from "../controllers/recipesController";
+import { RecipeController } from "../controllers/recipesController";
+import { validateRequestBodyData } from "../middleware/validateRequestData";
+import { FeSavedRecipeArray } from "../schemas/recipe.schema";
 
-const router = Router();
+export default function createRecipesRouter(recipeController: RecipeController) {
+    const router = Router();
 
-router.get("/", recipeController.getAllRecipes);
+    router.post("/new-recipes", validateRequestBodyData(FeSavedRecipeArray), recipeController.saveRecipes);
+    router.get("/public-recipes", recipeController.getPublicRecipes);
 
-router.post("/recipes/add", recipeController.createRecipe);
-
-router.put("/recipes/:recipeId", recipeController.updateRecipe);
-
-router.delete("/recipes/:recipeId", recipeController.deleteRecipe);
-
-export default router;
+    return router;
+}

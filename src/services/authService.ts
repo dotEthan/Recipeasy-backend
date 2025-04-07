@@ -5,10 +5,10 @@ import { LoginAttempt } from "../types/auth";
 import {
     AuthVerificationCodesRepository,
     AuthLoginAttemptRepository,
-} from "../repositories/authRepository";
+} from "../repositories/auth/authRepository";
 import { EmailService } from "./emailService";
 import { ObjectId } from "mongodb";
-import { UserRepository } from "../repositories/userRepository";
+import { UserRepository } from "../repositories/user/userRepository";
 import { StandardResponse } from "../types/responses";
 
 export class AuthService {
@@ -53,7 +53,7 @@ export class AuthService {
         if (!info) throw Error('email sending failed');
         console.log("Message sent: %s", info.messageId);
         console.log('verificationCode: ', verificationCode.toString())
-        const response = await this.authVerificationCodesRepository.createVerificationCOde({ 
+        const response = await this.authVerificationCodesRepository.createVerificationCode({ 
             userId,
             code: verificationCode.toString(),
             createdAt: new Date(),

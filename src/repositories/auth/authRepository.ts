@@ -1,8 +1,8 @@
 import { ObjectId } from "mongodb";
-import { createVerificationCodeSchema, DeleteVerificationCode, FindVerificationCode, SaveLoginAttemptDataSchema } from "../schemas/admin.schema";
-import { EmailAuthCode, EmailAuthCodeDocument, LoginAttempt } from "../types/auth";
-import { LoginAttemptDocument } from "../types/auth";
-import { BaseRepository } from "./baseRepository";
+import { createVerificationCodeSchema, DeleteVerificationCode, FindVerificationCode, SaveLoginAttemptDataSchema } from "../../schemas/admin.schema";
+import { EmailAuthCode, EmailAuthCodeDocument, LoginAttempt } from "../../types/auth";
+import { LoginAttemptDocument } from "../../types/auth";
+import { BaseRepository } from "../base/baseRepository";
 /**
  * Temporary auth-related collections:
  * - auth_verification_codes: email based verification codes, 1hr TTL
@@ -22,7 +22,7 @@ export class AuthVerificationCodesRepository extends BaseRepository<EmailAuthCod
     constructor() {
         super('auth_verification_codes');
     }
-    async createVerificationCOde(verificationCodeData: EmailAuthCode) {
+    async createVerificationCode(verificationCodeData: EmailAuthCode) {
         createVerificationCodeSchema.parse(verificationCodeData);
         return await this.create(verificationCodeData);
     }

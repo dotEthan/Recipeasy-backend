@@ -7,18 +7,23 @@ import { UserService } from "../services/userService";
 import { User } from "../types/user";
 import { UnauthorizedError } from "../errors";
 import { AuthService } from "../services/authService";
-import { ObjectId } from "mongodb";
+import { ObjectId, WithId } from "mongodb";
 import { FeUserSchema, LoginResSchema } from "../schemas/user.schema";
 import { SuccessFailResSchema } from "../schemas/generic.schema";
+import { RecipeService } from "../services/recipeService";
+import { RecipeDocument } from "../types/recipe";
 
 export class AuthController {
     private userService: UserService;
     private authService : AuthService;
+    private recipeService: RecipeService;
 
     constructor(
         userService: UserService, 
         authService: AuthService,
+        recipeService: RecipeService,
     ) {
+        this.recipeService = recipeService;
         this.userService = userService;
         this.authService = authService;
         this.register = this.register.bind(this);
@@ -60,17 +65,28 @@ export class AuthController {
             console.log('logging in')
             const autheticateResponse = await this.authenticateUser(req, res);
             console.log('authenticated')
+
             let newEmailVerifyCodeCreated = false;
             if (!autheticateResponse.verified) {
-                console.log('autheticated by not verified')
+                console.log('autheticated but not verified');
+
+                //TODO check if already exists and within TTL.
                 newEmailVerifyCodeCreated = await this.authService.setAndSendVerificationCode(autheticateResponse.email, autheticateResponse.displayName, autheticateResponse._id)
             }
+            console.log('autheticated and verified user: ');
+
+            let recipeResponse = [] as WithId<RecipeDocument>[];
+            if (autheticateResponse.recipes) {
+                const recipes = await this.recipeService.getUsersRecipes(autheticateResponse.recipes);
+                recipeResponse = recipes;
+            }
+            console.log('users Recipes: ', recipeResponse[1]);
             const responseData = {
                 user: autheticateResponse,
-                newEmailVerifyCodeCreated
+                newEmailVerifyCodeCreated,
+                recipeResponse
             }
-            console.log('autheticated and verified user: ', responseData);
-            
+            console.log('final return: ');
             LoginResSchema.parse(responseData);
             res.json(responseData);
 
