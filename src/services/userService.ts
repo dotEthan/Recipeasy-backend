@@ -2,7 +2,7 @@ import { ObjectId, UpdateResult } from "mongodb";
 import bcrypt from 'bcryptjs';
 import jwt, { JwtPayload } from 'jsonwebtoken';
 
-import { UserRepository } from "../repositories/userRepository";
+import { UserRepository } from "../repositories/user/userRepository";
 import { EmailService } from "./emailService";
 
 import { NewUserNoId, UserDocument } from "../types/user";

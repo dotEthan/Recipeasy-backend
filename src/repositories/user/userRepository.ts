@@ -1,14 +1,14 @@
-import { ObjectId, UpdateResult } from "mongodb";
-import { UserDocument } from "../types/user";
-import { BaseRepository } from "./baseRepository";
-import { CreatedDataResponse } from "../types/responses";
+import { ObjectId, UpdateFilter, UpdateResult } from "mongodb";
+import { UserDocument } from "../../types/user";
+import { BaseRepository } from "../base/baseRepository";
+import { CreatedDataResponse } from "../../types/responses";
 import { 
     BeCreateUserSchema,
     DeleteUserByIdSchema,
     FindByEmailSchema, 
-    FindByIdSchema, 
-    UpdateByIdSchema 
-} from "../schemas/user.schema";
+    FindByIdSchema,
+    UpdateByIdSchema
+} from "../../schemas/user.schema";
 
 
 export class UserRepository extends BaseRepository<UserDocument> {
@@ -37,10 +37,15 @@ export class UserRepository extends BaseRepository<UserDocument> {
         const user = await this.findOne({email} as Partial<UserDocument>);
         return user?._id;
     };
-
+    // Move schema.parse to service functions 
     async updateById(_id: ObjectId, updatedData: Partial<UserDocument>): Promise<UpdateResult | null> {
         UpdateByIdSchema.parse({_id, updatedData});
         return await this.updateOne({_id}, updatedData);
+    };
+    // No Dupes
+    async updateRecipeIdArrayByIdNoDupes(_id: ObjectId, updatedData: UpdateFilter<UserDocument>): Promise<UpdateResult | null> {
+        console.log('going in: ', updatedData)
+        return await this.updateOneByMergeNoDupe({_id}, updatedData);
     };
 
     // For Admin Dashboard

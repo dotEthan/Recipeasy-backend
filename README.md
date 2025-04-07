@@ -34,9 +34,10 @@ It's spun up and working with passportjs for authorization. Full Authorization f
 ### Working on Now:
 
 - Recipe CRUD
+
 ### To Come:
 
-- Global Error Handler (structure w/ pinia)
+- Global Error Handler 
 - Remove console.logs and look at TODOs
 - Deploy: 
     - sameSite: 'strict/lax', httpOnly: true, secure: true, 

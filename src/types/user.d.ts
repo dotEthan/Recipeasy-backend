@@ -1,7 +1,6 @@
 import 'express';
 import { Document, ObjectId } from "mongodb";
 
-import { Recipe } from "./recipe"
 import { ShoppingList } from "./shopping-list"
 
 export type User = {
@@ -12,9 +11,11 @@ export type User = {
   email: string;
   password: string;
   verified: boolean;
-  recipes?: Recipe[];
+  recipes?: ObjectId[];
   shoppingLists?: ShoppingList[];
   preferences? : UserPreferences;
+  ratings?: UserRatings;
+  passwordResetInProgress: boolean;
   createdAt?: Date;
 }
 
@@ -23,6 +24,12 @@ export type NewUserNoId = Omit<User, '_id'>;
 export type UserPreferences = {
   personalFilters?: string[];
   lightMode: boolean;
+}
+
+export type UserRatings = {
+  recipeId: ObjectId,
+  rating: number,
+  timestamp: Date
 }
 
 export interface UserDocument extends User, Document{};

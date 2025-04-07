@@ -1,8 +1,0 @@
-import { RecipeDocument } from "../types/recipe";
-import { BaseRepository } from "./baseRepository";
-
-export class RecipesRepository extends BaseRepository<RecipeDocument> {
-    constructor() {
-        super('recipes');
-    }
-}

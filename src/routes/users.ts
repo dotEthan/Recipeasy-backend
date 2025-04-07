@@ -10,7 +10,6 @@ export default function createUsersRouter(userController: UserController, authCo
   const router = Router();
   router.post("/register", validateRequestBodyData(RegisterUserSchema), authController.register);
   router.post("/login", validateRequestBodyData(LoginSchema), authController.login);
-  // router.post("/login", validateRequestBodyData(LoginSchema), authController.login);
   router.post("/logout", authController.logout);
   router.post("/update-password", validateRequestBodyData(SetPasswordSchema), userController.updateUserPassword);
   return router;

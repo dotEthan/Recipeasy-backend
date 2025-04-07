@@ -4,7 +4,7 @@ import { Strategy } from 'passport-local';
 import bcrypt from 'bcryptjs';
 
 import { VerifiedUserOrErrorFunc } from '../types/passport';
-import { UserRepository } from '../repositories/userRepository';
+import { UserRepository } from '../repositories/user/userRepository';
 import { ObjectId } from 'mongodb';
 
 
