@@ -1,10 +1,10 @@
 import { z } from "zod";
 import { RECIPE_DESC_MAX, RECIPE_NAME_MIN } from "../constants";
-import { ObjectIdSchema } from "./generic.schema";
+import { ObjectIdSchema } from "./shared.schema";
 
 export const DurationSchema = z.object({
     value: z.string(),
-    unit: z.string() // enum? 
+    unit: z.string() // enum? min|hour|day?
 }).strict();
 
 export const NutritionalInfoSchema = z.object({
@@ -24,7 +24,7 @@ export const RecipeInfoSchema = z.object({
 export const RatingsItemSchema = z.object({
     userId: z.string(),
     rating: z.number(),
-    timestamp: z.string().datetime()
+    timestamp: z.date()
 }).strict();
 
 export const RatingsSchema = z.object({
@@ -52,15 +52,10 @@ export const DirectionsSchema = z.object({
 }).strict();
 
 export const CopyDetailsSchema = z.object({
-    originalCreatorId: ObjectIdSchema.optional(),
+    originalCreatorId: ObjectIdSchema,
     originalRecipeId: ObjectIdSchema,
     copiedAt: z.string().datetime(),
     modifications: z.boolean()
-}).strict();
-
-export const MetaDataSchema = z.object({
-    createdAt: z.string().datetime().optional(),
-    updatedAt: z.string().datetime().optional()
 }).strict();
 
 export const FeRecipeSchema = z
@@ -78,12 +73,16 @@ export const FeRecipeSchema = z
     tags: z.array(z.string()),
     notes: z.array(z.string()),
     userId: ObjectIdSchema,
+    equipment: z.array(z.string()).optional(),
     copyDetails: CopyDetailsSchema.optional(),
-    metaData: MetaDataSchema.optional(),
     createdAt: z.date(),
     updatedAt: z.date()
 }).strict();
 
 export const FeSavedRecipeArray = z.object({
     recipes: z.array(FeRecipeSchema.omit({_id: true}))
+}).strict();
+
+export const FeSavedRecipe = z.object({
+    recipe: FeRecipeSchema.omit({_id: true, createdAt: true, updatedAt: true})
 }).strict();

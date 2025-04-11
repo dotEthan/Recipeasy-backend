@@ -1,4 +1,4 @@
-import { ObjectId, UpdateFilter, UpdateResult } from "mongodb";
+import { ObjectId, UpdateResult } from "mongodb";
 import { UserDocument } from "../../types/user";
 import { BaseRepository } from "../base/baseRepository";
 import { CreatedDataResponse } from "../../types/responses";
@@ -43,9 +43,9 @@ export class UserRepository extends BaseRepository<UserDocument> {
         return await this.updateOne({_id}, updatedData);
     };
     // No Dupes
-    async updateRecipeIdArrayByIdNoDupes(_id: ObjectId, updatedData: UpdateFilter<UserDocument>): Promise<UpdateResult | null> {
-        console.log('going in: ', updatedData)
-        return await this.updateOneByMergeNoDupe({_id}, updatedData);
+    async updateRecipeIdArrayByIdNoDupes(_id: ObjectId, recipeId: ObjectId): Promise<UpdateResult | null> {
+        console.log('going in: ', recipeId)
+        return await this.updateOneByMergeNoDupe({_id}, {$addToSet: {recipes: recipeId}});
     };
 
     // For Admin Dashboard

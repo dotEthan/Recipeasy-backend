@@ -1,9 +1,6 @@
 import { ObjectId } from 'mongodb';
 import { z } from 'zod';
-import { ObjectIdSchema } from './generic.schema';
-
-// TODO this or the one in SaveLoginAttemptDataSchema
-
+import { ObjectIdSchema } from './shared.schema';
 
 export const SaveLoginAttemptDataSchema = z.object({
     userId: z.custom<ObjectId>((val) => {

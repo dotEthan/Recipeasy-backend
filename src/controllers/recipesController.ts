@@ -9,24 +9,26 @@ export class RecipeController {
 
   constructor(recipeService: RecipeService) {
     this.recipeService = recipeService;
-    this.saveRecipes = this.saveRecipes.bind(this);
+    this.saveRecipe = this.saveRecipe.bind(this);
     this.getPublicRecipes = this.getPublicRecipes.bind(this);
   }
 
   // originally created just to get existing recipes into database, update when bulk inserts needed for offline functionality
-  public async saveRecipes(
+  public async saveRecipe(
     req: Request,
     res: Response,
     next: NextFunction,
   ): Promise<void> {
     // const body = req.body as RequestBody;
     try {
-      const recipes = req.body;
-      this.recipeService.saveRecipes(req.body.recipes);
+      const recipe = req.body.recipe;
+      const userId = req.user?._id
+      if(!userId) throw new Error('No user Logged in, please log in and try again')
+      const response = await this.recipeService.saveRecipe(recipe, userId);
+      // RecipeResponseSchema<re.parse(response);
       res.status(201)
         .json({
-          message: "recipe Added: ",
-          recipes: recipes,
+          response
         });
     } catch (err) {
       const message =

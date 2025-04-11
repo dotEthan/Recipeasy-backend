@@ -18,7 +18,7 @@ export type Recipe = {
   userId: ObjectId;
   originalCreatorId?: ObjectId,
   copyDetails?: CopyDetails,
-  metaData?: MetaDetails
+  equipment?: string[]
 }
 
 export type RecipeInfo = {
