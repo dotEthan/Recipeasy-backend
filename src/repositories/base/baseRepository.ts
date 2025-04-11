@@ -21,6 +21,7 @@ export abstract class BaseRepository<T extends Document> implements IBaseReposit
         const db = Database.getInstance().getDb();
         this.collection = db.collection<T>(collectionName);
     }
+    
     async findOne(filter: Filter<T>): Promise<WithId<T> | null> {
         console.log('finding one: ')
         return await this.collection.findOne(filter as Filter<T>);

@@ -3,7 +3,6 @@ import { RecipesRepository } from "../repositories/recipes/recipesRepository";
 import { UserRepository } from "../repositories/user/userRepository";
 import { Recipe } from "../types/recipe";
 import { PaginateResponse, StandardResponse } from "../types/responses";
-import { UpdateUserByIdSchema } from "../schemas/user.schema";
 
 export class RecipeService {
     private recipesRepository: RecipesRepository;
@@ -12,24 +11,20 @@ export class RecipeService {
         this.recipesRepository = recipesRepository;
         this.userRepository = userRepository;
     }
-    // Build just for data migration, update for real save
-    public async saveRecipes(recipes: Recipe[]): Promise<StandardResponse> {
-        console.log('recipe service starting')
-        recipes.forEach((recipe: Recipe) => {
-            return {...recipe, userId: new ObjectId(recipe.userId)};
-        });
-        console.log('recipeServiceRecipes: ', recipes);
-        const recipesSaveResponse = await this.recipesRepository.createRecipes(recipes);
-        console.log('reicpes saved, now onto user: ', recipesSaveResponse);
-        const recipeIdArray = Object.entries(recipesSaveResponse.insertedIds).map(entry => entry[1]);
-        console.log('recipeidarray: ', recipeIdArray);
-        //SAVING TO USER NOT WORKING
-        UpdateUserByIdSchema.parse({
-            user: {recipes: recipeIdArray}
-        });
-        const userUpdateRes = await this.userRepository.updateRecipeIdArrayByIdNoDupes(new ObjectId('67eeb97488940f7d0833071e'),  { $addToSet: { recipes: { $each: recipeIdArray } } } );
-        console.log('user update success: ', userUpdateRes);
-        return {success: true}
+
+    public async saveRecipe(recipe: Recipe, userId: ObjectId): Promise<StandardResponse> {
+        let success = false;
+
+        const recipeSaveResponse = await this.recipesRepository.createRecipe(recipe)
+        const userUpdateRes = await this.userRepository.updateRecipeIdArrayByIdNoDupes(userId,  recipeSaveResponse._id);
+        
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { createdAt, updatedAt, ...feRecipe } = recipeSaveResponse;
+
+        if (userUpdateRes?.modifiedCount && userUpdateRes?.modifiedCount > 0) success = true;
+
+        console.log(`Save Successful: ${success}, recipe going back: ${feRecipe}`)
+        return {success, data: feRecipe}
     }
 
     public async getPublicRecipes(limit: number, skip: number): Promise<PaginateResponse | null> {

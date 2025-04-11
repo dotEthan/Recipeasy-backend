@@ -4,7 +4,7 @@ import {
     AUTH_PASSWORD_MIN,
     AUTH_DISPLAY_NAME_MIN,
  } from '../constants';
- import { ObjectIdSchema } from "./generic.schema";
+ import { ObjectIdSchema } from "./shared.schema";
 import { FeRecipeSchema } from './recipe.schema';
 
 

@@ -9,7 +9,7 @@ import { UnauthorizedError } from "../errors";
 import { AuthService } from "../services/authService";
 import { ObjectId, WithId } from "mongodb";
 import { FeUserSchema, LoginResSchema } from "../schemas/user.schema";
-import { SuccessFailResSchema } from "../schemas/generic.schema";
+import { GenericResponseSchema } from "../schemas/generic.schema";
 import { RecipeService } from "../services/recipeService";
 import { RecipeDocument } from "../types/recipe";
 
@@ -134,7 +134,7 @@ export class AuthController {
             this.authService.deleteVerificationCode(userId);
 
             const verifyRes = {success: verified};
-            SuccessFailResSchema.parse(verifyRes);
+            GenericResponseSchema.parse(verifyRes);
             
             res.json(verifyRes); 
         } catch (err) {
@@ -149,7 +149,7 @@ export class AuthController {
             console.log('email: ', email);
             const passwordReset = await this.userService.emailUserToken(email);
             console.log('is password reset: ', passwordReset);
-            SuccessFailResSchema.parse(passwordReset)
+            GenericResponseSchema.parse(passwordReset)
             res.json(passwordReset); 
         } catch(error) {
             console.log('reset password error: ', error);
@@ -161,7 +161,7 @@ export class AuthController {
             const token = req.body.code;
             console.log('validate token: ', token);
             const isValid = await this.authService.validatePasswordToken(token);
-            SuccessFailResSchema.parse(isValid)
+            GenericResponseSchema.parse(isValid)
             res.json(isValid)
         } catch (error) {
             console.log('validating password token error: ', error);

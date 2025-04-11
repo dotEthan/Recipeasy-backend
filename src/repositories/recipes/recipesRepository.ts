@@ -1,6 +1,7 @@
-import { FeSavedRecipeArray } from "../../schemas/recipe.schema";
+import { FeSavedRecipeArray, FeSavedRecipe } from "../../schemas/recipe.schema";
 import { PaginationOptions } from "../../types/express";
 import { Recipe, RecipeDocument } from "../../types/recipe";
+import { CreatedDataResponse } from "../../types/responses";
 import { BaseRepository } from "../base/baseRepository";
 import { Filter, InsertManyResult } from "mongodb";
 
@@ -13,6 +14,14 @@ export class RecipesRepository extends BaseRepository<RecipeDocument> {
         console.log('creating reciperepo')
         FeSavedRecipeArray.parse({recipes});
         const recipeResponse =  await this.createMany(recipes);
+        console.log('recipes return: ', recipeResponse)
+        return recipeResponse;
+    }
+
+    async createRecipe(recipe: Omit<RecipeDocument, '_id'>): Promise <CreatedDataResponse<RecipeDocument>> {
+        console.log('creating reciperepo')
+        FeSavedRecipe.parse({recipe});
+        const recipeResponse =  await this.create(recipe);
         console.log('recipes return: ', recipeResponse)
         return recipeResponse;
     }
