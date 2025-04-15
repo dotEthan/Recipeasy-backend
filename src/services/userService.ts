@@ -1,11 +1,11 @@
-import { ObjectId, UpdateResult } from "mongodb";
+import { ObjectId, UpdateResult, WithId } from "mongodb";
 import bcrypt from 'bcryptjs';
 import jwt, { JwtPayload } from 'jsonwebtoken';
 
 import { UserRepository } from "../repositories/user/userRepository";
 import { EmailService } from "./emailService";
 
-import { NewUserNoId, UserDocument } from "../types/user";
+import { NewUserNoId, UserDocument, UsersRecipeData } from "../types/user";
 import { CreatedDataResponse, StandardResponse } from "../types/responses";
 import { AuthService } from "./authService";
 import { createNewUserUtility } from "../util";
@@ -31,6 +31,12 @@ export class UserService {
         const verificationSetAndSent = await this.authService.setAndSendVerificationCode(email, displayName,savedUserResults._id );
         console.log('email sent: ', verificationSetAndSent)
         return savedUserResults;
+    }
+
+    public async getUserData(_id: ObjectId): Promise<UserDocument> {
+        const userResponse = await this.userRepository.findById(_id);
+        if(!userResponse) throw new Error('User Not Found, relogin');
+        return userResponse;
     }
 
     public async setUserVerified(_id: ObjectId): Promise<StandardResponse> {
@@ -96,11 +102,27 @@ export class UserService {
         return updateResponse;
     }
 
+    
+    public async updateUserRecipes(userId: ObjectId, originalUserId: ObjectId, id: ObjectId): Promise<WithId<UserDocument>| null> {
+        const dataToAdd = {
+            id: id,
+            copyDetails: {
+                originalCreatorId: originalUserId,
+                originalRecipeId: id,
+                copiedAt: new Date(),
+                modifications: false
+            }
+        } as UsersRecipeData
+        //TOD z.parse data before entering?
+        const user = await this.userRepository.findOneAndUpdate({ '_id': userId }, { $addToSet: { recipes: dataToAdd }});
+        return user
+    }
+
     private async saveUser(newUserData: NewUserNoId): Promise<CreatedDataResponse<UserDocument>> {
-        const hasUser = await this.userRepository.findOne({'email': newUserData.email})
-        if (hasUser) {
-            throw new Error('Email already in use');
-        }
+        // const hasUser = await this.userRepository.findOne({'email': newUserData.email})
+        // if (hasUser) {
+        //     throw new Error('Email already in use');
+        // }
 
         console.log('Created User: ', newUserData);
         return this.userRepository.createUser(newUserData);

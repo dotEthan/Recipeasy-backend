@@ -192,4 +192,5 @@ export class AuthController {
             })(req, res);
         })
     }
+    
 }

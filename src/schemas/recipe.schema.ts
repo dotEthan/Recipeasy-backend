@@ -74,9 +74,7 @@ export const FeRecipeSchema = z
     notes: z.array(z.string()),
     userId: ObjectIdSchema,
     equipment: z.array(z.string()).optional(),
-    copyDetails: CopyDetailsSchema.optional(),
-    createdAt: z.date(),
-    updatedAt: z.date()
+    copyDetails: CopyDetailsSchema.optional()
 }).strict();
 
 export const FeSavedRecipeArray = z.object({
@@ -84,5 +82,9 @@ export const FeSavedRecipeArray = z.object({
 }).strict();
 
 export const FeSavedRecipe = z.object({
-    recipe: FeRecipeSchema.omit({_id: true, createdAt: true, updatedAt: true})
+    recipe: FeRecipeSchema.omit({_id: true})
+}).strict();
+
+export const FeUpdateRecipe = z.object({
+    recipe: FeRecipeSchema
 }).strict();

@@ -28,17 +28,19 @@ It's spun up and working with passportjs for authorization. Full Authorization f
 - Email Verification (register and login)
 - password resets
 - Schema Creation & Validation for Incoming, DB saves, and Outgoing data
-
-### Not Working
+- Recipe CRU
+- User Persistence
 
 ### Working on Now:
 
-- Recipe CRUD
+- data persistence
+- Recipe Delete
 
 ### To Come:
 
+- get 'passwordResetInProgress' working
 - Global Error Handler 
-- Remove console.logs and look at TODOs
+- Remove console.logs and prioritize TODOs (before deploy, after)
 - Deploy: 
     - sameSite: 'strict/lax', httpOnly: true, secure: true, 
     - ensure middleware security checks and limiters(readd). 
@@ -49,6 +51,7 @@ It's spun up and working with passportjs for authorization. Full Authorization f
     - pentests (Detectify or others)
     - Monitoring for sus action. 
     - Backups
+- Logging (Sonar? others)
 - Recipe Search
 - Testing
 - Full Documentation
@@ -62,6 +65,7 @@ It's spun up and working with passportjs for authorization. Full Authorization f
 - Expressjs
 - MongoDb
 - TypeScript
+- Express-sessions
 - Passportjs
 - bCrypt
 - Helmet
