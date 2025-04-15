@@ -1,4 +1,4 @@
-import { FeSavedRecipeArray, FeSavedRecipe } from "../../schemas/recipe.schema";
+import { FeSavedRecipeArray, FeSavedRecipe, FeUpdateRecipe } from "../../schemas/recipe.schema";
 import { PaginationOptions } from "../../types/express";
 import { Recipe, RecipeDocument } from "../../types/recipe";
 import { CreatedDataResponse } from "../../types/responses";
@@ -23,6 +23,15 @@ export class RecipesRepository extends BaseRepository<RecipeDocument> {
         FeSavedRecipe.parse({recipe});
         const recipeResponse =  await this.create(recipe);
         console.log('recipes return: ', recipeResponse)
+        return recipeResponse;
+    }
+
+    async updateRecipe(filter: Filter<Recipe>, recipe: RecipeDocument): Promise <CreatedDataResponse<RecipeDocument> | null> {
+        FeUpdateRecipe.parse({recipe});
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const {_id, ...recipeNoId} = recipe;
+        const recipeResponse =  await this.findOneAndUpdate({'_id': filter}, recipeNoId);
+        console.log('recipes updated: ', recipeResponse)
         return recipeResponse;
     }
 

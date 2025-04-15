@@ -36,6 +36,7 @@ export const FeUserSchema = z
     recipes: z.array(ObjectIdSchema),
     shoppingLists: z.array(ShoppingListSchema),
     preferences: PreferencesSchema.optional(),
+    role: z.string(),
     createdAt: z.date(),
     updatedAt: z.date(),
     passwordResetInProgress: z.boolean().default(false),
@@ -62,6 +63,7 @@ export const BeUserSchema = z
     preferences: PreferencesSchema.optional(),
     createdAt: z.date(),
     updatedAt: z.date(),
+    role: z.string(),
     passwordResetInProgress: z.boolean().default(false)
 }).strict();
 
@@ -136,5 +138,18 @@ export const DeleteUserByIdSchema = z.object({
         return ObjectId.isValid(val);
     }, {
         message: "Deleting User Invalid MongoDB ObjectId"
+    })
+}).strict();
+
+export const updateUsersRecipesSchema = z.object({
+    id: z.custom<ObjectId>((val) => {
+        return ObjectId.isValid(val);
+    }, {
+        message: "Patching User Invalid MongoDB ObjectId"
+    }),
+    originalUserId: z.custom<ObjectId>((val) => {
+        return ObjectId.isValid(val);
+    }, {
+        message: "Patching User Invalid MongoDB ObjectId"
     })
 }).strict();

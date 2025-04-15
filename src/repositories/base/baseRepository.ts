@@ -7,7 +7,8 @@ import {
     DeleteResult,
     UpdateResult,
     InsertManyResult,
-    FindCursor
+    FindCursor,
+    UpdateFilter
 } from "mongodb";
 import { Database } from "../../config/database";
 import { CreatedDataResponse } from "../../types/responses";
@@ -54,6 +55,14 @@ export abstract class BaseRepository<T extends Document> implements IBaseReposit
         }) as unknown as OptionalUnlessRequiredId<T>);
 
         return await this.collection.insertMany(insertingDocuments);
+    }
+
+    
+    // overwrites 
+    async findOneAndUpdate(filter: Filter<T>, updatedData: UpdateFilter<T>): Promise<WithId<T> | null> {
+        const response = await this.collection.findOneAndUpdate(filter, updatedData, { returnDocument: 'after' });
+        console.log(response);
+        return response;
     }
 
     // Will merge data over existing

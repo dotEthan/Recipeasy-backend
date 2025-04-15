@@ -1,3 +1,4 @@
+import { UserRoles } from "../enums";
 import { BeCreateUserSchema } from "../schemas/user.schema"
 import { NewUserNoId } from "../types/user";
 
@@ -17,6 +18,7 @@ export const createNewUserUtility = (displayName:string, email:string, hashedPas
             personalFilters: [],
             lightMode: true,
         },
+        role: UserRoles.user,
         passwordResetInProgress: false
     };
     BeCreateUserSchema.parse(newUser);

@@ -17,7 +17,6 @@ export type Recipe = {
   notes: string[];
   userId: ObjectId;
   originalCreatorId?: ObjectId,
-  copyDetails?: CopyDetails,
   equipment?: string[]
 }
 
@@ -70,11 +69,6 @@ export type RatingItem = {
   timestamp: Date; 
 }
 
-export type CopyDetails = {
-  originalRecipeId?: ObjectId,
-  copiedAt?: Date,
-  modifications?: boolean
-}
 export type MetaDetails = {
   createdAt: Date;
   updatedAt: Date;

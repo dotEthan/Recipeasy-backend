@@ -1,4 +1,4 @@
-import { ObjectId, UpdateResult } from "mongodb";
+import { Filter, ObjectId, UpdateResult, WithId } from "mongodb";
 import { UserDocument } from "../../types/user";
 import { BaseRepository } from "../base/baseRepository";
 import { CreatedDataResponse } from "../../types/responses";
@@ -47,6 +47,18 @@ export class UserRepository extends BaseRepository<UserDocument> {
         console.log('going in: ', recipeId)
         return await this.updateOneByMergeNoDupe({_id}, {$addToSet: {recipes: recipeId}});
     };
+
+
+    // overwrites 
+    async findOneAndOverwrite(filter: Filter<UserDocument>, updatedData: Partial<UserDocument>): Promise<WithId<UserDocument> | null> {
+        const insertingDocument = {
+            ...updatedData,
+            updatedAt: new Date()
+        }
+        const response = await this.findOneAndUpdate(filter, {$addToSet: insertingDocument});
+        console.log(response);
+        return response;
+    }
 
     // For Admin Dashboard
     async deleteUser(_id: ObjectId) {

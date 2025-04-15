@@ -74,7 +74,7 @@ export function registerRoutes(
   authService: AuthService,
   recipeService: RecipeService,
 ) {
-  const userController = new UserController(userService);
+  const userController = new UserController(userService, recipeService);
   const authController = new AuthController(
     userService, 
     authService, 

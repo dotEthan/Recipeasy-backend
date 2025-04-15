@@ -10,6 +10,7 @@ export class RecipeController {
   constructor(recipeService: RecipeService) {
     this.recipeService = recipeService;
     this.saveRecipe = this.saveRecipe.bind(this);
+    this.updateRecipe = this.updateRecipe.bind(this);
     this.getPublicRecipes = this.getPublicRecipes.bind(this);
   }
 
@@ -33,6 +34,32 @@ export class RecipeController {
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "Failed to create Recipe";
+      next(new HttpError(500, message));
+    }
+  }
+
+  public async updateRecipe(
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> {
+    // const body = req.body as RequestBody;
+    try {
+      const recipe = req.body.recipe;
+      const userId = req.user?._id
+      if(!userId) throw new Error('No user Logged in, please log in and try again')
+      const response = await this.recipeService.updateRecipe(recipe, userId);
+      // RecipeResponseSchema<re.parse(response);
+      res.status(201)
+        .json(response);
+    } catch (err) {
+      let message = "Failed to create Recipe";
+      if (err instanceof Error) {
+        if (err.message === 'Updating recipe failed: recipe does not exist') {
+          res.status(404).end();
+        }
+        message = err.message;
+      } 
       next(new HttpError(500, message));
     }
   }
