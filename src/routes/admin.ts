@@ -3,6 +3,7 @@ import { AuthController } from "../controllers/authController";
 import { CodeSchema, ResetPasswordSchema } from "../schemas/user.schema";
 import { validateRequestBodyData } from "../middleware/validateRequestData";
 
+    // TODO RESTFULy id resource in url
   export default function createAdminRouter(authController: AuthController) {
     const router = Router();
     router.get('/csrf-token', (req: Request, res: Response) => {

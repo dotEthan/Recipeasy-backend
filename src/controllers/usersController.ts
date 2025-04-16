@@ -3,6 +3,7 @@ import { UserService } from "../services/userService";
 import { RecipeService } from "../services/recipeService";
 import { Recipe } from "../types/recipe";
 import { FeUserSchema } from "../schemas/user.schema";
+import { ObjectId } from "mongodb";
 
 export class UserController {
     private userService: UserService;
@@ -63,7 +64,7 @@ export class UserController {
         try {
             console.log('updating user Recipes array')
             if(!req.user?._id) throw new Error('No User Found, relogin')
-            const newRecipeId = req.body.id;
+            const newRecipeId = new ObjectId(req.body.id as string);
             const originalUserId = req.body.originalUserId
             console.log('update User Recipes', newRecipeId);
             const updatedUserResponse = await this.userService.updateUserRecipes(req.user?._id, originalUserId, newRecipeId);

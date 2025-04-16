@@ -1,9 +1,10 @@
 import { FeSavedRecipeArray, FeSavedRecipe, FeUpdateRecipe } from "../../schemas/recipe.schema";
+import { FindByIdSchema } from "../../schemas/user.schema";
 import { PaginationOptions } from "../../types/express";
 import { Recipe, RecipeDocument } from "../../types/recipe";
 import { CreatedDataResponse } from "../../types/responses";
 import { BaseRepository } from "../base/baseRepository";
-import { Filter, InsertManyResult } from "mongodb";
+import { Filter, InsertManyResult, ObjectId } from "mongodb";
 
 export class RecipesRepository extends BaseRepository<RecipeDocument> {
     constructor() {
@@ -46,4 +47,9 @@ export class RecipesRepository extends BaseRepository<RecipeDocument> {
         const response = cursor?.sort(sort).toArray();
         return response;
     }
+    
+    async findById(_id: ObjectId): Promise<RecipeDocument | null> {
+        FindByIdSchema.parse({_id});
+        return await this.findOne({_id} as Partial<Recipe>);
+    };
 }

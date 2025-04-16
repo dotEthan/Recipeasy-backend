@@ -7,8 +7,8 @@ export interface IBaseRepository<T> {
     create(data: Omit<T, '_id'>): Promise<CreatedDataResponse<T>>;
     createMany(data: Omit<T, '_id'>[]): Promise<InsertManyResult<T>>;
     updateOne(filter: Filter<T>, updatedData: Partial<T>): Promise<UpdateResult>;
-    updateOneByMergeNoDupe(filter: Filter<T>, updatedData: Partial<T>): Promise<UpdateResult>;
+    updateByMergeOneNoDupe(filter: Filter<T>, updatedData: Partial<T>): Promise<UpdateResult>;
     updateByMergeOne(filter: Filter<T>, updatedData: Partial<T>): Promise<UpdateResult>;
-    delete(toDeleteData: Partial<T>): Promise<DeleteResult>;
+    delete(filter: Filter<T>): Promise<DeleteResult>;
     getTotalDocuments(findByData: Filter<T>): Promise<number>;
 }
