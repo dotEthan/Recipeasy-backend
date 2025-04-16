@@ -67,17 +67,13 @@ export abstract class BaseRepository<T extends Document> implements IBaseReposit
 
     // Will merge data over existing
     async updateOne(filter: Filter<T>, updatedData: Partial<T>): Promise<UpdateResult> {
-        const insertingDocument = {
-            ...updatedData,
-            updatedAt: new Date()
-        }
-        const response = await this.collection.updateOne(filter, {$set: insertingDocument});
+        const response = await this.collection.updateOne(filter, updatedData);
         console.log(response);
         return response;
     }
 
     // Will merge data into existing, no duplicates
-    async updateOneByMergeNoDupe(filter: Filter<T>, updatedData: Partial<T>): Promise<UpdateResult> {
+    async updateByMergeOneNoDupe(filter: Filter<T>, updatedData: Partial<T>): Promise<UpdateResult> {
         const response = await this.collection.updateOne(filter, updatedData);
         console.log(response);
         return response;
@@ -94,9 +90,8 @@ export abstract class BaseRepository<T extends Document> implements IBaseReposit
         return response;
     }
 
-    // TODO Do properly.
-    async delete(toDeleteData: Partial<T>): Promise<DeleteResult> {
-        const response = await this.collection.deleteOne(toDeleteData._id);
+    async delete(filter: Filter<T>): Promise<DeleteResult> {
+        const response = await this.collection.deleteOne(filter);
         console.log(response);
         return response;
     }

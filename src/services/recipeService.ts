@@ -68,7 +68,7 @@ export class RecipeService {
     }
 
     async getUsersRecipes(usersRecipeData: UsersRecipeData[]): Promise<Recipe[]> {
-        const recipeIdArray = usersRecipeData.map((item) => item.id);
+        const recipeIdArray = usersRecipeData.map((item) => new ObjectId(item.id));
         const cursor = await this.recipesRepository.findByIndex({ 
           _id: { $in: recipeIdArray } 
         });
@@ -79,6 +79,30 @@ export class RecipeService {
             const { createdAt, updatedAt, ...feRecipe } = recipe;
             return feRecipe;
         }) 
+        console.log('FeUserRecipes Array: ', feUserRecipes)
         return feUserRecipes
-      }
+    }
+
+    async deleteRecipe(userId: ObjectId, recipeId: ObjectId): Promise<StandardResponse> {
+        // find out if user's copy is really theirs
+        const thisRecipe = await this.recipesRepository.findById(recipeId);
+        if (!thisRecipe) throw new Error('No Recipe found to delete');
+        const recipesOwnersId = new ObjectId(thisRecipe.userId);
+        let updateRecipeResponse;
+        let updateUserResponse;
+        if (recipesOwnersId.equals(userId)) {
+            console.log('is this users recipe');
+            updateRecipeResponse = await this.recipesRepository.updateOne({'_id': recipeId}, { $set: { internalData: { isDeleted: true, wasDeletedAt: new Date(), deletedBy: userId}}});
+            
+            updateUserResponse = await this.userRepository.updateOne({ '_id': userId }, { $pull: { recipes: { id: recipeId }}});
+            
+        } else {
+            console.log('is NOT this users recipe');
+            console.log('is NOT this users recipe', recipeId);
+            updateUserResponse = await this.userRepository.updateOne({ '_id': userId }, { $pull: { recipes: { id: recipeId }}});
+        }
+        if (updateRecipeResponse && (!updateRecipeResponse.acknowledged || updateRecipeResponse.modifiedCount === 0)) throw new Error('Deletion Failed');
+        if (!updateUserResponse.acknowledged || updateUserResponse.modifiedCount === 0) throw new Error('UPdating User Recipe array failed');
+        return {success: true}
+    }
 }

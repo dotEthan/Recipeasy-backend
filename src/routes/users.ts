@@ -6,7 +6,9 @@ import { validateRequestBodyData } from "../middleware/validateRequestData";
 import { LoginSchema, RegisterUserSchema, SetPasswordSchema, updateUsersRecipesSchema } from "../schemas/user.schema";
 import { isAuthenticated } from "../middleware/auth";
 // import { registrationLimiter } from "../middleware/rateLimiters";
+
 // TODO check middleware - registrationLimiter, etc
+// RESTFULy id resource in url
 export default function createUsersRouter(userController: UserController, authController: AuthController) {
   const router = Router();
   router.post("/register", validateRequestBodyData(RegisterUserSchema), authController.register);

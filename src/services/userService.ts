@@ -110,6 +110,7 @@ export class UserService {
                 originalCreatorId: originalUserId,
                 originalRecipeId: id,
                 copiedAt: new Date(),
+                updatedAt: new Date(),
                 modifications: false
             }
         } as UsersRecipeData

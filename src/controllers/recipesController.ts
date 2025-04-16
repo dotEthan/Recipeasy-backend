@@ -2,6 +2,7 @@ import { NextFunction, Request, Response } from "express";
 
 import { HttpError } from "../errors";
 import { RecipeService } from "../services/recipeService";
+import { ObjectId } from "mongodb";
 
 
 export class RecipeController {
@@ -12,6 +13,7 @@ export class RecipeController {
     this.saveRecipe = this.saveRecipe.bind(this);
     this.updateRecipe = this.updateRecipe.bind(this);
     this.getPublicRecipes = this.getPublicRecipes.bind(this);
+    this.deleteRecipe = this.deleteRecipe.bind(this);
   }
 
   // originally created just to get existing recipes into database, update when bulk inserts needed for offline functionality
@@ -28,9 +30,7 @@ export class RecipeController {
       const response = await this.recipeService.saveRecipe(recipe, userId);
       // RecipeResponseSchema<re.parse(response);
       res.status(201)
-        .json({
-          response
-        });
+        .json(response);
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "Failed to create Recipe";
@@ -64,7 +64,7 @@ export class RecipeController {
     }
   }
 
-  public async getPublicRecipes(req: Request, res: Response) {
+  public async getPublicRecipes(req: Request, res: Response): Promise<void> {
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 25;
     const skip = (page - 1 ) * limit;
@@ -75,6 +75,19 @@ export class RecipeController {
       res.json(response?.data);
     } catch(error) {
       console.log('getting public recipes err: ', error);
+    }
+  }
+
+  public async deleteRecipe(req: Request, res: Response): Promise<void> {
+    const recipeId = new ObjectId(req.params.id);
+    const userId = req.user?._id
+    try {
+      if (!userId) throw new Error('No user to delete recipe of, relogin');
+      const successResponse = await this.recipeService.deleteRecipe(userId, recipeId);
+      console.log('delete repsonse: ', successResponse);
+      res.json(successResponse)
+    } catch (error) {
+      console.log('deleting recipe erorro: ', error);
     }
   }
 }

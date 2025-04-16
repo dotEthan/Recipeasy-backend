@@ -42,12 +42,12 @@ export class UserRepository extends BaseRepository<UserDocument> {
         UpdateByIdSchema.parse({_id, updatedData});
         return await this.updateOne({_id}, updatedData);
     };
+
     // No Dupes
     async updateRecipeIdArrayByIdNoDupes(_id: ObjectId, recipeId: ObjectId): Promise<UpdateResult | null> {
         console.log('going in: ', recipeId)
-        return await this.updateOneByMergeNoDupe({_id}, {$addToSet: {recipes: recipeId}});
+        return await this.updateByMergeOneNoDupe({_id}, {$addToSet: {recipes: {id: recipeId} }});
     };
-
 
     // overwrites 
     async findOneAndOverwrite(filter: Filter<UserDocument>, updatedData: Partial<UserDocument>): Promise<WithId<UserDocument> | null> {

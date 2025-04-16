@@ -51,31 +51,31 @@ export const DirectionsSchema = z.object({
     steps: z.array(z.string()).optional()
 }).strict();
 
-export const CopyDetailsSchema = z.object({
-    originalCreatorId: ObjectIdSchema,
-    originalRecipeId: ObjectIdSchema,
-    copiedAt: z.string().datetime(),
-    modifications: z.boolean()
-}).strict();
+export const InternalStateSchema = z.object({
+    isDeleted: z.boolean().default(false),
+    wasDeletedAt: z.date()
+})
 
-export const FeRecipeSchema = z
-  .object({
-    _id:  ObjectIdSchema,
-    name: z.string().min(RECIPE_NAME_MIN),
-    description: z.string().max(RECIPE_DESC_MAX),
-    imgPath: z.string(),
-    info: RecipeInfoSchema.optional(),
-    ratings: RatingsSchema,
-    url: z.string().optional(),
-    ingredients: z.array(IngredientsSchema),
-    directions: z.array(DirectionsSchema),
-    visibility: z.string().default('public'), // Enum
-    tags: z.array(z.string()),
-    notes: z.array(z.string()),
-    userId: ObjectIdSchema,
-    equipment: z.array(z.string()).optional(),
-    copyDetails: CopyDetailsSchema.optional()
-}).strict();
+export const BeRecipeSchema = z
+.object({
+  _id:  ObjectIdSchema,
+  name: z.string().min(RECIPE_NAME_MIN),
+  description: z.string().max(RECIPE_DESC_MAX),
+  imgPath: z.string(),
+  info: RecipeInfoSchema.optional(),
+  ratings: RatingsSchema,
+  url: z.string().optional(),
+  ingredients: z.array(IngredientsSchema),
+  directions: z.array(DirectionsSchema),
+  visibility: z.string().default('public'), // Enum
+  tags: z.array(z.string()),
+  notes: z.array(z.string()),
+  userId: ObjectIdSchema,
+  equipment: z.array(z.string()).optional(),
+  internalState: InternalStateSchema.optional()
+}).strict(); 
+
+export const FeRecipeSchema = BeRecipeSchema.omit({internalState: true});
 
 export const FeSavedRecipeArray = z.object({
     recipes: z.array(FeRecipeSchema.omit({_id: true}))

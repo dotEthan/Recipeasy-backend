@@ -28,13 +28,12 @@ It's spun up and working with passportjs for authorization. Full Authorization f
 - Email Verification (register and login)
 - password resets
 - Schema Creation & Validation for Incoming, DB saves, and Outgoing data
-- Recipe CRU
+- Recipe CRUD
 - User Persistence
 
 ### Working on Now:
 
 - data persistence
-- Recipe Delete
 
 ### To Come:
 
@@ -51,12 +50,12 @@ It's spun up and working with passportjs for authorization. Full Authorization f
     - pentests (Detectify or others)
     - Monitoring for sus action. 
     - Backups
-- Logging (Sonar? others)
 - Recipe Search
+- Cron based softdeleted/unrefd recipe deletion
+- Logging (Sonar? others)
 - Testing
 - Full Documentation
 - User Admin (update/delete)
-- Passportjs linked code refactor - ensure proper structure and only needed config values (Config pains - went through numerous versions)
 - Functional testing
 - Google/Facebook login (maybe)
 

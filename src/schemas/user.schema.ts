@@ -20,6 +20,23 @@ export const UserRatingsSchema = z.object({
     rating: z.number()
 }).strict();
 
+export const CopyDetailsSchema = z.object({
+    originalCreatorId: ObjectIdSchema,
+    originalRecipeId: ObjectIdSchema,
+    copiedAt: z.date(),
+    updatedAt: z.date(),
+    modifications: z.boolean()
+}).strict();
+
+export const UserRecipesSchema = z.object({
+    id: z.custom<ObjectId>((val) => {
+        return ObjectId.isValid(val);
+    }, {
+        message: "UserRecipe Invalid MongoDB ObjectId"
+    }),
+    copyDetails: CopyDetailsSchema.optional()
+})
+
 export const FeUserSchema = z
   .object({
     _id:  z.custom<ObjectId>((val) => {
@@ -33,7 +50,7 @@ export const FeUserSchema = z
     lastName: z.string().optional(),
     password: z.string(),
     verified: z.boolean().default(false),
-    recipes: z.array(ObjectIdSchema),
+    recipes: z.array(UserRecipesSchema.optional()),
     shoppingLists: z.array(ShoppingListSchema),
     preferences: PreferencesSchema.optional(),
     role: z.string(),
