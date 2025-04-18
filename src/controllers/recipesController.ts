@@ -6,22 +6,14 @@ import { ObjectId } from "mongodb";
 
 
 export class RecipeController {
-  private recipeService: RecipeService;
 
-  constructor(recipeService: RecipeService) {
-    this.recipeService = recipeService;
-    this.saveRecipe = this.saveRecipe.bind(this);
-    this.updateRecipe = this.updateRecipe.bind(this);
-    this.getPublicRecipes = this.getPublicRecipes.bind(this);
-    this.deleteRecipe = this.deleteRecipe.bind(this);
-  }
+  constructor(private recipeService: RecipeService) {}
 
-  // originally created just to get existing recipes into database, update when bulk inserts needed for offline functionality
-  public async saveRecipe(
+  public saveRecipe = async (
     req: Request,
     res: Response,
     next: NextFunction,
-  ): Promise<void> {
+  ): Promise<void> => {
     // const body = req.body as RequestBody;
     try {
       const recipe = req.body.recipe;
@@ -38,11 +30,11 @@ export class RecipeController {
     }
   }
 
-  public async updateRecipe(
+  public updateRecipe = async (
     req: Request,
     res: Response,
     next: NextFunction,
-  ): Promise<void> {
+  ): Promise<void> => {
     // const body = req.body as RequestBody;
     try {
       const recipe = req.body.recipe;
@@ -64,7 +56,7 @@ export class RecipeController {
     }
   }
 
-  public async getPublicRecipes(req: Request, res: Response): Promise<void> {
+  public getPublicRecipes = async (req: Request, res: Response): Promise<void> => {
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 25;
     const skip = (page - 1 ) * limit;
@@ -78,7 +70,7 @@ export class RecipeController {
     }
   }
 
-  public async deleteRecipe(req: Request, res: Response): Promise<void> {
+  public deleteRecipe = async (req: Request, res: Response): Promise<void> => {
     const recipeId = new ObjectId(req.params.id);
     const userId = req.user?._id
     try {

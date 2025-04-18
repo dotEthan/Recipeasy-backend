@@ -7,6 +7,7 @@ export class EmailService {
         passwordReset: {
             subject: 'Reset your Recipeasy Password',
             text: (displayName:string, code:string) => `Your Password Reset link for Recipeasy is ${RECIPEASY_PW_RESET_URL}?token=${code}`,
+            // TODO Create proper html email
             html: (displayName:string, code:string) => `Your Password Reset link for Recipeasy is ${RECIPEASY_PW_RESET_URL}?token=${code}`,
         },
         emailVerificationCode: {

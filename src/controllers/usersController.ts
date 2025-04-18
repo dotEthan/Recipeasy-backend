@@ -6,19 +6,11 @@ import { FeUserSchema } from "../schemas/user.schema";
 import { ObjectId } from "mongodb";
 
 export class UserController {
-    private userService: UserService;
-    private recipeService: RecipeService
 
-    constructor(userService: UserService, recipeService: RecipeService) {
-        this.userService = userService;
-        this.recipeService = recipeService;
-        this.getUserData = this.getUserData.bind(this);
-        this.updateUserPassword = this.updateUserPassword.bind(this);
-        this.updateUserRecipes = this.updateUserRecipes.bind(this);
-    }
+    constructor(private userService: UserService, private recipeService: RecipeService) {}
 
 
-    public async getUserData(req: Request, res: Response): Promise<void> {
+    public getUserData = async (req: Request, res: Response): Promise<void> => {
         try {
             console.log('getting User Body: ', req.user);
             const reqUser = req.user;
@@ -40,7 +32,7 @@ export class UserController {
         }
     }
 
-    public async updateUserPassword(req: Request, res: Response): Promise<void> {
+    public updateUserPassword = async (req: Request, res: Response): Promise<void> => {
         try {
             const token = req.body.code;
             const newPassword = req.body.password;
@@ -60,7 +52,7 @@ export class UserController {
         }
     }
 
-    public async updateUserRecipes(req: Request, res: Response): Promise<void> {
+    public updateUserRecipes = async (req: Request, res: Response): Promise<void> => {
         try {
             console.log('updating user Recipes array')
             if(!req.user?._id) throw new Error('No User Found, relogin')

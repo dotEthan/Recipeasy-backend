@@ -8,21 +8,34 @@ import {
     UpdateResult,
     InsertManyResult,
     FindCursor,
-    UpdateFilter
+    UpdateFilter,
+    WithoutId
 } from "mongodb";
 import { Database } from "../../config/database";
 import { CreatedDataResponse } from "../../types/responses";
 import { IBaseRepository } from "./baseRepository.interface";
+import { AppError } from "../../util/appError";
 
 
 export abstract class BaseRepository<T extends Document> implements IBaseRepository<T> {
-    protected collection: Collection<T>;
+    protected collectionName: string;
+    protected _collection: Collection<T> | null = null;
 
     constructor(collectionName: string) {
-        const db = Database.getInstance().getDb();
-        this.collection = db.collection<T>(collectionName);
+        console.log('constructor')
+        this.collectionName = collectionName;
     }
     
+    protected get collection(): Collection<T> {
+        console.log('getting')
+        if (!this._collection) {
+            const db = Database.getInstance().getDb();
+            this._collection = db.collection<T>(this.collectionName);
+        }
+        if (!this._collection) throw new AppError('MongDB Collection not found', 404);
+        return this._collection;
+    }
+
     async findOne(filter: Filter<T>): Promise<WithId<T> | null> {
         console.log('finding one: ')
         return await this.collection.findOne(filter as Filter<T>);
@@ -57,11 +70,15 @@ export abstract class BaseRepository<T extends Document> implements IBaseReposit
         return await this.collection.insertMany(insertingDocuments);
     }
 
-    
-    // overwrites 
+    async findOneAndReplace(filter: Filter<T>, updatedData: WithoutId<T>): Promise<WithId<T> | null> {
+        const response = await this.collection.findOneAndReplace(filter, updatedData, { returnDocument: 'after' });
+        console.log('replaced: ', response);
+        return response;
+    }
+ 
     async findOneAndUpdate(filter: Filter<T>, updatedData: UpdateFilter<T>): Promise<WithId<T> | null> {
         const response = await this.collection.findOneAndUpdate(filter, updatedData, { returnDocument: 'after' });
-        console.log(response);
+        console.log('updated: ', response);
         return response;
     }
 

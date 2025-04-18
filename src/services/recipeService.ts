@@ -32,7 +32,7 @@ export class RecipeService {
         console.log('recipe service, updating')
         const recipeSaveResponse = await this.recipesRepository.updateRecipe(new ObjectId(recipe._id), recipe);
         if (recipeSaveResponse === null) throw new Error('Updating recipe failed: recipe does not exist')
-            console.log('recipe service, updating2  ')
+        console.log('recipe service, updating2  ')
 
         // TODO add user.recipes.alteratoins once public recipe add to new user
         console.log('updated, now update user:', userId)

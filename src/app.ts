@@ -8,11 +8,24 @@ import express, { NextFunction, Request, Response } from "express";
 import session from 'express-session';
 import passport from 'passport';
 import helmet from 'helmet';
-
-import { HttpError } from "./errors/index";
 import MongoStore from 'connect-mongo';
-import { csrfErrorHandler, csrfProtection } from './middleware/csrf';
 import cookieParser from 'cookie-parser';
+
+import { UserController } from './controllers/usersController';
+import { AuthController } from './controllers/authController';
+import { RecipeController } from './controllers/recipesController';
+import createUsersRouter from './routes/users';
+import createAdminRouter from './routes/admin';
+import createRecipesRouter from './routes/recipes';
+import { UserService } from './services/userService';
+import { AuthService } from './services/authService';
+import { RecipeService } from './services/recipeService';
+import { csrfErrorHandler, csrfProtection } from './middleware/csrf';
+import { errorHandler } from './middleware/errorHandler';
+import { AuthLoginAttemptRepository, AuthVerificationCodesRepository } from './repositories/auth/authRepository';
+import { UserRepository } from './repositories/user/userRepository';
+import { RecipesRepository } from './repositories/recipes/recipesRepository';
+import { EmailService } from './services/emailService';
 
 const app = express();
 
@@ -69,23 +82,50 @@ app.use(cors({
 
 app.use('/images', express.static(path.join(__dirname, 'images')));
 
-// Error Handler, Keep last
+// Refactor to remove this mess
+const authVerificationCodesRepository = new AuthVerificationCodesRepository();
+const authLoginAttemptRepository = new AuthLoginAttemptRepository();
+const userRepository = new UserRepository();
+const recipesRepository = new RecipesRepository();
+const emailService = new EmailService();
+const authService = new AuthService(
+  authLoginAttemptRepository, 
+  authVerificationCodesRepository,
+  emailService,
+  userRepository
+);
+const userService = new UserService(
+  userRepository, 
+  emailService, 
+  authService
+);
+const recipeService = new RecipeService(recipesRepository,userRepository);
+const userController = new UserController(userService, recipeService);
+const authController = new AuthController(
+  userService, 
+  authService, 
+  recipeService
+);
+const recipeController = new RecipeController(recipeService);
+const usersRouter = createUsersRouter(userController, authController);
+const adminRouter = createAdminRouter(authController);
+const recipesRouter = createRecipesRouter(recipeController);
+app.use('/api', usersRouter);
+app.use('/api', adminRouter);
+app.use('/api', recipesRouter);
+
+// TODO Correct 404 Reply
 app.use(
   (
-    error: HttpError | Error,
     req: Request,
     res: Response,
-    next: NextFunction, // eslint-disable-line @typescript-eslint/no-unused-vars
+    next: NextFunction,
   ) => {
-    console.log('error catch all')
-    const status = error instanceof HttpError ? error.statusCode : 500;
-    const message = error.message;
-    const data = error.message;
-    res.status(status).json({ message: message, data: data });
+    next(new Error(`Not Found - ${req.originalUrl}`));
   },
 );
 
+// Global Error Handler
+app.use(errorHandler);
 
 export default app;
-
-// TODO DO COMMIT SOON!!!!

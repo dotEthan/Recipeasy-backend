@@ -5,6 +5,7 @@ import { AuthController } from "../controllers/authController";
 import { validateRequestBodyData } from "../middleware/validateRequestData";
 import { LoginSchema, RegisterUserSchema, SetPasswordSchema, updateUsersRecipesSchema } from "../schemas/user.schema";
 import { isAuthenticated } from "../middleware/auth";
+import { catchAsyncError } from "../util/catchAsyncErrors";
 // import { registrationLimiter } from "../middleware/rateLimiters";
 
 // TODO check middleware - registrationLimiter, etc
@@ -12,7 +13,7 @@ import { isAuthenticated } from "../middleware/auth";
 export default function createUsersRouter(userController: UserController, authController: AuthController) {
   const router = Router();
   router.post("/register", validateRequestBodyData(RegisterUserSchema), authController.register);
-  router.post("/login", validateRequestBodyData(LoginSchema), authController.login);
+  router.post("/login", validateRequestBodyData(LoginSchema), catchAsyncError(authController.login));
   router.post("/logout", authController.logout);
   router.post("/update-password", validateRequestBodyData(SetPasswordSchema), userController.updateUserPassword);
   router.get("/user-data", isAuthenticated(), userController.getUserData);

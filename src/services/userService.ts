@@ -8,7 +8,7 @@ import { EmailService } from "./emailService";
 import { NewUserNoId, UserDocument, UsersRecipeData } from "../types/user";
 import { CreatedDataResponse, StandardResponse } from "../types/responses";
 import { AuthService } from "./authService";
-import { createNewUserUtility } from "../util";
+import { createNewUserUtility } from "../util/createNewuser";
 
 export class UserService {
     private userRepository: UserRepository;

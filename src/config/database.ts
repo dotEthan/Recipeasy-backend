@@ -1,5 +1,6 @@
 import { Db, MongoClient } from 'mongodb';
 import { DbIndexManager } from './dbIndexManager';
+import { retryFunction } from '../util/retry';
 
 export class Database {
     private static instance: Database;
@@ -19,16 +20,11 @@ export class Database {
     }
 
     public async connect(): Promise<void> {
-        console.log('connect')
-        try {
-            console.log('Connecting to Database')
+        return retryFunction(async () => {
             await this.client.connect();
-            console.log('Database Connected')
             this.db = this.client.db();
-        } catch(err) {
-            console.error('Database Connection error: ', err)
-            throw err;
-        }
+            console.log('connected');
+        }, {})
     }
 
     public getDb(): Db {

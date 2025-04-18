@@ -31,7 +31,7 @@ export class RecipesRepository extends BaseRepository<RecipeDocument> {
         FeUpdateRecipe.parse({recipe});
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const {_id, ...recipeNoId} = recipe;
-        const recipeResponse =  await this.findOneAndUpdate({'_id': filter}, recipeNoId);
+        const recipeResponse =  await this.findOneAndReplace({'_id': filter}, recipeNoId);
         console.log('recipes updated: ', recipeResponse)
         return recipeResponse;
     }
