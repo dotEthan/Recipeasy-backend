@@ -1,9 +1,10 @@
-import { ObjectId } from "mongodb";
+import { Filter, ObjectId } from "mongodb";
 import { RecipesRepository } from "../repositories/recipes/recipesRepository";
 import { UserRepository } from "../repositories/user/userRepository";
 import { Recipe } from "../types/recipe";
 import { PaginateResponse, StandardResponse } from "../types/responses";
 import { UsersRecipeData } from "../types/user";
+import { Visibility } from "../types/enums";
 
 export class RecipeService {
     private recipesRepository: RecipesRepository;
@@ -32,7 +33,7 @@ export class RecipeService {
         console.log('recipe service, updating')
         const recipeSaveResponse = await this.recipesRepository.updateRecipe(new ObjectId(recipe._id), recipe);
         if (recipeSaveResponse === null) throw new Error('Updating recipe failed: recipe does not exist')
-            console.log('recipe service, updating2  ')
+        console.log('recipe service, updating2  ')
 
         // TODO add user.recipes.alteratoins once public recipe add to new user
         console.log('updated, now update user:', userId)
@@ -44,12 +45,13 @@ export class RecipeService {
         return {success: true, data: feRecipe}
     }
 
-    public async getPublicRecipes(limit: number, skip: number): Promise<PaginateResponse | null> {
+    public async getRecipes(visibility: Visibility | undefined, limit: number, skip: number): Promise<PaginateResponse | null> {
         console.log('getPublicRecipes rec: ');
+        const query: Filter<Recipe> = visibility ? { visibility } : {};
         // todo stay one step ahead, get 50 first time, then 25 per.
         // remove "Users"? or leave as little 'Oh that's mine' moments
         const response = await this.recipesRepository.paginatedFindByIndex(
-            {visibility: 'public'},
+            query,
             {
                 sort: { 'ratings.averageRating': -1 },
                 skip,
@@ -57,7 +59,7 @@ export class RecipeService {
             }
         );
         
-        const total = await this.recipesRepository.getTotalDocuments({ visibility: 'public' });
+        const total = await this.recipesRepository.getTotalDocuments(query);
         const feRecipes = response.map(recipe => {
             
             // eslint-disable-next-line @typescript-eslint/no-unused-vars

@@ -17,6 +17,10 @@ It's spun up and working with passportjs for authorization. Full Authorization f
 
 - Everything that *should* working, is.
 
+### Code Choices
+
+- Functional VS OOP - a bit mixed, mostly working with OOP as I haven't used it as much as functional in past projects
+
 ## Where are we?
 
 ### Working (not feature complete, full design still in progress):
@@ -30,15 +34,16 @@ It's spun up and working with passportjs for authorization. Full Authorization f
 - Schema Creation & Validation for Incoming, DB saves, and Outgoing data
 - Recipe CRUD
 - User Persistence
+- data persistence
 
 ### Working on Now:
 
-- data persistence
+- get 'passwordResetInProgress' working
+- Global Error Handler - Auth Errors, 3 tries and you need new email token to 'unlock' the account. 
+- Non-user's recipe updates(alterations)
 
 ### To Come:
 
-- get 'passwordResetInProgress' working
-- Global Error Handler 
 - Remove console.logs and prioritize TODOs (before deploy, after)
 - Deploy: 
     - sameSite: 'strict/lax', httpOnly: true, secure: true, 
@@ -51,6 +56,7 @@ It's spun up and working with passportjs for authorization. Full Authorization f
     - Monitoring for sus action. 
     - Backups
 - Recipe Search
+- Propgate the 'retry.ts' method for all calls, update 'shouldretry' error list. 
 - Cron based softdeleted/unrefd recipe deletion
 - Logging (Sonar? others)
 - Testing

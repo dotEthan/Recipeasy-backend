@@ -3,6 +3,7 @@ import { FindByIdSchema } from "../../schemas/user.schema";
 import { PaginationOptions } from "../../types/express";
 import { Recipe, RecipeDocument } from "../../types/recipe";
 import { CreatedDataResponse } from "../../types/responses";
+import { AppError } from "../../util/appError";
 import { BaseRepository } from "../base/baseRepository";
 import { Filter, InsertManyResult, ObjectId } from "mongodb";
 
@@ -31,7 +32,7 @@ export class RecipesRepository extends BaseRepository<RecipeDocument> {
         FeUpdateRecipe.parse({recipe});
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const {_id, ...recipeNoId} = recipe;
-        const recipeResponse =  await this.findOneAndUpdate({'_id': filter}, recipeNoId);
+        const recipeResponse =  await this.findOneAndReplace({'_id': filter}, recipeNoId);
         console.log('recipes updated: ', recipeResponse)
         return recipeResponse;
     }
@@ -39,11 +40,13 @@ export class RecipesRepository extends BaseRepository<RecipeDocument> {
     async paginatedFindByIndex(filterBy: Filter<Recipe>, options: PaginationOptions) {
         console.log('data: ', filterBy)
         const cursor = await this.findByIndex(filterBy);
-        if (!cursor) throw new Error('Query Failed');
+        if (!cursor || (Array.isArray(cursor) && cursor.length === 0)) {
+            throw new AppError('Resource not found', 404);
+        }
         const sort = typeof options.sort === 'object' && 'field' in options.sort
         ? { [options.sort.field]: options.sort.direction }
         : options.sort;
-        if (!sort) throw new Error('Sorting Requires Options');
+        if (!sort) throw new AppError('Sorting Requires Options', 400);
         const response = cursor?.sort(sort).toArray();
         return response;
     }

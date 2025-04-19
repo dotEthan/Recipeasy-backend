@@ -8,11 +8,12 @@ import express, { NextFunction, Request, Response } from "express";
 import session from 'express-session';
 import passport from 'passport';
 import helmet from 'helmet';
-
-import { HttpError } from "./errors/index";
 import MongoStore from 'connect-mongo';
-import { csrfErrorHandler, csrfProtection } from './middleware/csrf';
 import cookieParser from 'cookie-parser';
+
+import { csrfErrorHandler, csrfProtection } from './middleware/csrf';
+import { errorHandler } from './middleware/errorHandler';
+import appRouter from './routes/';
 
 const app = express();
 
@@ -62,30 +63,22 @@ app.use(cors({
   exposedHeaders: ['Set-Cookie']
 }));
 
-// adding in server.ts due to database connection timing issue
-// TODO leave as is or look into better fix? 
-// app.use('/api', recipesRoutes);
-// app.use('/api', usersRoutes);
-
 app.use('/images', express.static(path.join(__dirname, 'images')));
 
-// Error Handler, Keep last
+app.use('/api/v1', appRouter);
+
+// TODO Correct 404 Reply
 app.use(
   (
-    error: HttpError | Error,
     req: Request,
     res: Response,
-    next: NextFunction, // eslint-disable-line @typescript-eslint/no-unused-vars
+    next: NextFunction,
   ) => {
-    console.log('error catch all')
-    const status = error instanceof HttpError ? error.statusCode : 500;
-    const message = error.message;
-    const data = error.message;
-    res.status(status).json({ message: message, data: data });
+    next(new Error(`Not Found - ${req.originalUrl}`));
   },
 );
 
+// Global Error Handler
+app.use(errorHandler);
 
 export default app;
-
-// TODO DO COMMIT SOON!!!!

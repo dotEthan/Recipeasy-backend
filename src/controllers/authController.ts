@@ -12,30 +12,18 @@ import { FeUserSchema, LoginResSchema } from "../schemas/user.schema";
 import { GenericResponseSchema } from "../schemas/generic.schema";
 import { RecipeService } from "../services/recipeService";
 import { RecipeDocument } from "../types/recipe";
+import { AppError } from "../util/appError";
 
 export class AuthController {
-    private userService: UserService;
-    private authService : AuthService;
-    private recipeService: RecipeService;
 
     constructor(
-        userService: UserService, 
-        authService: AuthService,
-        recipeService: RecipeService,
-    ) {
-        this.recipeService = recipeService;
-        this.userService = userService;
-        this.authService = authService;
-        this.register = this.register.bind(this);
-        this.login = this.login.bind(this);
-        this.logout = this.logout.bind(this);
-        this.verifyCode = this.verifyCode.bind(this);
-        this.resetPassword = this.resetPassword.bind(this);
-        this.validatePasswordToken = this.validatePasswordToken.bind(this);
-    }
+        private userService: UserService, 
+        private authService: AuthService,
+        private recipeService: RecipeService,
+    ) { }
 
     
-    public async register(req: Request, res: Response): Promise<void> {
+    public register = async (req: Request, res: Response): Promise<void> => {
         try {
             const {displayName, email, password} = req.body;
 
@@ -60,7 +48,7 @@ export class AuthController {
 
     }
     
-    public async login(req: Request, res: Response, next: NextFunction): Promise<void> {
+    public login = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
         try {
             console.log('logging in')
             const autheticateResponse = await this.authenticateUser(req, res);
@@ -99,34 +87,19 @@ export class AuthController {
         }
     }
 
-    public async logout(req: Request, res: Response, next: NextFunction): Promise<void> {
-        req.logOut((err) => {
-            if (err) return next(err);
-            res.clearCookie('recipeasy.sid');
-
-            req.session.destroy((err) => {
-                if (err) return next(err);
-                return res.json({
-                    success: true,
-                    message: "User Logged Out"
-                });
-            });
-        })
-    }
-
-    public async verifyCode(req: Request, res: Response): Promise<void> {
+    public verifyCode = async (req: Request, res: Response): Promise<void> => {
         try {
             console.log('verifying Code')
             const currentUserId = req.session.unverifiedUserId || req.user?._id;
-            if (!currentUserId) throw new Error('User Session Ended, please log in again');
+            if (!currentUserId) throw new AppError('User Session Ended, please log in again', 401);
 
             const userId = new ObjectId(currentUserId);
 
             const verified = await this.authService.checkVerificationCode(userId, req.body.code);
-
             if (!verified) {
                 console.log('verification failed');
-                // TODO 3 retries, update object to track retries
+                throw new AppError('Not Verified', 401);
+                // throw new AppError('Token expired, revoked, already used', 404);
             }
 
             console.log('was verified: ', verified)
@@ -135,19 +108,19 @@ export class AuthController {
 
             const verifyRes = {success: verified};
             GenericResponseSchema.parse(verifyRes);
-            
             res.json(verifyRes); 
         } catch (err) {
             console.log('getVerifCode err', err);
         }
     }
 
-    public async resetPassword(req: Request, res: Response): Promise<void> {
+    public resetPassword =  async (req: Request, res: Response): Promise<void> => {
         console.log('resetting started: ', req.body)
         try {
             const email: string = req.body.email;
             console.log('email: ', email);
             const passwordReset = await this.userService.emailUserToken(email);
+            if (!passwordReset.success) throw new AppError('Password Reset Request failed to send, retry?', 500);
             console.log('is password reset: ', passwordReset);
             GenericResponseSchema.parse(passwordReset)
             res.json(passwordReset); 
@@ -156,7 +129,7 @@ export class AuthController {
         }
     }
 
-    public async validatePasswordToken(req: Request, res: Response) {
+    public validatePasswordToken = async (req: Request, res: Response) => {
         try {
             const token = req.body.code;
             console.log('validate token: ', token);
@@ -168,21 +141,24 @@ export class AuthController {
         }
     }
 
-    private authenticateUser(req: Request, res: Response): Promise<User>  {
+    private authenticateUser = (req: Request, res: Response): Promise<User> => {
         const passportOptions = {
             failureWithError: true
         } as AuthenticateOptions;
         return new Promise((resolve, reject) => {
             passport.authenticate('local', passportOptions, (err: Error, user: User, info: { message: string}) => {
                 if (err) {
+                    console.log('authenticate user err: ', err);
                     return reject(err);
                 }
                 if (!user) {
+                    console.log('authenticate user nouser err: ');
                     return reject(new UnauthorizedError(info.message));
                 }
 
                 req.logIn(user, (loginErr: Error | null) => {
                     if (loginErr) {
+                        console.log('authenticate user req.logIn err: ', loginErr);
                         return reject(loginErr);
                     }
 

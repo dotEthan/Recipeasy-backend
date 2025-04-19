@@ -8,18 +8,16 @@ import { EmailService } from "./emailService";
 import { NewUserNoId, UserDocument, UsersRecipeData } from "../types/user";
 import { CreatedDataResponse, StandardResponse } from "../types/responses";
 import { AuthService } from "./authService";
-import { createNewUserUtility } from "../util";
+import { createNewUserUtility } from "../util/createNewuser";
+import { BeUpdateUsersRecipesSchema } from "../schemas/user.schema";
 
 export class UserService {
-    private userRepository: UserRepository;
-    private emailService: EmailService;
-    private authService: AuthService;
 
-    constructor(userRepository: UserRepository, emailService: EmailService, AuthService: AuthService) {
-        this.userRepository = userRepository;
-        this.emailService = emailService;
-        this.authService = AuthService;
-    }
+    constructor(
+        private userRepository: UserRepository, 
+        private emailService: EmailService, 
+        private authService: AuthService
+    ) {}
 
     public async createNewUser(displayName: string, email: string, hashedPassword: string): Promise<CreatedDataResponse<UserDocument>> {
         console.log('createNewUser about to save')
@@ -33,7 +31,8 @@ export class UserService {
         return savedUserResults;
     }
 
-    public async getUserData(_id: ObjectId): Promise<UserDocument> {
+    public async getUserData(_id: ObjectId): Promise<UserDocument> {    
+        console.log('!!!!!!!!!here id: ', _id)
         const userResponse = await this.userRepository.findById(_id);
         if(!userResponse) throw new Error('User Not Found, relogin');
         return userResponse;
@@ -103,18 +102,19 @@ export class UserService {
     }
 
     
-    public async updateUserRecipes(userId: ObjectId, originalUserId: ObjectId, id: ObjectId): Promise<WithId<UserDocument>| null> {
+    public async updateUserRecipes(userId: ObjectId, originalUserId: ObjectId, recipeId: ObjectId): Promise<WithId<UserDocument>| null> {
         const dataToAdd = {
-            id: id,
+            id: recipeId,
             copyDetails: {
                 originalCreatorId: originalUserId,
-                originalRecipeId: id,
+                originalRecipeId: recipeId,
                 copiedAt: new Date(),
                 updatedAt: new Date(),
                 modifications: false
             }
         } as UsersRecipeData
-        //TOD z.parse data before entering?
+        BeUpdateUsersRecipesSchema.parse(dataToAdd);
+
         const user = await this.userRepository.findOneAndUpdate({ '_id': userId }, { $addToSet: { recipes: dataToAdd }});
         return user
     }

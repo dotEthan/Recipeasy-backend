@@ -3,30 +3,25 @@ import { NextFunction, Request, Response } from "express";
 import { HttpError } from "../errors";
 import { RecipeService } from "../services/recipeService";
 import { ObjectId } from "mongodb";
+import { Recipe } from "../types/recipe";
+import { AppError } from "../util/appError";
+import { Visibility } from "../types/enums";
 
 
 export class RecipeController {
-  private recipeService: RecipeService;
 
-  constructor(recipeService: RecipeService) {
-    this.recipeService = recipeService;
-    this.saveRecipe = this.saveRecipe.bind(this);
-    this.updateRecipe = this.updateRecipe.bind(this);
-    this.getPublicRecipes = this.getPublicRecipes.bind(this);
-    this.deleteRecipe = this.deleteRecipe.bind(this);
-  }
+  constructor(private recipeService: RecipeService) {}
 
-  // originally created just to get existing recipes into database, update when bulk inserts needed for offline functionality
-  public async saveRecipe(
+  public saveRecipe = async (
     req: Request,
     res: Response,
     next: NextFunction,
-  ): Promise<void> {
+  ): Promise<void> => {
     // const body = req.body as RequestBody;
     try {
       const recipe = req.body.recipe;
       const userId = req.user?._id
-      if(!userId) throw new Error('No user Logged in, please log in and try again')
+      if(!userId) throw new AppError('No user Logged in, please log in and try again', 401);
       const response = await this.recipeService.saveRecipe(recipe, userId);
       // RecipeResponseSchema<re.parse(response);
       res.status(201)
@@ -38,22 +33,24 @@ export class RecipeController {
     }
   }
 
-  public async updateRecipe(
+  public updateRecipe = async (
     req: Request,
     res: Response,
     next: NextFunction,
-  ): Promise<void> {
+  ): Promise<void> => {
     // const body = req.body as RequestBody;
     try {
-      const recipe = req.body.recipe;
+      const recipeId = req.params.id;
+      const recipe = req.body.recipe as Recipe;
+      if (recipeId !== recipe._id.toString())  throw new AppError('URL Recipe Id does not match Recipe Object ID', 400);
       const userId = req.user?._id
-      if(!userId) throw new Error('No user Logged in, please log in and try again')
+      if(!userId) throw new AppError('No user Logged in, please log in and try again', 401);
       const response = await this.recipeService.updateRecipe(recipe, userId);
       // RecipeResponseSchema<re.parse(response);
       res.status(201)
         .json(response);
     } catch (err) {
-      let message = "Failed to create Recipe";
+      let message = "Failed to update Recipe";
       if (err instanceof Error) {
         if (err.message === 'Updating recipe failed: recipe does not exist') {
           res.status(404).end();
@@ -64,13 +61,15 @@ export class RecipeController {
     }
   }
 
-  public async getPublicRecipes(req: Request, res: Response): Promise<void> {
-    const page = parseInt(req.query.page as string) || 1;
-    const limit = parseInt(req.query.limit as string) || 25;
-    const skip = (page - 1 ) * limit;
+  public getRecipes = async (req: Request, res: Response): Promise<void> => {
+    const visibility = req.query.visibility as Visibility | undefined;
+    const page = parseInt(req.query.page as string || '1', 10);
+    const limit = parseInt(req.query.limit as string || '25', 10);
+    const skip = (page - 1) * limit;
+
     try {
       console.log('getting limit: ', limit);
-      const response = await this.recipeService.getPublicRecipes(limit, skip);
+      const response = await this.recipeService.getRecipes(visibility, limit, skip);
 
       res.json(response?.data);
     } catch(error) {
@@ -78,11 +77,11 @@ export class RecipeController {
     }
   }
 
-  public async deleteRecipe(req: Request, res: Response): Promise<void> {
+  public deleteRecipe = async (req: Request, res: Response): Promise<void> => {
     const recipeId = new ObjectId(req.params.id);
     const userId = req.user?._id
     try {
-      if (!userId) throw new Error('No user to delete recipe of, relogin');
+      if (!userId) throw new AppError('No user to delete recipe of, relogin', 401);
       const successResponse = await this.recipeService.deleteRecipe(userId, recipeId);
       console.log('delete repsonse: ', successResponse);
       res.json(successResponse)

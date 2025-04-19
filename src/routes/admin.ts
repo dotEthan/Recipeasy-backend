@@ -1,39 +1,58 @@
-import { Request, Response, Router } from "express";
+import express, { Request, Response } from "express";
 import { AuthController } from "../controllers/authController";
 import { CodeSchema, ResetPasswordSchema } from "../schemas/user.schema";
 import { validateRequestBodyData } from "../middleware/validateRequestData";
+import { AuthLoginAttemptRepository, AuthVerificationCodesRepository } from "../repositories/auth/authRepository";
+import { UserRepository } from "../repositories/user/userRepository";
+import { RecipesRepository } from "../repositories/recipes/recipesRepository";
+import { EmailService } from "../services/emailService";
+import { AuthService } from "../services/authService";
+import { UserService } from "../services/userService";
+import { RecipeService } from "../services/recipeService";
 
-    // TODO RESTFULy id resource in url
-  export default function createAdminRouter(authController: AuthController) {
-    const router = Router();
-    router.get('/csrf-token', (req: Request, res: Response) => {
-        console.log('CSurfing')
-        res.cookie('csrftoken', req.csrfToken(), { 
-            httpOnly: true,
-            secure: true,
-            sameSite: 'strict' 
-        });
-        // TODO check why two csrf tokens, doubling due to res?
-        res.json({ csrfToken: req.csrfToken() }); 
-    });
 
-    
-    router.get('/check-session', (req: Request, res: Response) => {
-      console.log('checking session is Autheticated: ', req.isAuthenticated());
-      if (req.isAuthenticated()) {
-        res.json({ success: true, data: req.user});
-      } else {
-        res.status(401).json({success: false, message: 'User Not Autheticated'})
-      }
-    });
+const router = express.Router();
 
-    router.get('/validate-password-token', validateRequestBodyData(CodeSchema), authController.validatePasswordToken);
+const authLoginAttemptRepository = new AuthLoginAttemptRepository();
+const authVerificationCodesRepository = new AuthVerificationCodesRepository();
+const userRepository = new UserRepository();
+const recipeRepository = new RecipesRepository();
 
-    router.post('/verification-code', validateRequestBodyData(CodeSchema), authController.verifyCode);
+const emailService = new EmailService();
 
-    router.post('/reset-password', validateRequestBodyData(ResetPasswordSchema), authController.resetPassword);
+const authService = new AuthService(
+  authLoginAttemptRepository,
+  authVerificationCodesRepository,
+  emailService, 
+  userRepository
+)
+const userService = new UserService(
+  userRepository, 
+  emailService, 
+  authService
+);
+const recipeService = new RecipeService(recipeRepository, userRepository);
 
-    router.post('/validate-password-token', validateRequestBodyData(CodeSchema), authController.validatePasswordToken);
+const authController = new AuthController(userService, authService, recipeService);
 
-    return router;
-  }
+// RESTFULy id resource in url
+// Autheticate as needed
+
+router.get('/csrf-token', (req: Request, res: Response) => {
+  console.log('CSurfing')
+  res.cookie('csrftoken', req.csrfToken(), { 
+      httpOnly: true,
+      secure: true,
+      sameSite: 'strict' 
+  });
+  // TODO check why two csrf tokens, doubling due to res?
+  res.json({ csrfToken: req.csrfToken() }); 
+});
+
+router.post('/verification-codes/verify', validateRequestBodyData(CodeSchema), authController.verifyCode);
+
+router.post('/password-reset-requests', validateRequestBodyData(ResetPasswordSchema), authController.resetPassword);
+
+router.post('/password-reset/validate', validateRequestBodyData(CodeSchema), authController.validatePasswordToken);
+
+export default router;
