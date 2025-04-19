@@ -22,7 +22,6 @@ export abstract class BaseRepository<T extends Document> implements IBaseReposit
     protected _collection: Collection<T> | null = null;
 
     constructor(collectionName: string) {
-        console.log('constructor')
         this.collectionName = collectionName;
     }
     

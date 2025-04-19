@@ -11,21 +11,9 @@ import helmet from 'helmet';
 import MongoStore from 'connect-mongo';
 import cookieParser from 'cookie-parser';
 
-import { UserController } from './controllers/usersController';
-import { AuthController } from './controllers/authController';
-import { RecipeController } from './controllers/recipesController';
-import createUsersRouter from './routes/users';
-import createAdminRouter from './routes/admin';
-import createRecipesRouter from './routes/recipes';
-import { UserService } from './services/userService';
-import { AuthService } from './services/authService';
-import { RecipeService } from './services/recipeService';
 import { csrfErrorHandler, csrfProtection } from './middleware/csrf';
 import { errorHandler } from './middleware/errorHandler';
-import { AuthLoginAttemptRepository, AuthVerificationCodesRepository } from './repositories/auth/authRepository';
-import { UserRepository } from './repositories/user/userRepository';
-import { RecipesRepository } from './repositories/recipes/recipesRepository';
-import { EmailService } from './services/emailService';
+import appRouter from './routes/';
 
 const app = express();
 
@@ -75,44 +63,9 @@ app.use(cors({
   exposedHeaders: ['Set-Cookie']
 }));
 
-// adding in server.ts due to database connection timing issue
-// TODO leave as is or look into better fix? 
-// app.use('/api', recipesRoutes);
-// app.use('/api', usersRoutes);
-
 app.use('/images', express.static(path.join(__dirname, 'images')));
 
-// Refactor to remove this mess
-const authVerificationCodesRepository = new AuthVerificationCodesRepository();
-const authLoginAttemptRepository = new AuthLoginAttemptRepository();
-const userRepository = new UserRepository();
-const recipesRepository = new RecipesRepository();
-const emailService = new EmailService();
-const authService = new AuthService(
-  authLoginAttemptRepository, 
-  authVerificationCodesRepository,
-  emailService,
-  userRepository
-);
-const userService = new UserService(
-  userRepository, 
-  emailService, 
-  authService
-);
-const recipeService = new RecipeService(recipesRepository,userRepository);
-const userController = new UserController(userService, recipeService);
-const authController = new AuthController(
-  userService, 
-  authService, 
-  recipeService
-);
-const recipeController = new RecipeController(recipeService);
-const usersRouter = createUsersRouter(userController, authController);
-const adminRouter = createAdminRouter(authController);
-const recipesRouter = createRecipesRouter(recipeController);
-app.use('/api', usersRouter);
-app.use('/api', adminRouter);
-app.use('/api', recipesRouter);
+app.use('/api/v1', appRouter);
 
 // TODO Correct 404 Reply
 app.use(

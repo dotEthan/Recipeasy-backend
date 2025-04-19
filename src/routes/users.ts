@@ -1,22 +1,45 @@
-import { Router } from "express";
+import express from "express";
 
 import { UserController } from "../controllers/usersController";
-import { AuthController } from "../controllers/authController";
 import { validateRequestBodyData } from "../middleware/validateRequestData";
-import { LoginSchema, RegisterUserSchema, SetPasswordSchema, updateUsersRecipesSchema } from "../schemas/user.schema";
+import { SetPasswordSchema, FeUpdateUsersRecipesSchema } from "../schemas/user.schema";
 import { isAuthenticated } from "../middleware/auth";
 import { catchAsyncError } from "../util/catchAsyncErrors";
+import { UserService } from "../services/userService";
+import { UserRepository } from "../repositories/user/userRepository";
+import { EmailService } from "../services/emailService";
+import { AuthService } from "../services/authService";
+import { AuthLoginAttemptRepository, AuthVerificationCodesRepository } from "../repositories/auth/authRepository";
+import { RecipeService } from "../services/recipeService";
+import { RecipesRepository } from "../repositories/recipes/recipesRepository";
 // import { registrationLimiter } from "../middleware/rateLimiters";
 
-// TODO check middleware - registrationLimiter, etc
-// RESTFULy id resource in url
-export default function createUsersRouter(userController: UserController, authController: AuthController) {
-  const router = Router();
-  router.post("/register", validateRequestBodyData(RegisterUserSchema), authController.register);
-  router.post("/login", validateRequestBodyData(LoginSchema), catchAsyncError(authController.login));
-  router.post("/logout", authController.logout);
-  router.post("/update-password", validateRequestBodyData(SetPasswordSchema), userController.updateUserPassword);
-  router.get("/user-data", isAuthenticated(), userController.getUserData);
-  router.patch("/user-recipes", isAuthenticated(), validateRequestBodyData(updateUsersRecipesSchema), userController.updateUserRecipes);
-  return router;
-}
+const router = express.Router();
+
+const authLoginAttemptRepository = new AuthLoginAttemptRepository();
+const authVerificationCodesRepository = new AuthVerificationCodesRepository();
+const userRepository = new UserRepository();
+const recipeRepository = new RecipesRepository();
+
+const emailService = new EmailService();
+const authService = new AuthService(
+  authLoginAttemptRepository,
+  authVerificationCodesRepository,
+  emailService, 
+  userRepository
+)
+const userService = new UserService(
+  userRepository, 
+  emailService, 
+  authService
+);
+const recipeService = new RecipeService(recipeRepository, userRepository);
+
+const userController = new UserController(userService, recipeService);
+
+
+router.patch("/password", validateRequestBodyData(SetPasswordSchema), userController.updateUserPassword);
+router.get("/:id", isAuthenticated(), userController.getUsersData);
+router.patch("/:id/recipes", isAuthenticated(), validateRequestBodyData(FeUpdateUsersRecipesSchema), userController.updateUserRecipes);
+
+export default router;

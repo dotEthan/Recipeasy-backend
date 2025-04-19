@@ -39,7 +39,7 @@ It's spun up and working with passportjs for authorization. Full Authorization f
 ### Working on Now:
 
 - get 'passwordResetInProgress' working
-- Global Error Handler 
+- Global Error Handler - Auth Errors, 3 tries and you need new email token to 'unlock' the account. 
 - Non-user's recipe updates(alterations)
 
 ### To Come:

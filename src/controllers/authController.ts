@@ -12,6 +12,7 @@ import { FeUserSchema, LoginResSchema } from "../schemas/user.schema";
 import { GenericResponseSchema } from "../schemas/generic.schema";
 import { RecipeService } from "../services/recipeService";
 import { RecipeDocument } from "../types/recipe";
+import { AppError } from "../util/appError";
 
 export class AuthController {
 
@@ -86,34 +87,19 @@ export class AuthController {
         }
     }
 
-    public logout = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-        req.logOut((err) => {
-            if (err) return next(err);
-            res.clearCookie('recipeasy.sid');
-
-            req.session.destroy((err) => {
-                if (err) return next(err);
-                return res.json({
-                    success: true,
-                    message: "User Logged Out"
-                });
-            });
-        })
-    }
-
     public verifyCode = async (req: Request, res: Response): Promise<void> => {
         try {
             console.log('verifying Code')
             const currentUserId = req.session.unverifiedUserId || req.user?._id;
-            if (!currentUserId) throw new Error('User Session Ended, please log in again');
+            if (!currentUserId) throw new AppError('User Session Ended, please log in again', 401);
 
             const userId = new ObjectId(currentUserId);
 
             const verified = await this.authService.checkVerificationCode(userId, req.body.code);
-
             if (!verified) {
                 console.log('verification failed');
-                // TODO 3 retries, update object to track retries
+                throw new AppError('Not Verified', 401);
+                // throw new AppError('Token expired, revoked, already used', 404);
             }
 
             console.log('was verified: ', verified)
@@ -122,7 +108,6 @@ export class AuthController {
 
             const verifyRes = {success: verified};
             GenericResponseSchema.parse(verifyRes);
-            
             res.json(verifyRes); 
         } catch (err) {
             console.log('getVerifCode err', err);
@@ -135,6 +120,7 @@ export class AuthController {
             const email: string = req.body.email;
             console.log('email: ', email);
             const passwordReset = await this.userService.emailUserToken(email);
+            if (!passwordReset.success) throw new AppError('Password Reset Request failed to send, retry?', 500);
             console.log('is password reset: ', passwordReset);
             GenericResponseSchema.parse(passwordReset)
             res.json(passwordReset); 

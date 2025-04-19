@@ -1,6 +1,7 @@
 import { Db, MongoClient } from 'mongodb';
 import { DbIndexManager } from './dbIndexManager';
 import { retryFunction } from '../util/retry';
+import { AppError } from '../util/appError';
 
 export class Database {
     private static instance: Database;
@@ -29,13 +30,13 @@ export class Database {
 
     public getDb(): Db {
         if (!this.db) {
-            throw new Error('Database Not Initialized, Must Connect() first.')
+            throw new AppError('Database Not Initialized, Must Connect() first.', 404)
         }
         return this.db;
     }
 
     public async initializeIndexes(): Promise<void> {
-      if (!this.db) throw new Error('Connect first');
+      if (!this.db) throw new AppError('Database Not Initialized, Must Connect() first.', 404);
       await DbIndexManager.initialize(this.db);
     }
 

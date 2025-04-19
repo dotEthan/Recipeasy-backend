@@ -158,8 +158,8 @@ export const DeleteUserByIdSchema = z.object({
     })
 }).strict();
 
-export const updateUsersRecipesSchema = z.object({
-    id: z.custom<ObjectId>((val) => {
+export const FeUpdateUsersRecipesSchema = z.object({
+    recipeId: z.custom<ObjectId>((val) => {
         return ObjectId.isValid(val);
     }, {
         message: "Patching User Invalid MongoDB ObjectId"
@@ -169,4 +169,15 @@ export const updateUsersRecipesSchema = z.object({
     }, {
         message: "Patching User Invalid MongoDB ObjectId"
     })
+}).strict();
+
+
+
+export const BeUpdateUsersRecipesSchema = z.object({
+    id: z.custom<ObjectId>((val) => {
+        return ObjectId.isValid(val);
+    }, {
+        message: "Patching User Invalid MongoDB ObjectId"
+    }),
+    copyDetails: CopyDetailsSchema
 }).strict();

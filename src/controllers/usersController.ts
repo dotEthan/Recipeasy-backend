@@ -4,22 +4,23 @@ import { RecipeService } from "../services/recipeService";
 import { Recipe } from "../types/recipe";
 import { FeUserSchema } from "../schemas/user.schema";
 import { ObjectId } from "mongodb";
+import { AppError } from "../util/appError";
 
 export class UserController {
 
     constructor(private userService: UserService, private recipeService: RecipeService) {}
 
 
-    public getUserData = async (req: Request, res: Response): Promise<void> => {
+    public getUsersData = async (req: Request, res: Response): Promise<void> => {
         try {
             console.log('getting User Body: ', req.user);
-            const reqUser = req.user;
-            if (!reqUser) {
-                res.status(401).json({success: false, message: 'Session User Data Not Found, relogin'});
+            const userId = req.params.id;
+            if (!userId) {
+                res.status(401).json({success: false, message: 'User Id missing from request'});
                 return;
             }
 
-            const freshUser = await this.userService.getUserData(reqUser._id);
+            const freshUser = await this.userService.getUserData(new ObjectId(userId));
 
             let userRecipes: Recipe[] = [];
             if (freshUser.recipes && freshUser.recipes.length > 0) {
@@ -54,13 +55,14 @@ export class UserController {
 
     public updateUserRecipes = async (req: Request, res: Response): Promise<void> => {
         try {
-            console.log('updating user Recipes array')
-            if(!req.user?._id) throw new Error('No User Found, relogin')
-            const newRecipeId = new ObjectId(req.body.id as string);
+            console.log('updating Users Recipes array')
+            const currentUserId = new ObjectId(req.params.id);
+            if(!currentUserId) throw new AppError('No User Found, relogin', 401);
+            const toBeAddedRecipeId = new ObjectId(req.body.recipeId as string);
             const originalUserId = req.body.originalUserId
-            console.log('update User Recipes', newRecipeId);
-            const updatedUserResponse = await this.userService.updateUserRecipes(req.user?._id, originalUserId, newRecipeId);
-            if (!updatedUserResponse) throw new Error('No User data found');
+            console.log('update User Recipes', toBeAddedRecipeId);
+            const updatedUserResponse = await this.userService.updateUserRecipes(currentUserId, originalUserId, toBeAddedRecipeId);
+            if (!updatedUserResponse) throw new AppError('No User data found', 401);
             console.log('updated user: ', updatedUserResponse);
             FeUserSchema.parse(updatedUserResponse);
             res.json(updatedUserResponse);
