@@ -1,13 +1,16 @@
 import { ObjectId } from "mongodb";
-import { createVerificationCodeSchema, DeleteVerificationCode, FindVerificationCode, SaveLoginAttemptDataSchema } from "../../schemas/admin.schema";
+import { createVerificationCodeSchema, DeleteVerificationCode, GetVerificationCode, SaveLoginAttemptDataSchema } from "../../schemas/admin.schema";
 import { EmailAuthCode, EmailAuthCodeDocument, LoginAttempt } from "../../types/auth";
 import { LoginAttemptDocument } from "../../types/auth";
 import { BaseRepository } from "../base/baseRepository";
+
 /**
- * Temporary auth-related collections:
+ * Recipe Collection specific Mongodb Related calls
+ * Zod database related data parsing 
  * - auth_verification_codes: email based verification codes, 1hr TTL
  * - auth_login_attempts: logging all login attempts for security, 30day TTL
  */
+// 
 export class AuthLoginAttemptRepository extends BaseRepository<LoginAttemptDocument> {
     constructor() {
         super('auth_login_attempts');
@@ -26,12 +29,14 @@ export class AuthVerificationCodesRepository extends BaseRepository<EmailAuthCod
         createVerificationCodeSchema.parse(verificationCodeData);
         return await this.create(verificationCodeData);
     }
-    async findVerificationCode(_id: ObjectId) {
-        FindVerificationCode.parse({_id});
-        return await this.findOne(_id);
+    async getVerificationCode(_id: ObjectId) {
+        console.log('user Id in autRepo:', _id)
+        console.log('typeof user Id in autRepo:', typeof _id)
+        GetVerificationCode.parse({_id});
+        return await this.findOne({userId: _id});
     }
     async deleteVerificationCode(_id: ObjectId) {
         DeleteVerificationCode.parse({_id});
-        return await this.delete(_id);
+        return await this.delete({'userId':_id});
     }
 }

@@ -33,6 +33,22 @@ export class RecipeController {
     }
   }
 
+  public getRecipes = async (req: Request, res: Response): Promise<void> => {
+    const visibility = req.query.visibility as Visibility | undefined;
+    const page = parseInt(req.query.page as string || '1', 10);
+    const limit = parseInt(req.query.limit as string || '25', 10);
+    const skip = (page - 1) * limit;
+
+    try {
+      console.log('getting limit: ', limit);
+      const response = await this.recipeService.getRecipes(visibility, limit, skip);
+
+      res.status(200).json(response?.data);
+    } catch(error) {
+      console.log('getting public recipes err: ', error);
+    }
+  }
+
   public updateRecipe = async (
     req: Request,
     res: Response,
@@ -61,30 +77,14 @@ export class RecipeController {
     }
   }
 
-  public getRecipes = async (req: Request, res: Response): Promise<void> => {
-    const visibility = req.query.visibility as Visibility | undefined;
-    const page = parseInt(req.query.page as string || '1', 10);
-    const limit = parseInt(req.query.limit as string || '25', 10);
-    const skip = (page - 1) * limit;
-
-    try {
-      console.log('getting limit: ', limit);
-      const response = await this.recipeService.getRecipes(visibility, limit, skip);
-
-      res.json(response?.data);
-    } catch(error) {
-      console.log('getting public recipes err: ', error);
-    }
-  }
-
   public deleteRecipe = async (req: Request, res: Response): Promise<void> => {
     const recipeId = new ObjectId(req.params.id);
     const userId = req.user?._id
     try {
-      if (!userId) throw new AppError('No user to delete recipe of, relogin', 401);
+      if (!userId) throw new AppError('User Not Found: relogin', 401);
       const successResponse = await this.recipeService.deleteRecipe(userId, recipeId);
       console.log('delete repsonse: ', successResponse);
-      res.json(successResponse)
+      res.status(204).end();
     } catch (error) {
       console.log('deleting recipe erorro: ', error);
     }

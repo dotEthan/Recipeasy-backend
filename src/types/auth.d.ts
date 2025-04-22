@@ -15,7 +15,13 @@ export interface LoginAttemptDocument extends LoginAttempt, Document{};
 export type EmailAuthCode = {
     userId?: ObjectId,
     code: string,
-    createdAt: date,
+    createdAt: Date,
+    updatedAt: Date
 }
 
 export interface EmailAuthCodeDocument extends EmailAuthCode, Document{};
+
+export type EmailRegistration = {
+    email: string,
+    password: string
+}

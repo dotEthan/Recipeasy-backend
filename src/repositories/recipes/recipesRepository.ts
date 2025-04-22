@@ -7,6 +7,11 @@ import { AppError } from "../../util/appError";
 import { BaseRepository } from "../base/baseRepository";
 import { Filter, InsertManyResult, ObjectId } from "mongodb";
 
+/**
+ * Recipes Collection specific Mongodb Related calls
+ * Zod database related data parsing 
+ */
+// 
 export class RecipesRepository extends BaseRepository<RecipeDocument> {
     constructor() {
         super('recipes');

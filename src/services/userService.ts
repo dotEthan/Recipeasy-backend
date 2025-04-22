@@ -1,16 +1,21 @@
-import { ObjectId, UpdateResult, WithId } from "mongodb";
+import { ObjectId, WithId } from "mongodb";
 import bcrypt from 'bcryptjs';
 import jwt, { JwtPayload } from 'jsonwebtoken';
 
 import { UserRepository } from "../repositories/user/userRepository";
 import { EmailService } from "./emailService";
 
-import { NewUserNoId, UserDocument, UsersRecipeData } from "../types/user";
+import { UserDocument, UsersRecipeData } from "../types/user";
 import { CreatedDataResponse, StandardResponse } from "../types/responses";
 import { AuthService } from "./authService";
 import { createNewUserUtility } from "../util/createNewuser";
 import { BeUpdateUsersRecipesSchema } from "../schemas/user.schema";
 
+/**
+ * Handles all user related services
+ * @todo Ensure all errors are handled
+ */
+// 
 export class UserService {
 
     constructor(
@@ -23,7 +28,7 @@ export class UserService {
         console.log('createNewUser about to save')
         const newUserData = createNewUserUtility(displayName, email, hashedPassword);
         console.log('createNewUser about to save')
-        const savedUserResults =  await this.saveUser(newUserData);
+        const savedUserResults =  await this.userRepository.createUser(newUserData);
         if (!savedUserResults) throw Error('No User Created');
 
         const verificationSetAndSent = await this.authService.setAndSendVerificationCode(email, displayName,savedUserResults._id );
@@ -46,8 +51,8 @@ export class UserService {
             throw new Error('User Not Found, try logging in again');
         }
         console.log('setting user to verified')
-        const updateResult: UpdateResult = await this.userRepository.updateOne({"_id": _id}, {verified: true});
-        if(!updateResult.acknowledged || updateResult.modifiedCount === 0) throw new Error('update not successful')
+        const updateResult = await this.userRepository.updateById(_id, {verified: true});
+        if(!updateResult?.acknowledged || updateResult?.modifiedCount === 0) throw new Error('update not successful')
         return {success: true};
     }
 
@@ -102,7 +107,7 @@ export class UserService {
     }
 
     
-    public async updateUserRecipes(userId: ObjectId, originalUserId: ObjectId, recipeId: ObjectId): Promise<WithId<UserDocument>| null> {
+    public async updateUserRecipes(userId: ObjectId, originalUserId: ObjectId, recipeId: ObjectId): Promise<WithId<UserDocument> | null> {
         const dataToAdd = {
             id: recipeId,
             copyDetails: {
@@ -119,13 +124,7 @@ export class UserService {
         return user
     }
 
-    private async saveUser(newUserData: NewUserNoId): Promise<CreatedDataResponse<UserDocument>> {
-        // const hasUser = await this.userRepository.findOne({'email': newUserData.email})
-        // if (hasUser) {
-        //     throw new Error('Email already in use');
-        // }
-
-        console.log('Created User: ', newUserData);
-        return this.userRepository.createUser(newUserData);
+    public async findUserByEmail(email: string): Promise<WithId<UserDocument> | null> {
+        return await this.userRepository.findOne({'email': email})
     }
 }

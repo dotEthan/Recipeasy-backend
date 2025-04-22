@@ -1,5 +1,5 @@
 import { NextFunction, Response, Request } from "express";
-import { AnyZodObject, ZodError } from "zod";
+import { AnyZodObject } from "zod";
 /**
  * Validate Middleware to ensure Data matches expected Schema
  * @constructor
@@ -13,13 +13,6 @@ export const validateRequestBodyData = (schema: AnyZodObject) =>
       schema.parse(req.body);
       next();
     } catch (err) {
-      if (err instanceof ZodError) {
-        console.log("Kneel Before Zod Error!")
-        res.status(400).json({
-          message: 'Validation failed',
-          errors: err.format(),
-        });
-      }
       next(err);
     }
 };

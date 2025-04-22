@@ -1,4 +1,4 @@
-import express, { NextFunction, Request, Response } from "express";
+import express, { Request, Response } from "express";
 import { validateRequestBodyData } from "../middleware/validateRequestData";
 import { LoginSchema, RegisterUserSchema } from "../schemas/user.schema";
 import { catchAsyncError } from "../util/catchAsyncErrors";
@@ -11,6 +11,16 @@ import { UserRepository } from "../repositories/user/userRepository";
 import { AuthLoginAttemptRepository, AuthVerificationCodesRepository } from "../repositories/auth/authRepository";
 import { RecipeService } from "../services/recipeService";
 import { isAuthenticated } from "../middleware/auth";
+
+
+/**
+ * Handles all Authorization based routes
+ * @todo Add Authentication As needed
+ * @todo Full Error Lists
+ */
+// 
+
+const router = express.Router();
 
 const authLoginAttemptRepository = new AuthLoginAttemptRepository();
 const authVerificationCodesRepository = new AuthVerificationCodesRepository();
@@ -32,36 +42,67 @@ const userService = new UserService(
 const recipeService = new RecipeService(recipeRepository, userRepository);
 
 const authController = new AuthController(userService, authService, recipeService);
-const router = express.Router();
 
-// Autheticate as needed
-
+/**
+ * Check to ensure user session is still active
+ * @route GET /auth/session
+ * @group Authorization - Session Management
+ * @returns {LoginResponse} 200 - User registered
+ * @returns {ErrorResponse} 401 - User credentials wrong
+ * @returns {ErrorResponse} 400 - Validation Error
+ * @returns {ErrorResponse} 500 - Server/database issues
+ * @produces application/json
+ */
 router.get('/session', isAuthenticated(), (req: Request, res: Response) => {
   console.log('checking session is Autheticated: ', req.isAuthenticated());
   if (req.isAuthenticated()) {
-    res.json({ success: true, data: req.user});
+    res.status(200).json({ success: true, user: req.user});
   } else {
     res.status(401).json({success: false, message: 'User Not Autheticated'})
   }
 });
 
-router.delete("/session", isAuthenticated(), (req: Request, res: Response, next: NextFunction) => {    
-    req.logOut((err) => {
-        if (err) return next(err);
-        res.clearCookie('recipeasy.sid');
+/**
+ * Delete User session
+ * @route DELETE /auth/session
+ * @group Authorization - Session Management
+ * @returns {StandardResponse} 201 - User registered
+ * @returns {ErrorResponse} 400 - Validation Error
+ * @returns {ErrorResponse} 401 - User password too short
+ * @returns {ErrorResponse} 409 - User Already Exists
+ * @returns {ErrorResponse} 500 - Server/database issues
+ * @produces application/json
+ * @consumes application/json
+ */
+router.delete("/session", isAuthenticated(), authController.logUserOut);
 
-        req.session.destroy((err) => {
-            if (err) return next(err);
-            return res.json({
-                success: true,
-                message: "User Logged Out"
-            });
-        });
-    })
-});
-
+/**
+ * Log in user
+ * @route POST /auth/login
+ * @group Authorization - Session Management
+ * @returns {LoginResponse} 200 - User registered
+ * @returns {ErrorResponse} 400 - Validation Error
+ * @returns {ErrorResponse} 401 - User credentials wrong
+ * @returns {ErrorResponse} 404 - User Not Found
+ * @returns {ErrorResponse} 500 - Server/database issues
+ * @produces application/json
+ * @consumes application/json
+ */
 router.post("/login", validateRequestBodyData(LoginSchema), catchAsyncError(authController.login));
 
+/**
+ * Register new user
+ * @route POST /auth/register
+ * @group Authorization - User Management
+ * @param {EmailRegistration} request.body.required - email and plaintext password
+ * @returns {StandardResponse} 201 - User registered
+ * @returns {ErrorResponse} 400 - Validation Error
+ * @returns {ErrorResponse} 401 - User password too short
+ * @returns {ErrorResponse} 409 - User Already Exists
+ * @returns {ErrorResponse} 500 - Server/database issues
+ * @produces application/json
+ * @consumes application/json
+ */
 router.post("/register", validateRequestBodyData(RegisterUserSchema), authController.register);
 
 export default router;

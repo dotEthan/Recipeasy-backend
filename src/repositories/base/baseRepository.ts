@@ -16,6 +16,10 @@ import { CreatedDataResponse } from "../../types/responses";
 import { IBaseRepository } from "./baseRepository.interface";
 import { AppError } from "../../util/appError";
 
+/**
+ * Base Mongodb Related calls
+ */
+// 
 
 export abstract class BaseRepository<T extends Document> implements IBaseRepository<T> {
     protected collectionName: string;

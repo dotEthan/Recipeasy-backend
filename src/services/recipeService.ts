@@ -6,6 +6,11 @@ import { PaginateResponse, StandardResponse } from "../types/responses";
 import { UsersRecipeData } from "../types/user";
 import { Visibility } from "../types/enums";
 
+/**
+ * Handles all recipe related services
+ * @todo Ensure all errors are handled
+ */
+// 
 export class RecipeService {
     private recipesRepository: RecipesRepository;
     private userRepository: UserRepository;
@@ -18,7 +23,7 @@ export class RecipeService {
         let success = false;
 
         const recipeSaveResponse = await this.recipesRepository.createRecipe(recipe)
-        const userUpdateRes = await this.userRepository.updateRecipeIdArrayByIdNoDupes(userId,  recipeSaveResponse._id);
+        const userUpdateRes = await this.userRepository.addToUsersRecipesArray(userId,  recipeSaveResponse._id);
         
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { createdAt, updatedAt, ...feRecipe } = recipeSaveResponse;
@@ -37,7 +42,7 @@ export class RecipeService {
 
         // TODO add user.recipes.alteratoins once public recipe add to new user
         console.log('updated, now update user:', userId)
-        // const userUpdateRes = await this.userRepository.updateRecipeIdArrayByIdNoDupes(userId,  recipeSaveResponse._id);
+        // const userUpdateRes = await this.userRepository.addToUsersRecipesArray(userId,  recipeSaveResponse._id);
         
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { createdAt, updatedAt, ...feRecipe } = recipeSaveResponse;
@@ -47,9 +52,16 @@ export class RecipeService {
 
     public async getRecipes(visibility: Visibility | undefined, limit: number, skip: number): Promise<PaginateResponse | null> {
         console.log('getPublicRecipes rec: ');
-        const query: Filter<Recipe> = visibility ? { visibility } : {};
-        // todo stay one step ahead, get 50 first time, then 25 per.
-        // remove "Users"? or leave as little 'Oh that's mine' moments
+        const query: Filter<Recipe> = {
+            "internalData.isDeleted": { $ne: true } 
+        };
+
+        if (visibility) { 
+            query.visibility = visibility
+        }
+
+        // TODO stay one step ahead, get 50 first time, then 25 per.
+        // TODO remove Users own recipes? or leave as little 'Oh that's mine' moments
         const response = await this.recipesRepository.paginatedFindByIndex(
             query,
             {
@@ -88,23 +100,22 @@ export class RecipeService {
     async deleteRecipe(userId: ObjectId, recipeId: ObjectId): Promise<StandardResponse> {
         // find out if user's copy is really theirs
         const thisRecipe = await this.recipesRepository.findById(recipeId);
-        if (!thisRecipe) throw new Error('No Recipe found to delete');
+        if (!thisRecipe) throw new Error('Deletion Failed: Recipe Not Found');
         const recipesOwnersId = new ObjectId(thisRecipe.userId);
         let updateRecipeResponse;
         let updateUserResponse;
         if (recipesOwnersId.equals(userId)) {
-            console.log('is this users recipe');
+            console.log('is this users recipe', recipeId);
             updateRecipeResponse = await this.recipesRepository.updateOne({'_id': recipeId}, { $set: { internalData: { isDeleted: true, wasDeletedAt: new Date(), deletedBy: userId}}});
             
             updateUserResponse = await this.userRepository.updateOne({ '_id': userId }, { $pull: { recipes: { id: recipeId }}});
             
         } else {
-            console.log('is NOT this users recipe');
             console.log('is NOT this users recipe', recipeId);
             updateUserResponse = await this.userRepository.updateOne({ '_id': userId }, { $pull: { recipes: { id: recipeId }}});
         }
-        if (updateRecipeResponse && (!updateRecipeResponse.acknowledged || updateRecipeResponse.modifiedCount === 0)) throw new Error('Deletion Failed');
-        if (!updateUserResponse.acknowledged || updateUserResponse.modifiedCount === 0) throw new Error('UPdating User Recipe array failed');
+        if (updateRecipeResponse && (!updateRecipeResponse.acknowledged || updateRecipeResponse.modifiedCount === 0)) throw new Error('Deletion Failed: Recipe deletion failed');
+        if (!updateUserResponse.acknowledged || updateUserResponse.modifiedCount === 0) throw new Error('Deletion Failed: Updating User Recipe array failed');
         return {success: true}
     }
 }

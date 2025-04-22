@@ -20,6 +20,8 @@ It's spun up and working with passportjs for authorization. Full Authorization f
 ### Code Choices
 
 - Functional VS OOP - a bit mixed, mostly working with OOP as I haven't used it as much as functional in past projects
+- No Mongoose - I have worked with Mongoose, but I wanted to get a better feel for MongoDB directly. If I did it again, I'd use Mongoose. 
+- 
 
 ## Where are we?
 
@@ -57,7 +59,7 @@ It's spun up and working with passportjs for authorization. Full Authorization f
     - Backups
 - Recipe Search
 - Propgate the 'retry.ts' method for all calls, update 'shouldretry' error list. 
-- Cron based softdeleted/unrefd recipe deletion
+- Cron based softdeleted/unref'd recipe deletion (only if no user.recipes has ref'd)
 - Logging (Sonar? others)
 - Testing
 - Full Documentation

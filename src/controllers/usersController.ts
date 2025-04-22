@@ -27,7 +27,7 @@ export class UserController {
                 userRecipes = await this.recipeService.getUsersRecipes(freshUser.recipes);
             }
             console.log('User Data retrieved:', freshUser);
-            res.json({ user: freshUser, userRecipes });
+            res.status(200).json({ user: freshUser, userRecipes });
         } catch(error: unknown) {
             console.log('Error Getting User: ', error);
         }
@@ -39,7 +39,7 @@ export class UserController {
             const newPassword = req.body.password;
             await this.userService.updateUserPassword(newPassword, token);
 
-            res.json({success: true});
+            res.status(201).json({success: true});
         } catch(error: unknown) {
             console.log('Error Updating User: ', error);
             // Todo Look into which errors wont be an instance of error and address here
@@ -65,7 +65,7 @@ export class UserController {
             if (!updatedUserResponse) throw new AppError('No User data found', 401);
             console.log('updated user: ', updatedUserResponse);
             FeUserSchema.parse(updatedUserResponse);
-            res.json(updatedUserResponse);
+            res.status(201).json({success: true, user: updatedUserResponse});
         } catch (error) {
             console.log('userUserRecipes Error', error);
         }

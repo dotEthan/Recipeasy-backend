@@ -13,6 +13,7 @@ import { GenericResponseSchema } from "../schemas/generic.schema";
 import { RecipeService } from "../services/recipeService";
 import { RecipeDocument } from "../types/recipe";
 import { AppError } from "../util/appError";
+import { LoginResponse } from "../types/responses";
 
 export class AuthController {
 
@@ -28,6 +29,8 @@ export class AuthController {
             const {displayName, email, password} = req.body;
 
             const hashedPassword = await bcrypt.hash(password, 12);
+            const emailInUse = await this.userService.findUserByEmail(email);
+            if(emailInUse) throw new AppError('Email already in use', 409);
             const userResponse = await this.userService.createNewUser(displayName, email, hashedPassword);
 
             req.session.unverifiedUserId = userResponse._id;
@@ -52,16 +55,21 @@ export class AuthController {
         try {
             console.log('logging in')
             const autheticateResponse = await this.authenticateUser(req, res);
-            console.log('authenticated')
+            console.log('authenticated: ', autheticateResponse)
+            console.log('authenticatedid: ', autheticateResponse._id)
 
             let newEmailVerifyCodeCreated = false;
             if (!autheticateResponse.verified) {
                 console.log('autheticated but not verified');
 
                 //TODO check if already exists and within TTL.
-                newEmailVerifyCodeCreated = await this.authService.setAndSendVerificationCode(autheticateResponse.email, autheticateResponse.displayName, autheticateResponse._id)
+                const codeExists = await this.authService.getVerificationCode(autheticateResponse._id);
+                if (codeExists === null) {
+                    console.log('no code exists, resending')
+                    newEmailVerifyCodeCreated = await this.authService.setAndSendVerificationCode(autheticateResponse.email, autheticateResponse.displayName, autheticateResponse._id)
+                }
             }
-            console.log('autheticated and verified user: ');
+            console.log('user Data Finished ');
 
             let recipeResponse = [] as WithId<RecipeDocument>[];
             if (autheticateResponse.recipes) {
@@ -73,10 +81,10 @@ export class AuthController {
                 user: autheticateResponse,
                 newEmailVerifyCodeCreated,
                 recipeResponse
-            }
+            } as LoginResponse;
             console.log('final return: ');
             LoginResSchema.parse(responseData);
-            res.json(responseData);
+            res.status(200).json(responseData);
 
             console.log('logging attempt')
             await this.authService.logLoginAttempt(req, true);
@@ -92,10 +100,12 @@ export class AuthController {
             console.log('verifying Code')
             const currentUserId = req.session.unverifiedUserId || req.user?._id;
             if (!currentUserId) throw new AppError('User Session Ended, please log in again', 401);
+            console.log(currentUserId)
 
             const userId = new ObjectId(currentUserId);
-
-            const verified = await this.authService.checkVerificationCode(userId, req.body.code);
+           const code = req.body.code as string;
+            console.log('code: ', userId);
+            const verified = await this.authService.checkVerificationCode(userId, code);
             if (!verified) {
                 console.log('verification failed');
                 throw new AppError('Not Verified', 401);
@@ -108,13 +118,13 @@ export class AuthController {
 
             const verifyRes = {success: verified};
             GenericResponseSchema.parse(verifyRes);
-            res.json(verifyRes); 
+            res.status(200).json(verifyRes); 
         } catch (err) {
             console.log('getVerifCode err', err);
         }
     }
 
-    public resetPassword =  async (req: Request, res: Response): Promise<void> => {
+    public resetPasswordRequest =  async (req: Request, res: Response): Promise<void> => {
         console.log('resetting started: ', req.body)
         try {
             const email: string = req.body.email;
@@ -123,7 +133,7 @@ export class AuthController {
             if (!passwordReset.success) throw new AppError('Password Reset Request failed to send, retry?', 500);
             console.log('is password reset: ', passwordReset);
             GenericResponseSchema.parse(passwordReset)
-            res.json(passwordReset); 
+            res.status(201).json(passwordReset); 
         } catch(error) {
             console.log('reset password error: ', error);
         }
@@ -135,10 +145,49 @@ export class AuthController {
             console.log('validate token: ', token);
             const isValid = await this.authService.validatePasswordToken(token);
             GenericResponseSchema.parse(isValid)
-            res.json(isValid)
+            res.status(200).json(isValid)
         } catch (error) {
             console.log('validating password token error: ', error);
         }
+    }
+
+    public logUserOut = async (req: Request, res: Response) => {    
+      try {
+        await new Promise<void>((resolve, reject) => {
+            req.logOut((error) => {
+                if (error) return reject(error);
+                resolve();
+            });
+        });
+
+        res.clearCookie('recipeasy.sid', {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'strict'
+        });
+
+        res.clearCookie('XSRF-TOKEN', {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'strict'
+        });
+        
+        await new Promise<void>((resolve, reject) => {
+            req.session.destroy((error) => {
+                if (error) return reject(error);
+                resolve();
+            });
+        });
+
+        res.status(200).json({
+            success: true,
+            message: "User logged out successfully"
+        });
+
+      } catch (error) {
+        console.log('User log out error:', error);
+        throw new AppError('Failed to complete logout process', 500);
+      }
     }
 
     private authenticateUser = (req: Request, res: Response): Promise<User> => {

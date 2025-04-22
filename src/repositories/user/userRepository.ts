@@ -10,7 +10,11 @@ import {
     UpdateByIdSchema
 } from "../../schemas/user.schema";
 
-
+/**
+ * Users Collection specific Mongodb Related calls
+ * Zod database related data parsing 
+ */
+// 
 export class UserRepository extends BaseRepository<UserDocument> {
 
     constructor() {
@@ -39,17 +43,16 @@ export class UserRepository extends BaseRepository<UserDocument> {
     };
     // Move schema.parse to service functions 
     async updateById(_id: ObjectId, updatedData: Partial<UserDocument>): Promise<UpdateResult | null> {
-        UpdateByIdSchema.parse({_id, updatedData});
-        return await this.updateOne({_id}, updatedData);
+        UpdateByIdSchema.parse({updatedData});
+        return await this.updateOne({_id}, { $set: updatedData});
     };
 
     // No Dupes
-    async updateRecipeIdArrayByIdNoDupes(_id: ObjectId, recipeId: ObjectId): Promise<UpdateResult | null> {
+    async addToUsersRecipesArray(_id: ObjectId, recipeId: ObjectId): Promise<UpdateResult | null> {
         console.log('going in: ', recipeId)
         return await this.updateByMergeOneNoDupe({_id}, {$addToSet: {recipes: {id: recipeId} }});
     };
 
-    // overwrites 
     async findOneAndOverwrite(filter: Filter<UserDocument>, updatedData: Partial<UserDocument>): Promise<WithId<UserDocument> | null> {
         const insertingDocument = {
             ...updatedData,
