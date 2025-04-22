@@ -138,11 +138,6 @@ export const UpdateUserByIdSchema = z.object({
 
 // Generic, needed or all will be specific due to specific #addToSet mongoDb syntax?
 export const UpdateByIdSchema = z.object({
-    _id: z.custom<ObjectId>((val) => {
-        return ObjectId.isValid(val);
-    }, {
-        message: "Updating User Invalid MongoDB ObjectId"
-    }),
     updatedData: BeUserSchema
         .omit({ _id: true, createdAt: true })
         .partial()

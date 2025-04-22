@@ -22,10 +22,11 @@ export const createVerificationCodeSchema = z.object({
         message: "Create VerificationCode Invalid MongoDB ObjectId"
     }),
     code: z.string(),
-    createdAt:z.date()
+    createdAt:z.date(),
+    updatedAt: z.date()
 }).strict();
 
-export const FindVerificationCode = z.object({
+export const GetVerificationCode = z.object({
     _id: ObjectIdSchema,
 }).strict();
 

@@ -10,6 +10,12 @@ import { AuthService } from "../services/authService";
 import { UserService } from "../services/userService";
 import { RecipeService } from "../services/recipeService";
 
+/**
+ * Handles all Administration based routes
+ * @todo Add Authentication As needed
+ * @todo Full Error Lists
+ */
+// 
 
 const router = express.Router();
 
@@ -35,24 +41,70 @@ const recipeService = new RecipeService(recipeRepository, userRepository);
 
 const authController = new AuthController(userService, authService, recipeService);
 
-// RESTFULy id resource in url
-// Autheticate as needed
-
+/**
+ * Gets Csurf token for user
+ * @route GET /admin/csrf-token
+ * @group Security - user tracking
+ * @returns {SuccessResponse} 200 - Csurfing!
+ * @returns {ErrorResponse} 500 - Token not generated
+ * @produces application/json
+ */
 router.get('/csrf-token', (req: Request, res: Response) => {
-  console.log('CSurfing')
-  res.cookie('csrftoken', req.csrfToken(), { 
-      httpOnly: true,
-      secure: true,
-      sameSite: 'strict' 
-  });
-  // TODO check why two csrf tokens, doubling due to res?
-  res.json({ csrfToken: req.csrfToken() }); 
+  try {
+    const csrfToken = req.csrfToken();
+    console.log(`C'Surfing CANADA! - ${csrfToken}`);
+    res.header('X-CSRF-Token', csrfToken); 
+    res.status(200).json({success: true});
+  } catch (error) {
+    console.log('Security token not generated: ', error);
+    res.status(500).json({
+      success: false,
+      message: 'Security Token Not Generated. Oh no!'
+    })
+  }
 });
 
+/**
+ * Verify a user's authentication code
+ * @route POST /admin/verification-codes/verify
+ * @group Authentication - Code verification
+ * @param {VerifyCodeRequest} request.body.required - Code and user identifier
+ * @returns {SuccessResponse} 200 - Verification successful
+ * @returns {ErrorResponse} 400 - Invalid code format
+ * @returns {ErrorResponse} 401 - Code expired or incorrect
+ * @produces application/json
+ * @consumes application/json
+ */
 router.post('/verification-codes/verify', validateRequestBodyData(CodeSchema), authController.verifyCode);
 
-router.post('/password-reset-requests', validateRequestBodyData(ResetPasswordSchema), authController.resetPassword);
 
+/**
+ * Reset the users
+ * @route POST /admin/password-reset-requests
+ * @group Authentication - Password Management
+ * @param {VerifyCodeRequest} request.body.required - email
+ * @returns {SuccessResponse} 201 - Request creation successful
+ * @returns {ErrorResponse} 400 - Validation Error
+ * @returns {ErrorResponse} 404 - User email not found
+ * @returns {ErrorResponse} 500 - Send email request failed
+ * @produces application/json
+ * @consumes application/json
+ */
+router.post('/password-reset-requests', validateRequestBodyData(ResetPasswordSchema), authController.resetPasswordRequest);
+
+
+/**
+ * Validate Password Reset Token input by User
+ * @route POST /admin/password-reset/validate
+ * @group Authentication - Password Management
+ * @param {VerifyCodeRequest} request.body.required - Reset token
+ * @returns {SuccessResponse} 200 - Validation Successful
+ * @returns {ErrorResponse} 400 - Input Token invalid
+ * @returns {ErrorResponse} 404 - Token record not found in DB
+ * @returns {ErrorResponse} 500 - Misc
+ * @produces application/json
+ * @consumes application/json
+ */
 router.post('/password-reset/validate', validateRequestBodyData(CodeSchema), authController.validatePasswordToken);
 
 export default router;
