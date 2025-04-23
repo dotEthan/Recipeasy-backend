@@ -17,8 +17,9 @@ declare module 'express-session' {
   }
 }
 
-interface PaginationOptions {
+interface PaginationOptions<T> {
   sort?: Record<string, 1 | -1>; 
   skip?: number;
   limit?: number;
+  projection?: Document<T>;
 }

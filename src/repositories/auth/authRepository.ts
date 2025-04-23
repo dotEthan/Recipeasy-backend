@@ -5,12 +5,17 @@ import { LoginAttemptDocument } from "../../types/auth";
 import { BaseRepository } from "../base/baseRepository";
 
 /**
- * Recipe Collection specific Mongodb Related calls
- * Zod database related data parsing 
+ * Auth Collection specific Mongodb Related calls
+ * @todo BOW TO ZOD PARSING!
+ * @todo create and implement Interface
+ * @todo Are those TTL right?
+ * 
  * - auth_verification_codes: email based verification codes, 1hr TTL
+ * - auth_password_reset: email based verification token, 1 day TTL
  * - auth_login_attempts: logging all login attempts for security, 30day TTL
  */
 // 
+
 export class AuthLoginAttemptRepository extends BaseRepository<LoginAttemptDocument> {
     constructor() {
         super('auth_login_attempts');

@@ -7,14 +7,22 @@ import { UserService } from "../services/userService";
 import { User } from "../types/user";
 import { UnauthorizedError } from "../errors";
 import { AuthService } from "../services/authService";
-import { ObjectId, WithId } from "mongodb";
+import { WithId } from "mongodb";
 import { FeUserSchema, LoginResSchema } from "../schemas/user.schema";
 import { GenericResponseSchema } from "../schemas/generic.schema";
 import { RecipeService } from "../services/recipeService";
 import { RecipeDocument } from "../types/recipe";
 import { AppError } from "../util/appError";
-import { LoginResponse } from "../types/responses";
+import { LoginResponse, PaginateResponse } from "../types/responses";
+import { ensureObjectId } from "../util/ensureObjectId";
 
+/**
+ * Authorization based req and res handling
+ * @todo BOW TO ZOD PARSING!
+ * @todo console.logs
+ * @todo Error Handling
+ */
+// 
 export class AuthController {
 
     constructor(
@@ -39,7 +47,6 @@ export class AuthController {
             res.status(201).json({success: true, data: userResponse});
 
         } catch(error: unknown) {
-            // Todo Global Error Handling
             console.log('Register Failed: ', error);
             const errorMessage = error instanceof Error ? error.message : 'Unknown error';
             if (errorMessage === 'User already exists') {
@@ -55,7 +62,6 @@ export class AuthController {
         try {
             console.log('logging in')
             const autheticateResponse = await this.authenticateUser(req, res);
-            console.log('authenticated: ', autheticateResponse)
             console.log('authenticatedid: ', autheticateResponse._id)
 
             let newEmailVerifyCodeCreated = false;
@@ -72,17 +78,19 @@ export class AuthController {
             console.log('user Data Finished ');
 
             let recipeResponse = [] as WithId<RecipeDocument>[];
+            let totalRecipes = 0;
             if (autheticateResponse.recipes) {
-                const recipes = await this.recipeService.getUsersRecipes(autheticateResponse.recipes);
-                recipeResponse = recipes;
+                const paginatedResponse: PaginateResponse = await this.recipeService.getUsersRecipes(autheticateResponse);
+                recipeResponse = paginatedResponse.data;
+                totalRecipes = paginatedResponse.totalDocs;
             }
-            console.log('users Recipes: ', recipeResponse[1]);
             const responseData = {
                 user: autheticateResponse,
                 newEmailVerifyCodeCreated,
-                recipeResponse
+                recipeResponse,
+                totalRecipes: totalRecipes
             } as LoginResponse;
-            console.log('final return: ');
+            // console.log('final return: ', recipeResponse[0]);
             LoginResSchema.parse(responseData);
             res.status(200).json(responseData);
 
@@ -102,7 +110,7 @@ export class AuthController {
             if (!currentUserId) throw new AppError('User Session Ended, please log in again', 401);
             console.log(currentUserId)
 
-            const userId = new ObjectId(currentUserId);
+            const userId = ensureObjectId(currentUserId);
            const code = req.body.code as string;
             console.log('code: ', userId);
             const verified = await this.authService.checkVerificationCode(userId, code);

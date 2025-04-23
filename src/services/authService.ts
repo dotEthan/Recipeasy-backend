@@ -11,6 +11,7 @@ import { ObjectId, WithId } from "mongodb";
 import { UserRepository } from "../repositories/user/userRepository";
 import { StandardResponse } from "../types/responses";
 import { AppError } from "../util/appError";
+import { ensureObjectId } from "../util/ensureObjectId";
 
 /**
  * Handles all Authorization related services
@@ -41,7 +42,7 @@ export class AuthService {
     public async logLoginAttempt(req: Request, success: boolean, errorMessage?: string)  {
         console.log('errormsg:', errorMessage)
         const loginData: LoginAttempt = {
-            userId: new ObjectId(req.user?._id),
+            userId: req.user?._id,
             ipAddress: req.ip,
             userAgent: req.headers['user-agent'],
             timestamp: new Date(),
@@ -151,7 +152,7 @@ export class AuthService {
         const decoded = await jwt.verify(token, secret) as JwtPayload;
         const userId = decoded.userId;
 
-        const user = await this.userRepository.findById(new ObjectId(userId));
+        const user = await this.userRepository.findById(ensureObjectId(userId));
         if(!user) throw new Error('No user found validating password token');
 
         return {success: true}

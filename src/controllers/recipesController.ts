@@ -2,12 +2,19 @@ import { NextFunction, Request, Response } from "express";
 
 import { HttpError } from "../errors";
 import { RecipeService } from "../services/recipeService";
-import { ObjectId } from "mongodb";
 import { Recipe } from "../types/recipe";
 import { AppError } from "../util/appError";
 import { Visibility } from "../types/enums";
+import { ensureObjectId } from "../util/ensureObjectId";
 
 
+/**
+ * Recipe based req and res handling
+ * @todo BOW TO ZOD PARSING!
+ * @todo console.logs
+ * @todo Error Handling
+ */
+// 
 export class RecipeController {
 
   constructor(private recipeService: RecipeService) {}
@@ -40,9 +47,8 @@ export class RecipeController {
     const skip = (page - 1) * limit;
 
     try {
-      console.log('getting limit: ', limit);
       const response = await this.recipeService.getRecipes(visibility, limit, skip);
-
+      if (response === null) throw new AppError('No recipes found: ', 404);
       res.status(200).json(response?.data);
     } catch(error) {
       console.log('getting public recipes err: ', error);
@@ -78,7 +84,7 @@ export class RecipeController {
   }
 
   public deleteRecipe = async (req: Request, res: Response): Promise<void> => {
-    const recipeId = new ObjectId(req.params.id);
+    const recipeId = ensureObjectId(req.params.id);
     const userId = req.user?._id
     try {
       if (!userId) throw new AppError('User Not Found: relogin', 401);

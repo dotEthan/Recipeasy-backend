@@ -100,7 +100,8 @@ export const LoginSchema = z.object({
 export const LoginResSchema = z.object({
     user: FeUserSchema,
     newEmailVerifyCodeCreated: z.boolean(),
-    recipeResponse: z.array(FeRecipeSchema)
+    recipeResponse: z.array(FeRecipeSchema),
+    totalRecipes: z.number()
 }).strict();
 
 export const SetPasswordSchema = z.object({
