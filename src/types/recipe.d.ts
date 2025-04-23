@@ -12,13 +12,17 @@ export type Recipe = {
   url?: string;
   ingredients: Ingredient[];
   directions: Direction[];
-  visibility: 'public' | 'private';
+  visibility: string;
   tags: string[];
   notes: string[];
   userId: ObjectId;
-  originalCreatorId?: ObjectId,
-  equipment?: string[]
+  equipment?: string[];
+  updatedAt: Date;
+  createdAt: Date;
+  passwordResetInProgress?: boolean;
 }
+
+export type FeRecipe = Omit<Recipe, 'passwordResetInProgress', 'createdAt'>;
 
 export type RecipeInfo = {
   mealType?: string[];

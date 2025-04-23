@@ -20,7 +20,7 @@ export const errorHandler = (error: Error | AppError, req: Request, res: Respons
     let message = 'Internal Server Error';
     let errorDetails = {};
 
-    console.log(`name: ${error.name} message: ${error.message} stack: ${error.stack}`);
+    // console.log(`name: ${error.name} message: ${error.message} stack: ${error.stack}`);
     console.log('error handler: ');
 
     if ('statusCode' in error) {

@@ -3,13 +3,14 @@ import { FindByIdSchema } from "../../schemas/user.schema";
 import { PaginationOptions } from "../../types/express";
 import { Recipe, RecipeDocument } from "../../types/recipe";
 import { CreatedDataResponse } from "../../types/responses";
-import { AppError } from "../../util/appError";
 import { BaseRepository } from "../base/baseRepository";
 import { Filter, InsertManyResult, ObjectId } from "mongodb";
 
 /**
  * Recipes Collection specific Mongodb Related calls
- * Zod database related data parsing 
+ * @todo BOW TO ZOD PARSING!
+ * @todo create and implement Interface
+ * @todo Try to make more generic and ensure best practices
  */
 // 
 export class RecipesRepository extends BaseRepository<RecipeDocument> {
@@ -42,22 +43,16 @@ export class RecipesRepository extends BaseRepository<RecipeDocument> {
         return recipeResponse;
     }
 
-    async paginatedFindByIndex(filterBy: Filter<Recipe>, options: PaginationOptions) {
-        console.log('data: ', filterBy)
-        const cursor = await this.findByIndex(filterBy);
-        if (!cursor || (Array.isArray(cursor) && cursor.length === 0)) {
-            throw new AppError('Resource not found', 404);
-        }
-        const sort = typeof options.sort === 'object' && 'field' in options.sort
-        ? { [options.sort.field]: options.sort.direction }
-        : options.sort;
-        if (!sort) throw new AppError('Sorting Requires Options', 400);
-        const response = cursor?.sort(sort).toArray();
-        return response;
+    async paginatedFindByIndex(filterBy: Filter<Recipe>, options: PaginationOptions<Recipe>) {
+        //schema.parse(schema)
+        return this.findPaginated(filterBy, options);
     }
     
     async findById(_id: ObjectId): Promise<RecipeDocument | null> {
         FindByIdSchema.parse({_id});
-        return await this.findOne({_id} as Partial<Recipe>);
+        return await this.findOne(
+            {_id} as Partial<Recipe>,
+            { createdAt: 0 }
+        );
     };
 }

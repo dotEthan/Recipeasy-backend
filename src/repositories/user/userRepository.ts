@@ -9,9 +9,12 @@ import {
     FindByIdSchema,
     UpdateByIdSchema
 } from "../../schemas/user.schema";
+import { Recipe } from "../../types/recipe";
 
 /**
  * Users Collection specific Mongodb Related calls
+ * @todo BOW TO ZOD PARSING!
+ * @todo create and implement Interface
  * Zod database related data parsing 
  */
 // 
@@ -28,17 +31,26 @@ export class UserRepository extends BaseRepository<UserDocument> {
 
     async findById(_id: ObjectId): Promise<UserDocument | null> {
         FindByIdSchema.parse({_id});
-        return await this.findOne({_id} as Partial<UserDocument>);
+        return await this.findOne(
+            {_id} as Partial<UserDocument>, 
+            { createdAt: 0, passwordResetInProgress: 0 }
+        );
     };
 
     async findByEmail(email: string): Promise<UserDocument | null> {
         FindByEmailSchema.parse({email});
-        return await this.findOne({email} as Partial<UserDocument>);
+        return await this.findOne(
+            {email} as Partial<UserDocument>, 
+            { createdAt: 0, passwordResetInProgress: 0 }
+        );
     };
 
     async findIdByEmail(email: string): Promise<ObjectId | undefined> {
         FindByEmailSchema.parse({email});
-        const user = await this.findOne({email} as Partial<UserDocument>);
+        const user = await this.findOne(
+            {email} as Partial<UserDocument>, 
+            { createdAt: 0, passwordResetInProgress: 0 }
+        );
         return user?._id;
     };
     // Move schema.parse to service functions 
@@ -51,6 +63,19 @@ export class UserRepository extends BaseRepository<UserDocument> {
     async addToUsersRecipesArray(_id: ObjectId, recipeId: ObjectId): Promise<UpdateResult | null> {
         console.log('going in: ', recipeId)
         return await this.updateByMergeOneNoDupe({_id}, {$addToSet: {recipes: {id: recipeId} }});
+    };
+
+    // No Dupes
+    async updateAlterationsOnUserRecipes(_id: ObjectId, recipeId: ObjectId, alterations: Partial<Recipe>): Promise<UpdateResult | null> {
+        return await this.updateOne({
+            _id,
+            "recipes.id": recipeId
+        }, {
+            $set: {
+                "recipes.$.alterations": alterations,
+                "recipes.$.copyDetails.modifications": true
+            }
+        });
     };
 
     async findOneAndOverwrite(filter: Filter<UserDocument>, updatedData: Partial<UserDocument>): Promise<WithId<UserDocument> | null> {

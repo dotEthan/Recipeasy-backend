@@ -15,6 +15,7 @@ import { Database } from "../../config/database";
 import { CreatedDataResponse } from "../../types/responses";
 import { IBaseRepository } from "./baseRepository.interface";
 import { AppError } from "../../util/appError";
+import { PaginationOptions } from "../../types/express";
 
 /**
  * Base Mongodb Related calls
@@ -39,14 +40,25 @@ export abstract class BaseRepository<T extends Document> implements IBaseReposit
         return this._collection;
     }
 
-    async findOne(filter: Filter<T>): Promise<WithId<T> | null> {
+    async findOne(filter: Filter<T>, projection: Document = {}): Promise<WithId<T> | null> {
         console.log('finding one: ')
-        return await this.collection.findOne(filter as Filter<T>);
+        return await this.collection.findOne(filter, projection);
     }
 
     async findByIndex(filter: Filter<T>): Promise<FindCursor<WithId<T>>> {
         console.log('finding one: ')
         return this.collection.find(filter);
+    }
+
+    async findPaginated(filter: Filter<T>, options: PaginationOptions<T>): Promise<WithId<T>[]> {
+        console.log('finding one: ', options)
+        return this.collection
+            .find(filter)
+            .sort(options.sort || {})
+            .skip(options.skip || 0)
+            .limit(options.limit || 0)
+            .project(options.projection || {})
+            .toArray() as Promise<WithId<T>[]>;
     }
 
     async create(data: Omit<T, '_id'>):  Promise<CreatedDataResponse<T>> {

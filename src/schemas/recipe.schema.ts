@@ -53,7 +53,8 @@ export const DirectionsSchema = z.object({
 
 export const InternalStateSchema = z.object({
     isDeleted: z.boolean().default(false),
-    wasDeletedAt: z.date()
+    wasDeletedAt: z.date(),
+    deletedBy:  ObjectIdSchema
 })
 
 export const BeRecipeSchema = z
@@ -72,10 +73,12 @@ export const BeRecipeSchema = z
   notes: z.array(z.string()),
   userId: ObjectIdSchema,
   equipment: z.array(z.string()).optional(),
-  internalState: InternalStateSchema.optional()
+  internalState: InternalStateSchema.optional(),
+  createdAt: z.date(),
+  updatedAt: z.date()
 }).strict(); 
 
-export const FeRecipeSchema = BeRecipeSchema.omit({internalState: true});
+export const FeRecipeSchema = BeRecipeSchema.omit({internalState: true, createdAt: true });
 
 export const FeSavedRecipeArray = z.object({
     recipes: z.array(FeRecipeSchema.omit({_id: true}))

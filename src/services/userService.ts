@@ -25,19 +25,17 @@ export class UserService {
     ) {}
 
     public async createNewUser(displayName: string, email: string, hashedPassword: string): Promise<CreatedDataResponse<UserDocument>> {
-        console.log('createNewUser about to save')
         const newUserData = createNewUserUtility(displayName, email, hashedPassword);
-        console.log('createNewUser about to save')
         const savedUserResults =  await this.userRepository.createUser(newUserData);
         if (!savedUserResults) throw Error('No User Created');
 
         const verificationSetAndSent = await this.authService.setAndSendVerificationCode(email, displayName,savedUserResults._id );
-        console.log('email sent: ', verificationSetAndSent)
+        // TODO error handling? 
+        console.log('Verification email sent: ', verificationSetAndSent)
         return savedUserResults;
     }
 
     public async getUserData(_id: ObjectId): Promise<UserDocument> {    
-        console.log('!!!!!!!!!here id: ', _id)
         const userResponse = await this.userRepository.findById(_id);
         if(!userResponse) throw new Error('User Not Found, relogin');
         return userResponse;

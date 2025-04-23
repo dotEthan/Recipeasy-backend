@@ -1,8 +1,7 @@
 import { ObjectId, OptionalUnlessRequiredId, WithId } from "mongodb";
 import { User } from "./user";
-import { Recipe } from "./recipe";
+import { FeRecipe, Recipe } from "./recipe";
 
-// Todo: Generic or specific?
 export type StandardResponse = {
     success: boolean;
     message?: string;
@@ -14,6 +13,13 @@ export type StandardUserResponse = {
     success: boolean;
     message?: string;
     user?: User;
+    error?: string;
+};
+
+export type StandardRecipeResponse = {
+    success: boolean;
+    message?: string;
+    recipe?: FeRecipe;
     error?: string;
 };
 
