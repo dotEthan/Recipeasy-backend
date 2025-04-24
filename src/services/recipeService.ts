@@ -12,6 +12,8 @@ import { mergeAlterations } from "../util/mergeAlterations";
 /**
  * Handles all recipe related services
  * @todo Ensure all errors are handled
+ * @todo Add logging
+ * @todo BOW TO ZOD PARSING!
  */
 // 
 export class RecipeService {

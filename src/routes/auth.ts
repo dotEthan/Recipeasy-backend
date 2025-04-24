@@ -17,6 +17,7 @@ import { isAuthenticated } from "../middleware/auth";
  * Handles all Authorization based routes
  * @todo Add Authentication As needed
  * @todo Full Error Lists
+ * @todo catchAsyncError for errors?
  */
 // 
 

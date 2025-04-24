@@ -8,6 +8,11 @@ import {
 import { FeRecipeSchema } from './recipe.schema';
 
 
+/**
+ * Authorization based req and res handling
+ * @todo is copyDetails need in FE?
+ */
+// 
 export const ShoppingListSchema = z.object({}).strict();  // TODO Import once other schema added
 
 export const PreferencesSchema = z.object({
@@ -25,66 +30,60 @@ export const CopyDetailsSchema = z.object({
     originalRecipeId: ObjectIdSchema,
     copiedAt: z.date(),
     updatedAt: z.date(),
-    modifications: z.boolean()
+    modified: z.boolean()
 }).strict();
 
-export const UserRecipesSchema = z.object({
+export const UserRecipesIdSchema = z.object({
     id: z.custom<ObjectId>((val) => {
         return ObjectId.isValid(val);
     }, {
         message: "UserRecipe Invalid MongoDB ObjectId"
     }),
-    copyDetails: CopyDetailsSchema.optional()
-})
+    copyDetails: CopyDetailsSchema.optional(),
+    alterations: FeRecipeSchema.partial().optional()
+}).strict();
 
-export const FeUserSchema = z
-  .object({
-    _id:  z.custom<ObjectId>((val) => {
-        return ObjectId.isValid(val);
-    }, {
-        message: "FEUser Invalid MongoDB ObjectId"
-    }),
-    displayName: z.string().min(AUTH_DISPLAY_NAME_MIN),
-    email: z.string().email(),
-    firstName: z.string().optional(),
-    lastName: z.string().optional(),
-    password: z.string(),
-    verified: z.boolean().default(false),
-    recipes: z.array(UserRecipesSchema.optional()),
-    shoppingLists: z.array(ShoppingListSchema),
-    preferences: PreferencesSchema.optional(),
-    role: z.string(),
-    createdAt: z.date(),
-    updatedAt: z.date(),
-    passwordResetInProgress: z.boolean().default(false),
-    userRatings: UserRatingsSchema.optional()
-  }).strict();
+export const PreviousPassword = z.object({
+    hash: z.string(),
+    deprecatedAt: z.date()
+}).strict();
 
-export const UpdateFeUserSchema = FeUserSchema.partial().strict().strict();
-
+export const PasswordResetData = z.object({
+    resetInProgress: z.boolean(),
+    attempts: z.number(),
+    expiresAt: z.date(),
+    resetRequestedAt: z.date()
+}).strict();
+  
 export const BeUserSchema = z
 .object({
     _id:  z.custom<ObjectId>((val) => {
         return ObjectId.isValid(val);
     }, {
-        message: "BeUser Invalid MongoDB ObjectId"
+        message: "User Invalid MongoDB ObjectId"
     }),
     displayName: z.string().min(AUTH_DISPLAY_NAME_MIN),
     email: z.string().email(),
-    firstName: z.string(),
-    lastName: z.string(),
-    password: z.string(),
+    firstName: z.string().optional(),
+    lastName: z.string().optional(),
     verified: z.boolean().default(false),
-    recipes: z.array(ObjectIdSchema),
+    recipes: z.array(UserRecipesIdSchema.optional()),
     shoppingLists: z.array(ShoppingListSchema),
+    userRatings: UserRatingsSchema.optional(),
     preferences: PreferencesSchema.optional(),
-    createdAt: z.date(),
-    updatedAt: z.date(),
     role: z.string(),
-    passwordResetInProgress: z.boolean().default(false)
+    password: z.string(),
+    passwordResetData: PasswordResetData.optional(),
+    previousPasswords: z.array(PreviousPassword).optional(),
+    createdAt: z.date(),
+    updatedAt: z.date()
 }).strict();
 
 export const BeCreateUserSchema = BeUserSchema.omit({ _id: true}).strict();
+
+export const FeUserSchema = BeUserSchema.omit({ previousPasswords: true, createdAt: true}).strict();
+
+export const UpdateFeUserSchema = FeUserSchema.partial().strict();
 
 export const RegisterUserSchema = z.object({
     displayName: z.string().min(1),
@@ -104,7 +103,7 @@ export const LoginResSchema = z.object({
     totalRecipes: z.number()
 }).strict();
 
-export const SetPasswordSchema = z.object({
+export const ResetFlowSetPasswordSchema = z.object({
     code: z.string(),
     password: z.string().min(AUTH_PASSWORD_MIN)
 }).strict();

@@ -6,16 +6,14 @@ import {
     BeCreateUserSchema,
     DeleteUserByIdSchema,
     FindByEmailSchema, 
-    FindByIdSchema,
-    UpdateByIdSchema
+    FindByIdSchema
 } from "../../schemas/user.schema";
 import { Recipe } from "../../types/recipe";
 
 /**
  * Users Collection specific Mongodb Related calls
- * @todo BOW TO ZOD PARSING!
  * @todo create and implement Interface
- * Zod database related data parsing 
+ * @todo move Parsing to Service
  */
 // 
 export class UserRepository extends BaseRepository<UserDocument> {
@@ -29,34 +27,35 @@ export class UserRepository extends BaseRepository<UserDocument> {
         return await this.create(data);
     }
 
-    async findById(_id: ObjectId): Promise<UserDocument | null> {
+    async findById(_id: ObjectId, addedProjection?: Partial<Record<keyof UserDocument, 0 | 1 | boolean>>): Promise<Partial<UserDocument> | null> {
+        const projection = addedProjection ? addedProjection : { createdAt: 0, previousPasswords: 0 };
         FindByIdSchema.parse({_id});
         return await this.findOne(
             {_id} as Partial<UserDocument>, 
-            { createdAt: 0, passwordResetInProgress: 0 }
+            projection
         );
     };
 
-    async findByEmail(email: string): Promise<UserDocument | null> {
-        FindByEmailSchema.parse({email});
+    async findByEmail(email: string, addedProjection?: Document): Promise<UserDocument | null> {
+        const projection = addedProjection ? addedProjection : { createdAt: 0, previousPasswords: 0 };
         return await this.findOne(
             {email} as Partial<UserDocument>, 
-            { createdAt: 0, passwordResetInProgress: 0 }
+            projection
         );
     };
 
-    async findIdByEmail(email: string): Promise<ObjectId | undefined> {
+    async findIdByEmail(email: string, addedProjection?: Document): Promise<ObjectId | undefined> {
+        const projection = addedProjection ? addedProjection : { createdAt: 0, previousPasswords: 0 };
         FindByEmailSchema.parse({email});
         const user = await this.findOne(
             {email} as Partial<UserDocument>, 
-            { createdAt: 0, passwordResetInProgress: 0 }
+            projection
         );
         return user?._id;
     };
-    // Move schema.parse to service functions 
-    async updateById(_id: ObjectId, updatedData: Partial<UserDocument>): Promise<UpdateResult | null> {
-        UpdateByIdSchema.parse({updatedData});
-        return await this.updateOne({_id}, { $set: updatedData});
+    
+    async updateById(_id: ObjectId, update: Partial<UserDocument>): Promise<UpdateResult | null> {
+        return await this.updateOne({_id}, update);
     };
 
     // No Dupes
@@ -73,7 +72,7 @@ export class UserRepository extends BaseRepository<UserDocument> {
         }, {
             $set: {
                 "recipes.$.alterations": alterations,
-                "recipes.$.copyDetails.modifications": true
+                "recipes.$.copyDetails.modified": true
             }
         });
     };

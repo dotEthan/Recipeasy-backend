@@ -6,6 +6,8 @@ import { RECIPEASY_PW_RESET_URL } from '../constants';
  * Handles all email related services
  * @todo Ensure all errors are handled
  * @todo Create Proper HTML based email structure
+ * @todo Add logging
+ * @todo BOW TO ZOD PARSING!
  */
 // 
 export class EmailService {

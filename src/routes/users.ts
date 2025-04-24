@@ -2,7 +2,7 @@ import express from "express";
 
 import { UserController } from "../controllers/usersController";
 import { validateRequestBodyData } from "../middleware/validateRequestData";
-import { SetPasswordSchema, FeUpdateUsersRecipesSchema } from "../schemas/user.schema";
+import { FeUpdateUsersRecipesSchema } from "../schemas/user.schema";
 import { isAuthenticated } from "../middleware/auth";
 import { catchAsyncError } from "../util/catchAsyncErrors";
 import { UserService } from "../services/userService";
@@ -12,12 +12,14 @@ import { AuthService } from "../services/authService";
 import { AuthLoginAttemptRepository, AuthVerificationCodesRepository } from "../repositories/auth/authRepository";
 import { RecipeService } from "../services/recipeService";
 import { RecipesRepository } from "../repositories/recipes/recipesRepository";
+import { updatePasswordSchema } from "../schemas/admin.schema";
 // import { registrationLimiter } from "../middleware/rateLimiters";
 
 /**
  * Handles all User based routes
  * @todo Add Authentication As needed
  * @todo Full Error Lists
+ * @todo catchAsyncError for errors?
  */
 // 
 const router = express.Router();
@@ -61,7 +63,6 @@ router.get("/:id", isAuthenticated(), userController.getUsersData);
  * Update user with new password
  * @route PATCH /users/password
  * @group Recipe Management - User data Update
- * @param {string} request.body.code.required
  * @param {string} request.body.password.required
  * @returns {StandardResponse} 201 - success: true
  * @returns {ErrorResponse} 400 - Validation Error
@@ -70,7 +71,8 @@ router.get("/:id", isAuthenticated(), userController.getUsersData);
  * @produces application/json
  * @consumes application/json
 */
-router.patch("/password", validateRequestBodyData(SetPasswordSchema), userController.updateUserPassword);
+router.patch("/password", validateRequestBodyData(updatePasswordSchema), userController.userPasswordUpdate);
+
 /**
  * Update User.recipes array
  * @route PATCH /users/:id/recipes

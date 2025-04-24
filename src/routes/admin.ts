@@ -1,6 +1,6 @@
 import express, { Request, Response } from "express";
 import { AuthController } from "../controllers/authController";
-import { CodeSchema, ResetPasswordSchema } from "../schemas/user.schema";
+import { CodeSchema, ResetPasswordSchema, ResetFlowSetPasswordSchema } from "../schemas/user.schema";
 import { validateRequestBodyData } from "../middleware/validateRequestData";
 import { AuthLoginAttemptRepository, AuthVerificationCodesRepository } from "../repositories/auth/authRepository";
 import { UserRepository } from "../repositories/user/userRepository";
@@ -14,6 +14,7 @@ import { RecipeService } from "../services/recipeService";
  * Handles all Administration based routes
  * @todo Add Authentication As needed
  * @todo Full Error Lists
+ * @todo catchAsyncError for errors?
  */
 // 
 
@@ -79,7 +80,7 @@ router.post('/verification-codes/verify', validateRequestBodyData(CodeSchema), a
 
 
 /**
- * Reset the users
+ * Request to start user Password reset
  * @route POST /admin/password-reset-requests
  * @group Authentication - Password Management
  * @param {VerifyCodeRequest} request.body.required - email
@@ -91,7 +92,6 @@ router.post('/verification-codes/verify', validateRequestBodyData(CodeSchema), a
  * @consumes application/json
  */
 router.post('/password-reset-requests', validateRequestBodyData(ResetPasswordSchema), authController.resetPasswordRequest);
-
 
 /**
  * Validate Password Reset Token input by User
@@ -106,5 +106,20 @@ router.post('/password-reset-requests', validateRequestBodyData(ResetPasswordSch
  * @consumes application/json
  */
 router.post('/password-reset/validate', validateRequestBodyData(CodeSchema), authController.validatePasswordToken);
+
+/**
+ * Final step in user password reset Request - update with new password
+ * @route PATCH /admin/user-password
+ * @group Recipe Management - User data Update
+ * @param {string} request.body.code.required - reset token
+ * @param {string} request.body.password.required - new password
+ * @returns {StandardResponse} 201 - success: true
+ * @returns {ErrorResponse} 400 - Validation Error
+ * @returns {ErrorResponse} 404 - User does not exist
+ * @returns {ErrorResponse} 500 - Server/database issues
+ * @produces application/json
+ * @consumes application/json
+*/
+router.patch("/user-password", validateRequestBodyData(ResetFlowSetPasswordSchema), authController.finishPasswordResetRequest);
 
 export default router;

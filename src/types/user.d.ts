@@ -4,7 +4,7 @@ import { Document, ObjectId } from "mongodb";
 import { ShoppingList } from "./shopping-list"
 import { UserRoles } from '../enums';
 
-export type FeUser = Omit<User, 'updatedAt', 'createdAt'>;
+export type FeUser = Omit<User, 'updatedAt', 'createdAt', 'previousPasswords'>;
 
 export type User = {
   _id: ObjectId;
@@ -18,7 +18,8 @@ export type User = {
   shoppingLists?: ShoppingList[];
   preferences? : UserPreferences;
   ratings?: UserRatings;
-  passwordResetInProgress: boolean;
+  passwordResetData?: PasswordResetData;
+  previousPasswords?: PreviousPasssword[];
   role: UserRoles;
   createdAt?: Date;
   updateAt?: Date;
@@ -48,7 +49,19 @@ export type CopyDetails = {
   originalRecipeId: ObjectId;
   copiedAt: Date;
   updatedAt?: Date;
-  modifications: boolean; // TODO Should be 'modified'
+  modified: boolean; // TODO Should be 'modified'
+}
+
+export type PasswordResetData = {
+  resetInProgress: boolean;
+  resetRequestedAt: Date;
+  attempts: number;
+  expiresAt: Date;
+}
+
+export type PreviousPasssword = {
+  hash: string;
+  deprecatedAt: Date;
 }
 
 export interface UserDocument extends User, Document{};

@@ -43,11 +43,14 @@ export class UserController {
         }
     }
 
-    public updateUserPassword = async (req: Request, res: Response): Promise<void> => {
+    /**
+     * Validate Password Token
+     * @todo left to refactor for user dashboard updating
+     */
+    public userPasswordUpdate = async (req: Request, res: Response): Promise<void> => {
         try {
-            const token = req.body.code;
-            const newPassword = req.body.password;
-            await this.userService.updateUserPassword(newPassword, token);
+            // const newPassword = req.body.password;
+            // await this.userService.updateUserPassword(newPassword);
 
             res.status(201).json({success: true});
         } catch(error: unknown) {
