@@ -19,6 +19,7 @@ import { PaginationOptions } from "../../types/express";
 
 /**
  * Base Mongodb Related calls
+ * @todo ensure Interface udpated
  */
 // 
 
@@ -41,8 +42,8 @@ export abstract class BaseRepository<T extends Document> implements IBaseReposit
     }
 
     async findOne(filter: Filter<T>, projection: Document = {}): Promise<WithId<T> | null> {
-        console.log('finding one: ')
-        return await this.collection.findOne(filter, projection);
+        console.log('finding one: ', projection)
+        return await this.collection.findOne(filter, {projection});
     }
 
     async findByIndex(filter: Filter<T>): Promise<FindCursor<WithId<T>>> {

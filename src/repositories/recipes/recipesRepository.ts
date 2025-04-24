@@ -8,9 +8,9 @@ import { Filter, InsertManyResult, ObjectId } from "mongodb";
 
 /**
  * Recipes Collection specific Mongodb Related calls
- * @todo BOW TO ZOD PARSING!
  * @todo create and implement Interface
  * @todo Try to make more generic and ensure best practices
+ * @todo move Parsing to Service
  */
 // 
 export class RecipesRepository extends BaseRepository<RecipeDocument> {

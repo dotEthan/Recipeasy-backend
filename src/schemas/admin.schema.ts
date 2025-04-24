@@ -37,3 +37,7 @@ export const DeleteVerificationCode = z.object({
         message: "Delete VerificationCode Invalid MongoDB ObjectId"
     }),
 }).strict();
+
+export const updatePasswordSchema = z.object({
+    password: z.string()
+})

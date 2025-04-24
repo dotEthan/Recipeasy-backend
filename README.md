@@ -40,8 +40,8 @@ It's spun up and working with passportjs for authorization. Full Authorization f
 
 ### Working on Now:
 
-- get 'passwordResetInProgress' working
 - Global Error Handler - Auth Errors, verification: 3 tries and you need new email token to 'unlock' the account. 
+- Image Upload
 
 ### To Come:
 
@@ -57,7 +57,7 @@ It's spun up and working with passportjs for authorization. Full Authorization f
     - Monitoring for sus action. 
     - Backups
 - Recipe Search
-- Propgate the 'retry.ts' method for all calls, update 'shouldretry' error list. 
+- Propogate the 'retry.ts' method for all calls, update 'shouldretry' error list. 
 - Cron based softdeleted/unref'd recipe deletion (only if no user.recipes has ref'd)
 - Logging (Sonar? others)
 - Testing

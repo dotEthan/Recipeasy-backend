@@ -12,7 +12,8 @@ export const validateRequestBodyData = (schema: AnyZodObject) =>
       // console.log('validating Request Data schema: ', schema)
       schema.parse(req.body);
       next();
-    } catch (err) {
-      next(err);
+    } catch (error) {
+      console.log('validateRequestBodyData error: ', error)
+      next(error);
     }
 };

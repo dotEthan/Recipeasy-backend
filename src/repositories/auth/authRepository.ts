@@ -6,8 +6,8 @@ import { BaseRepository } from "../base/baseRepository";
 
 /**
  * Auth Collection specific Mongodb Related calls
- * @todo BOW TO ZOD PARSING!
  * @todo create and implement Interface
+ * @todo move Parsing to Service
  * @todo Are those TTL right?
  * 
  * - auth_verification_codes: email based verification codes, 1hr TTL

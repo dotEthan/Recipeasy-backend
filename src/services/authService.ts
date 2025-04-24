@@ -11,11 +11,12 @@ import { ObjectId, WithId } from "mongodb";
 import { UserRepository } from "../repositories/user/userRepository";
 import { StandardResponse } from "../types/responses";
 import { AppError } from "../util/appError";
-import { ensureObjectId } from "../util/ensureObjectId";
 
 /**
  * Handles all Authorization related services
  * @todo Ensure all errors are handled
+ * @todo Add logging
+ * @todo BOW TO ZOD PARSING!
  */
 // 
 
@@ -139,22 +140,24 @@ export class AuthService {
     /**
      * Validate Password Token
      * @group Security - Bot trap
-     * @param {string} code - client entered verification code
+     * @param {string} token - password reset token
      * @return {boolean} true - validation success
      * @example
      * const authService = useAuthService();
      * await authService.validatePasswordToken('xyz987');
      */
-    public async validatePasswordToken(token: string): Promise<StandardResponse> {
+    public async validatePasswordToken(token: string, type: string): Promise<StandardResponse> {
         const secret = (process.env.NODE_ENV !== 'prod') ? process.env.JWT_SECRET_PROD : process.env.JWT_SECRET_DEV;
-        if (!secret) throw new Error('Env JWT_SECRET_PROD/DEV not set');
+        if (!secret) throw new AppError('validatePasswordToken - Env JWT_SECRET_PROD/DEV not set', 500);
 
-        const decoded = await jwt.verify(token, secret) as JwtPayload;
+        const decoded = jwt.verify(token, secret) as JwtPayload;
+        if (decoded.type !== type) {
+            throw new AppError('validatePasswordToken - Invalid token type', 400);
+        }
+
         const userId = decoded.userId;
-
-        const user = await this.userRepository.findById(ensureObjectId(userId));
-        if(!user) throw new Error('No user found validating password token');
-
-        return {success: true}
+        
+        if (!userId) throw new AppError('validatePasswordToken - Token UserId not found', 401);
+        return {success: true, data: userId};
     }
 }

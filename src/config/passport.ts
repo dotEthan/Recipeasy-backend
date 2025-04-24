@@ -6,6 +6,7 @@ import bcrypt from 'bcryptjs';
 import { VerifiedUserOrErrorFunc } from '../types/passport';
 import { UserRepository } from '../repositories/user/userRepository';
 import { ObjectId } from 'mongodb';
+import { User } from '../types/user';
 
 
 export async function initialize(passport: PassportStatic) {
@@ -44,7 +45,7 @@ export async function initialize(passport: PassportStatic) {
     passport.deserializeUser(async (id: string, done) => {
         console.log('deserialization: ', id)
         try {
-            const user = await userRepository.findById(new ObjectId(id));
+            const user = await userRepository.findById(new ObjectId(id)) as User;
             done(null, user);
         } catch (error: unknown) {
             done(error);

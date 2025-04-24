@@ -1,4 +1,5 @@
 import { NextFunction, Request, Response } from "express";
+import jwt from 'jsonwebtoken';
 import { AppError } from "../util/appError";
 import { ZodError } from "zod";
 import { MongoError } from "mongodb";
@@ -49,6 +50,12 @@ export const errorHandler = (error: Error | AppError, req: Request, res: Respons
     } else if (error.name === 'UnauthorizedError') {
         statusCode = 401;
         message = 'Authetication Error';
+    } else if (error instanceof jwt.JsonWebTokenError) {
+        statusCode = 401;
+        message = 'Invalid Token'
+    } else if (error instanceof jwt.TokenExpiredError) {
+        statusCode = 401;
+        message = 'Password reset token has expired';
     }
 
     const isProduction = process.env.NODE_ENV = 'production';

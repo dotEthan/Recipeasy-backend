@@ -15,9 +15,11 @@ import { RecipeDocument } from "../types/recipe";
 import { AppError } from "../util/appError";
 import { LoginResponse, PaginateResponse } from "../types/responses";
 import { ensureObjectId } from "../util/ensureObjectId";
+import { TokenTypes } from "../types/enums";
 
 /**
  * Authorization based req and res handling
+ * @todo split up admin/auth
  * @todo BOW TO ZOD PARSING!
  * @todo console.logs
  * @todo Error Handling
@@ -60,32 +62,33 @@ export class AuthController {
     
     public login = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
         try {
-            console.log('logging in')
-            const autheticateResponse = await this.authenticateUser(req, res);
-            console.log('authenticatedid: ', autheticateResponse._id)
+            const PwResetInProgress = await this.userService.checkIfPwResetInProgress(req.body.email);
+            if (PwResetInProgress) throw new AppError('Password reset already in progress', 409);
+
+            const authenticateResponse = await this.authenticateUser(req, res);
 
             let newEmailVerifyCodeCreated = false;
-            if (!autheticateResponse.verified) {
+            if (!authenticateResponse.verified) {
                 console.log('autheticated but not verified');
 
                 //TODO check if already exists and within TTL.
-                const codeExists = await this.authService.getVerificationCode(autheticateResponse._id);
+                const codeExists = await this.authService.getVerificationCode(authenticateResponse._id);
                 if (codeExists === null) {
                     console.log('no code exists, resending')
-                    newEmailVerifyCodeCreated = await this.authService.setAndSendVerificationCode(autheticateResponse.email, autheticateResponse.displayName, autheticateResponse._id)
+                    newEmailVerifyCodeCreated = await this.authService.setAndSendVerificationCode(authenticateResponse.email, authenticateResponse.displayName, authenticateResponse._id)
                 }
             }
             console.log('user Data Finished ');
 
             let recipeResponse = [] as WithId<RecipeDocument>[];
             let totalRecipes = 0;
-            if (autheticateResponse.recipes) {
-                const paginatedResponse: PaginateResponse = await this.recipeService.getUsersRecipes(autheticateResponse);
+            if (authenticateResponse.recipes) {
+                const paginatedResponse: PaginateResponse = await this.recipeService.getUsersRecipes(authenticateResponse);
                 recipeResponse = paginatedResponse.data;
                 totalRecipes = paginatedResponse.totalDocs;
             }
             const responseData = {
-                user: autheticateResponse,
+                user: authenticateResponse,
                 newEmailVerifyCodeCreated,
                 recipeResponse,
                 totalRecipes: totalRecipes
@@ -94,7 +97,6 @@ export class AuthController {
             LoginResSchema.parse(responseData);
             res.status(200).json(responseData);
 
-            console.log('logging attempt')
             await this.authService.logLoginAttempt(req, true);
         } catch(err) {
             const errorMessage = ((err instanceof UnauthorizedError) ? err.message : err) as string;
@@ -103,16 +105,22 @@ export class AuthController {
         }
     }
 
+    /**
+     * Request to start User password reset flow
+     * @todo 3 strikes you're out
+     * @group Security - Bot repellant
+     * @param {string} req.body.email - User's email
+     * @param {Response} userId - User's _id
+     * @return  {StandardResponse} success, message, data, error - Stardard response for generic calls
+     */
     public verifyCode = async (req: Request, res: Response): Promise<void> => {
         try {
             console.log('verifying Code')
             const currentUserId = req.session.unverifiedUserId || req.user?._id;
             if (!currentUserId) throw new AppError('User Session Ended, please log in again', 401);
-            console.log(currentUserId)
 
             const userId = ensureObjectId(currentUserId);
            const code = req.body.code as string;
-            console.log('code: ', userId);
             const verified = await this.authService.checkVerificationCode(userId, code);
             if (!verified) {
                 console.log('verification failed');
@@ -132,30 +140,71 @@ export class AuthController {
         }
     }
 
+    /**
+     * Request to start User password reset flow
+     * @group Security - Bot repellant
+     * @param {string} req.body.email - User's email
+     * @param {Response} userId - User's _id
+     * @return  {StandardResponse} success, message, data, error - Stardard response for generic calls
+     */
     public resetPasswordRequest =  async (req: Request, res: Response): Promise<void> => {
         console.log('resetting started: ', req.body)
         try {
             const email: string = req.body.email;
-            console.log('email: ', email);
-            const passwordReset = await this.userService.emailUserToken(email);
+            const passwordReset = await this.userService.startPasswordResetFlow(email);
             if (!passwordReset.success) throw new AppError('Password Reset Request failed to send, retry?', 500);
-            console.log('is password reset: ', passwordReset);
-            GenericResponseSchema.parse(passwordReset)
+            GenericResponseSchema.parse(passwordReset);
+            console.log('Password Reset Flow Started')
             res.status(201).json(passwordReset); 
         } catch(error) {
             console.log('reset password error: ', error);
         }
     }
 
+    /**
+     * Validate if password token provided by FrontEnd.
+     * @group Security - Bot repellant
+     * @param {Request} req.body.token - User's token
+     * @return  {StandardResponse} success, message, data, error - Stardard response for generic calls
+     */
     public validatePasswordToken = async (req: Request, res: Response) => {
         try {
             const token = req.body.code;
             console.log('validate token: ', token);
-            const isValid = await this.authService.validatePasswordToken(token);
-            GenericResponseSchema.parse(isValid)
-            res.status(200).json(isValid)
+            const response = await this.authService.validatePasswordToken(token, TokenTypes.PasswordReset);
+            GenericResponseSchema.parse(response)
+            res.status(200).json(response)
         } catch (error) {
             console.log('validating password token error: ', error);
+        }
+    }
+
+    /**
+     * Reset Password Flow - change password and delete resetPasswordData
+     * @group Security - Bot repellant
+     * @param {Request} req.body.token - User's token
+     * @param {Request} req.body.password - User's new password
+     * @return  {StandardResponse} success, message, data, error - Stardard response for generic calls
+     */
+    public finishPasswordResetRequest = async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            const token = req.body.code as string;
+            const newPassword = req.body.password as string;
+            const response = await this.authService.validatePasswordToken(token, TokenTypes.PasswordReset);
+
+            const userId = response.data as string;
+            const user = await this.userService.findUserById(ensureObjectId(userId));
+            if(!user) throw new AppError('validatePasswordToken - No user found validating password token', 404);
+            
+            const updatePasswordRes = await this.userService.updateUserPassword(newPassword, user);
+            if (updatePasswordRes?.matchedCount === 0 || updatePasswordRes?.modifiedCount === 0) throw new AppError('Updating User password failed', 500);
+            
+            this.userService.deleteUserPwResetData(user);
+
+            res.status(201).json({success: true});
+        } catch(error: unknown) {
+            console.log('Error Updating User: ', error);
+            next(error)
         }
     }
 
