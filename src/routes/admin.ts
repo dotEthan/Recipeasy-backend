@@ -9,6 +9,7 @@ import { EmailService } from "../services/emailService";
 import { AuthService } from "../services/authService";
 import { UserService } from "../services/userService";
 import { RecipeService } from "../services/recipeService";
+import { catchAsyncError } from "../util/catchAsyncErrors";
 
 /**
  * Handles all Administration based routes
@@ -76,7 +77,7 @@ router.get('/csrf-token', (req: Request, res: Response) => {
  * @produces application/json
  * @consumes application/json
  */
-router.post('/verification-codes/verify', validateRequestBodyData(CodeSchema), authController.verifyCode);
+router.post('/verification-codes/verify', validateRequestBodyData(CodeSchema), catchAsyncError(authController.verifyCode));
 
 
 /**
@@ -91,7 +92,7 @@ router.post('/verification-codes/verify', validateRequestBodyData(CodeSchema), a
  * @produces application/json
  * @consumes application/json
  */
-router.post('/password-reset-requests', validateRequestBodyData(ResetPasswordSchema), authController.resetPasswordRequest);
+router.post('/password-reset-requests', validateRequestBodyData(ResetPasswordSchema), catchAsyncError(authController.resetPasswordRequest));
 
 /**
  * Validate Password Reset Token input by User
@@ -101,11 +102,11 @@ router.post('/password-reset-requests', validateRequestBodyData(ResetPasswordSch
  * @returns {SuccessResponse} 200 - Validation Successful
  * @returns {ErrorResponse} 400 - Input Token invalid
  * @returns {ErrorResponse} 404 - Token record not found in DB
- * @returns {ErrorResponse} 500 - Misc
+ * @returns {ErrorResponse} 500 - Server Error
  * @produces application/json
  * @consumes application/json
  */
-router.post('/password-reset/validate', validateRequestBodyData(CodeSchema), authController.validatePasswordToken);
+router.post('/password-reset/validate', validateRequestBodyData(CodeSchema), catchAsyncError(authController.validatePasswordToken));
 
 /**
  * Final step in user password reset Request - update with new password
@@ -120,6 +121,6 @@ router.post('/password-reset/validate', validateRequestBodyData(CodeSchema), aut
  * @produces application/json
  * @consumes application/json
 */
-router.patch("/user-password", validateRequestBodyData(ResetFlowSetPasswordSchema), authController.finishPasswordResetRequest);
+router.patch("/user-password", validateRequestBodyData(ResetFlowSetPasswordSchema), catchAsyncError(authController.finishPasswordResetRequest));
 
 export default router;

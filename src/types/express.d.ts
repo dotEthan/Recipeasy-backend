@@ -7,6 +7,9 @@ declare global {
     interface User extends CustomUser {
       _id: ObjectId;
     }
+    interface Request {
+      requestId: string;
+    }
   }
 }
 

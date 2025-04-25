@@ -14,7 +14,7 @@ import {
 import { Database } from "../../config/database";
 import { CreatedDataResponse } from "../../types/responses";
 import { IBaseRepository } from "./baseRepository.interface";
-import { AppError } from "../../util/appError";
+import { AppError } from "../../errors";
 import { PaginationOptions } from "../../types/express";
 
 /**
