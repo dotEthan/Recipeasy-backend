@@ -24,7 +24,7 @@ export const RecipeInfoSchema = z.object({
 export const RatingsItemSchema = z.object({
     userId: z.string(),
     rating: z.number(),
-    timestamp: z.date()
+    timestamp: z.coerce.date(),
 }).strict();
 
 export const RatingsSchema = z.object({
@@ -53,7 +53,7 @@ export const DirectionsSchema = z.object({
 
 export const InternalStateSchema = z.object({
     isDeleted: z.boolean().default(false),
-    wasDeletedAt: z.date(),
+    wasDeletedAt: z.coerce.date(),
     deletedBy:  ObjectIdSchema
 })
 
@@ -74,20 +74,20 @@ export const BeRecipeSchema = z
   userId: ObjectIdSchema,
   equipment: z.array(z.string()).optional(),
   internalState: InternalStateSchema.optional(),
-  createdAt: z.date(),
-  updatedAt: z.date()
+  createdAt: z.coerce.date(),
+  updatedAt: z.coerce.date()
 }).strict(); 
 
 export const FeRecipeSchema = BeRecipeSchema.omit({internalState: true, createdAt: true });
 
-export const FeSavedRecipeArray = z.object({
+export const FeSavedRecipeArraySchema = z.object({
     recipes: z.array(FeRecipeSchema.omit({_id: true}))
 }).strict();
 
-export const FeSavedRecipe = z.object({
+export const FeSavedRecipeSchema = z.object({
     recipe: FeRecipeSchema.omit({_id: true})
 }).strict();
 
-export const FeUpdateRecipe = z.object({
+export const FeUpdateRecipeSchema = z.object({
     recipe: FeRecipeSchema
 }).strict();

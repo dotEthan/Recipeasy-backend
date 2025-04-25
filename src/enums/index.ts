@@ -2,5 +2,6 @@
 export enum UserRoles {
     user = 'user',
     admin = 'admin',
-    vip = 'vip'
+    vip = 'vip',
+    testMode = 'testMode'
   }

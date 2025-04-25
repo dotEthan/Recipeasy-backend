@@ -2,15 +2,17 @@ import express from "express";
 
 import { RecipeController } from "../controllers/recipesController";
 import { validateRequestBodyData } from "../middleware/validateRequestData";
-import { FeSavedRecipe, FeUpdateRecipe } from "../schemas/recipe.schema";
+import { FeSavedRecipeSchema, FeUpdateRecipeSchema } from "../schemas/recipe.schema";
 import { hasOwnership, isAuthenticated } from "../middleware/auth";
 import { UserRepository } from "../repositories/user/userRepository";
 import { RecipesRepository } from "../repositories/recipes/recipesRepository";
 import { RecipeService } from "../services/recipeService";
+import { upload } from "../config/cloudinary";
+import { checkIdParam } from "../middleware/checkIdParam";
 
 /**
  * Handles all Recipe based routes
- * @todo Add Authentication As needed
+ * @todo Add middleware (authetnication, has ownership, ratelimiter, validateRequestData) As needed
  * @todo Full Error Lists
  * @todo catchAsyncError for errors?
  */
@@ -37,8 +39,11 @@ const recipeController = new RecipeController(recipeService);
  * @returns {ErrorResponse} 500 - Server/database issues
  * @produces application/json
  * @consumes application/json
+ * @example
+ * // Client-side usage:
+ * fetch('/recipes/`, { method: 'POST', body: recipe  });
  */
-router.post("/", isAuthenticated(), hasOwnership(),  validateRequestBodyData(FeSavedRecipe), recipeController.saveRecipe);
+router.post("/", isAuthenticated(), hasOwnership(),  validateRequestBodyData(FeSavedRecipeSchema), recipeController.saveRecipe);
 
 /**
  * Get Public Recipe data
@@ -53,23 +58,29 @@ router.post("/", isAuthenticated(), hasOwnership(),  validateRequestBodyData(FeS
  * @returns {ErrorResponse} 401 - Queries malformed
  * @returns {ErrorResponse} 500 - Server/database issues
  * @produces application/json
+ * @example
+ * // Client-side usage:
+ * fetch('/recipes/`, { method: 'GET' });
  */
 router.get("/", recipeController.getRecipes);
 
 /**
  * Update Recipe data
- * @route GET /recipes/
+ * @route PUT /recipes/:id
  * @group Recipe Management - Recipe Retrieval
- * @param {Visibility} request.query.visibility - 'public'/'private'
- * @param {number} request.query.page - User's page (pagination)
- * @param {number} request.query.limit - Recipes per page
- * @returns {PaginateResponse} 200 - Recipe Data
+ * @param {string} request.params.id - Recipe Id to update
+ * @param {Recipe} request.body.recipe - updated recipe data
+ * @returns {PaginateResponse} 201 - Update completed Successfully
  * @returns {ErrorResponse} 404 - Recipes not found
  * @returns {ErrorResponse} 401 - Queries malformed
  * @returns {ErrorResponse} 500 - Server/database issues
+ * @consumes application/json
  * @produces application/json
+ * @example
+ * // Client-side usage:
+ * fetch('/recipes/${recipeId}`, { method: 'PUT', body: updatedRecipe  });
  */
-router.put("/:id", isAuthenticated(), hasOwnership(), validateRequestBodyData(FeUpdateRecipe), recipeController.updateRecipe);
+router.put("/:id", checkIdParam(), isAuthenticated(), hasOwnership(), validateRequestBodyData(FeUpdateRecipeSchema), recipeController.updateRecipe);
 
 
 /**
@@ -81,9 +92,54 @@ router.put("/:id", isAuthenticated(), hasOwnership(), validateRequestBodyData(Fe
  * @returns {ErrorResponse} 400 - Validation Error
  * @returns {ErrorResponse} 401 - User not Found
  * @returns {ErrorResponse} 500 - Server/database issues
+ * @consumes application/json
+ * @produces application/json
+ * @example
+ * // Client-side usage:
+ * fetch('/recipes/${recipeId}`, { method: 'DELETE' });
+ */
+router.delete("/:id", checkIdParam(), isAuthenticated(), recipeController.deleteRecipe);
+
+/**
+ * Image upload for recipes
+ * @todo fix this jsdoc once working
+ * @todo add middleware - validateRequestBody once set
+ * @route get /image-upload
+ * @group Recipe Management - image uploads
+ * @param {File} request.file - Image file user Uploaded
+ * @returns {StandardResponse} 201 - success: true url: secureUrl
+ * @returns {ErrorResponse} 400 - Validation Error
+ * @returns {ErrorResponse} 404 - User does not exist
+ * @returns {ErrorResponse} 500 - Server/database issues
+ * @consumes application/json
+ * @produces application/json
+ * @remarks
+ * ## Validation Notes:
+ * - File validation happens in controller as file is not in req.body
+ * @example
+ * // Client-side usage:
+ * const formData = new FormData();
+ * formData.append('image', fileInput.files[0]);
+ * fetch('/recipes/image-upload', { method: 'POST', body: formData });
+ */
+router.post("/image", upload.single('image'), recipeController.uploadRecipeImage);
+
+/**
+ * Deleted Image uploaded for recipe
+ * @todo fix this jsdoc once working
+ * @route delete /image/:id
+ * @group Recipe Management - image deletion
+ * @param {string} request.body.params.id - Public Id of the image to delete
+ * @returns {StandardResponse} 201 - success: true
+ * @returns {ErrorResponse} 400 - Validation Error
+ * @returns {ErrorResponse} 404 - User does not exist
+ * @returns {ErrorResponse} 500 - Server/database issues
  * @produces application/json
  * @consumes application/json
+ * @example
+ * // Client-side usage:
+ * fetch(`/recipes/image/${imageId}`, { method: 'DELETE' });
  */
-router.delete("/:id", isAuthenticated(), recipeController.deleteRecipe);
+router.delete("/image/:id", checkIdParam() ,recipeController.deleteRecipeImage);
 
 export default router;

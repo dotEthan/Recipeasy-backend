@@ -1,6 +1,7 @@
 import { NextFunction, Response, Request } from "express";
 /**
  * isAuthorized Middleware to ensure user is logged in and session active
+ * @todo figure out full middleware checks
  * @constructor
  * @param {}
  */

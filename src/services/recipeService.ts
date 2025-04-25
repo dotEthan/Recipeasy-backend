@@ -136,10 +136,7 @@ export class RecipeService {
 
         console.log('Recipe Updated', userId)
         
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { createdAt, updatedAt, ...feRecipe } = recipeResponse;
-
-        return {success: true, recipe: feRecipe as Recipe}
+        return {success: true, recipe: recipeResponse as Recipe}
     }
 
     /**   
