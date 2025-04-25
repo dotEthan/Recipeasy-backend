@@ -9,6 +9,7 @@ import { RecipesRepository } from "../repositories/recipes/recipesRepository";
 import { RecipeService } from "../services/recipeService";
 import { upload } from "../config/cloudinary";
 import { checkIdParam } from "../middleware/checkIdParam";
+import { catchAsyncError } from "../util/catchAsyncErrors";
 
 /**
  * Handles all Recipe based routes
@@ -43,7 +44,7 @@ const recipeController = new RecipeController(recipeService);
  * // Client-side usage:
  * fetch('/recipes/`, { method: 'POST', body: recipe  });
  */
-router.post("/", isAuthenticated(), hasOwnership(),  validateRequestBodyData(FeSavedRecipeSchema), recipeController.saveRecipe);
+router.post("/", isAuthenticated(), hasOwnership(),  validateRequestBodyData(FeSavedRecipeSchema), catchAsyncError(recipeController.saveRecipe));
 
 /**
  * Get Public Recipe data
@@ -62,7 +63,7 @@ router.post("/", isAuthenticated(), hasOwnership(),  validateRequestBodyData(FeS
  * // Client-side usage:
  * fetch('/recipes/`, { method: 'GET' });
  */
-router.get("/", recipeController.getRecipes);
+router.get("/", catchAsyncError(recipeController.getRecipes));
 
 /**
  * Update Recipe data
@@ -80,7 +81,7 @@ router.get("/", recipeController.getRecipes);
  * // Client-side usage:
  * fetch('/recipes/${recipeId}`, { method: 'PUT', body: updatedRecipe  });
  */
-router.put("/:id", checkIdParam(), isAuthenticated(), hasOwnership(), validateRequestBodyData(FeUpdateRecipeSchema), recipeController.updateRecipe);
+router.put("/:id", checkIdParam(), isAuthenticated(), hasOwnership(), validateRequestBodyData(FeUpdateRecipeSchema), catchAsyncError(recipeController.updateRecipe));
 
 
 /**
@@ -98,7 +99,7 @@ router.put("/:id", checkIdParam(), isAuthenticated(), hasOwnership(), validateRe
  * // Client-side usage:
  * fetch('/recipes/${recipeId}`, { method: 'DELETE' });
  */
-router.delete("/:id", checkIdParam(), isAuthenticated(), recipeController.deleteRecipe);
+router.delete("/:id", checkIdParam(), isAuthenticated(), catchAsyncError(recipeController.deleteRecipe));
 
 /**
  * Image upload for recipes
@@ -122,7 +123,7 @@ router.delete("/:id", checkIdParam(), isAuthenticated(), recipeController.delete
  * formData.append('image', fileInput.files[0]);
  * fetch('/recipes/image-upload', { method: 'POST', body: formData });
  */
-router.post("/image", upload.single('image'), recipeController.uploadRecipeImage);
+router.post("/image", upload.single('image'), catchAsyncError(recipeController.uploadRecipeImage));
 
 /**
  * Deleted Image uploaded for recipe
@@ -140,6 +141,6 @@ router.post("/image", upload.single('image'), recipeController.uploadRecipeImage
  * // Client-side usage:
  * fetch(`/recipes/image/${imageId}`, { method: 'DELETE' });
  */
-router.delete("/image/:id", checkIdParam() ,recipeController.deleteRecipeImage);
+router.delete("/image/:id", checkIdParam(), catchAsyncError(recipeController.deleteRecipeImage));
 
 export default router;

@@ -14,6 +14,8 @@ import cookieParser from 'cookie-parser';
 import { csrfErrorHandler, csrfProtection } from './middleware/csrf';
 import { errorHandler } from './middleware/errorHandler';
 import appRouter from './routes/';
+import { AppError } from './errors';
+import { addRequestId } from './middleware/addRequestId';
 
 const app = express();
 
@@ -65,6 +67,7 @@ app.use(cors({
 
 app.use('/images', express.static(path.join(__dirname, 'images')));
 
+app.use(addRequestId)
 app.use('/api/v1', appRouter);
 
 // TODO Correct 404 Reply
@@ -74,7 +77,7 @@ app.use(
     res: Response,
     next: NextFunction,
   ) => {
-    next(new Error(`Not Found - ${req.originalUrl}`));
+    next(new AppError(`Not Found - ${req.originalUrl}`, 404));
   },
 );
 

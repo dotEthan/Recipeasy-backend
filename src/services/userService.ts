@@ -11,7 +11,7 @@ import { AuthService } from "./authService";
 import { createNewUserUtility } from "../util/createNewuser";
 import { BeUpdateUsersRecipesSchema, FindByEmailSchema, UpdateByIdSchema } from "../schemas/user.schema";
 import { PW_RESET_TOKEN_TTL } from "../constants";
-import { AppError } from "../util/appError";
+import { AppError, ConflictError, NotFoundError, ServerError } from "../errors";
 import { ensureObjectId } from "../util/ensureObjectId";
 
 /**
@@ -32,13 +32,16 @@ export class UserService {
 
     public async createNewUser(displayName: string, email: string, hashedPassword: string): Promise<CreatedDataResponse<UserDocument>> {
         const newUserData = createNewUserUtility(displayName, email, hashedPassword);
-        const savedUserResults =  await this.userRepository.createUser(newUserData);
-        if (!savedUserResults) throw new AppError(`createNewUser - User not created`, 500);
+        
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { createdAt, ...userWithoutBeData } = await this.userRepository.createUser(newUserData);
+        
+        if (!userWithoutBeData) throw new AppError(`createNewUser - User not created`, 500);
 
-        const verificationSetAndSent = await this.authService.setAndSendVerificationCode(email, displayName,savedUserResults._id );
+        const verificationSetAndSent = await this.authService.setAndSendVerificationCode(email, displayName,userWithoutBeData._id );
         if (!verificationSetAndSent) throw new AppError(`createNewUser - Verificatin Code not set or sent`, 500);
         console.log('Verification email sent: ', verificationSetAndSent)
-        return savedUserResults;
+        return userWithoutBeData;
     }
 
     public async getUserData(_id: ObjectId): Promise<UserDocument> {    
@@ -92,6 +95,16 @@ export class UserService {
         return {success: emailSent};
     }
     
+    /**
+     * Delete passwordResetData - No flow in process
+     * @todo log if deleteUserPwResetData fails (non-breaking)
+     * @group Security - Bot trap
+     * @param {UserDocument} userResponse - User to delete object from
+     * @throws {ConflictError} 500 - if deletion fails (error as necessary cleanup)
+     * @example
+     * const userService = useUserService();
+     * await userService.deleteUserPwResetData('xyz987');
+     */
     public async checkIfPwResetInProgress(userEmail: string): Promise<boolean> {
         FindByEmailSchema.parse({email: userEmail});
         const userResponse =  await this.userRepository.findByEmail(userEmail);
@@ -108,16 +121,16 @@ export class UserService {
     }
 
     /**
-     * Delete passwordResetData - No flow in process
-     * @group Security - Bot trap
+     * Delete passwordResetData 
+     * @group User Data - Forgotten Password
      * @param {UserDocument} userResponse - User to delete object from
+     * @throws {ConflictError} 500 - if deletion fails (error as necessary cleanup)
      * @example
-     * const authService = useAuthService();
-     * await authService.validatePasswordToken('xyz987');
+     * const userService = useUserService();
+     * await userService.deleteUserPwResetData('xyz987');
      */
-    public async deleteUserPwResetData(userResponse: UserDocument) {
-        const updateResult = await this.userRepository.updateById(userResponse._id, {$unset: { passwordResetData: '' }});
-        if (updateResult?.matchedCount === 0 || updateResult?.modifiedCount === 0) throw new AppError('deleteUserPwResetData:  update User failed', 500);
+    public async deleteUserPwResetData(userResponse: UserDocument): Promise<UpdateResult | null> {
+        return await this.userRepository.updateById(userResponse._id, {$unset: { passwordResetData: '' }});
     }
 
     /**
@@ -126,6 +139,8 @@ export class UserService {
      * @param {string} password - user's new password
      * @param {User} user - User to update
      * @return {UpdateResult} - User Document || null
+     * @throws {NotFoundError} 404 - Data not found
+     * @throws {ConflictError} 409 - Data state conflict
      * @example
      * const userService = useUserService();
      * await userService.updateUserPassword('xyz987', {_id:'12332132'});
@@ -138,17 +153,26 @@ export class UserService {
         UpdateByIdSchema.parse({updatedData});
         const updateResponse = await this.userRepository.updateById(ensureObjectId(user._id), { $set: updatedData});
         if (updateResponse && updateResponse.matchedCount === 0) {
-            // TODO ERROR Handling
             console.log("updateUserPassword Document Not Found");
-            throw new Error('updateUserPassword Document Not Found')
+            throw new NotFoundError('updateUserPassword Document Not Found');
         } else if (updateResponse && updateResponse.modifiedCount === 0) {
             console.log("updateUserPassword Document not modified");
-            throw new Error('Document Not Modified')
+            throw new ConflictError('Document Not Modified');
         }
         return updateResponse;
     }
 
-    
+    /**
+     * Adds recipeID to user.recipes array when user adds a public recipe to their personal list. 
+     * @group User Data - updating data
+     * @param {ObjectId} userId - user's id
+     * @param {ObjectId} originalUserId - User's id that created the recipe
+     * @param {ObjectId} recipeId - added recipe's id
+     * @return {WithId<UserDocument> | null>} - if User update successful, the user document
+     * @example
+     * const userService = useUserService();
+     * await userService.findUserById('test@test.com');
+     */
     public async updateUserRecipes(userId: ObjectId, originalUserId: ObjectId, recipeId: ObjectId): Promise<WithId<UserDocument> | null> {
         const dataToAdd = {
             id: recipeId,
@@ -166,11 +190,29 @@ export class UserService {
         return user
     }
 
+    /**
+     * Returns user based on inputed email
+     * @group User Data - retrieval
+     * @param {string} email - user's email
+     * @return {WithId<UserDocument> | null>} - if User found, the user document
+     * @example
+     * const userService = useUserService();
+     * await userService.findUserById('test@test.com');
+     */
     public async findUserByEmail(email: string): Promise<WithId<UserDocument> | null> {
         // parse
         return await this.userRepository.findOne({'email': email})
     }
 
+    /**
+     * Returns user based on inputed id
+     * @group User Data - retrieval
+     * @param {ObjectId} _id - user's id
+     * @return {WithId<UserDocument> | null>} - if User found, the user document
+     * @example
+     * const userService = useUserService();
+     * await userService.findUserById('12332132');
+     */
     public async findUserById(_id: ObjectId): Promise<WithId<UserDocument> | null> {
         // parse
         return await this.userRepository.findOne({_id});
@@ -182,6 +224,9 @@ export class UserService {
      * @param {ObjectId} userId - user's id
      * @param {string} newPassword - user's new password
      * @param {string} hashedPassword - User new password hashed value
+     * @return {AppError} 404 - Data not found
+     * @return {AppError} 409 - Data state conflict
+     * @return {AppError} 500 - Server Error
      * @example
      * const userService = useUserService();
      * await userService.updateUserPassword('xyz987', {_id:'12332132'});
@@ -195,13 +240,13 @@ export class UserService {
             ensureObjectId(userId), 
             { previousPasswords: 1 }
         );
-        if (!findUserResponse) throw new AppError('updateUserPassword - User not found', 404);
+        if (!findUserResponse) throw new NotFoundError('updateUserPassword - User not found');
 
         const previousPwArray = findUserResponse.previousPasswords || [];
 
         for ( const pw of previousPwArray) {
             const isEqual = await bcrypt.compare(newPassword, pw.hash);
-            if (isEqual) throw new AppError('Password previously used', 409);
+            if (isEqual) throw new ConflictError('Password previously used');
         }
 
         const updatedPwArray = [...previousPwArray];
@@ -218,6 +263,6 @@ export class UserService {
             { _id: findUserResponse._id },
             { $set: {previousPasswords: updatedPwArray} }
         )
-        if (updateResult.modifiedCount === 0) throw new AppError('cachePreviousPassword - Failed to update password history', 500);
+        if (updateResult.modifiedCount === 0) throw new ServerError('cachePreviousPassword - Failed to update password history');
     }
 }

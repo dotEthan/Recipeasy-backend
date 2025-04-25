@@ -75,7 +75,7 @@ router.get('/session', isAuthenticated(), (req: Request, res: Response) => {
  * @produces application/json
  * @consumes application/json
  */
-router.delete("/session", isAuthenticated(), authController.logUserOut);
+router.delete("/session", isAuthenticated(), catchAsyncError(authController.logUserOut));
 
 /**
  * Log in user
@@ -104,6 +104,6 @@ router.post("/login", validateRequestBodyData(LoginSchema), catchAsyncError(auth
  * @produces application/json
  * @consumes application/json
  */
-router.post("/register", validateRequestBodyData(RegisterUserSchema), authController.register);
+router.post("/register", validateRequestBodyData(RegisterUserSchema), catchAsyncError(authController.register));
 
 export default router;

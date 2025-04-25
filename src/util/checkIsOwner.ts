@@ -1,4 +1,4 @@
-import { AppError } from "./appError";
+import { AppError } from "../errors";
 
 export function assertUserOwnership(
     authenticatedUserId: string, 

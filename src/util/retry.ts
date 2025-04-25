@@ -1,5 +1,5 @@
 import { RETRY_MAX_ATTEMPTS, RETRY_MIN_DELAY } from "../constants";
-import { AppError } from "./appError";
+import { AppError } from "../errors";
 
 interface RetryOptions {
     numOfAttempts?: number;

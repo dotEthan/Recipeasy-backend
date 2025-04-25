@@ -18,8 +18,7 @@ export const createNewUserUtility = (displayName:string, email:string, hashedPas
             personalFilters: [],
             lightMode: true,
         },
-        role: UserRoles.user,
-        passwordResetInProgress: false
+        role: UserRoles.user
     };
     BeCreateUserSchema.parse(newUser);
     return newUser

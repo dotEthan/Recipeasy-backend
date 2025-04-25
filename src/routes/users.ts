@@ -12,7 +12,7 @@ import { AuthService } from "../services/authService";
 import { AuthLoginAttemptRepository, AuthVerificationCodesRepository } from "../repositories/auth/authRepository";
 import { RecipeService } from "../services/recipeService";
 import { RecipesRepository } from "../repositories/recipes/recipesRepository";
-import { updatePasswordSchema } from "../schemas/admin.schema";
+// import { updatePasswordSchema } from "../schemas/admin.schema";
 import { checkIdParam } from "../middleware/checkIdParam";
 // import { registrationLimiter } from "../middleware/rateLimiters";
 
@@ -58,10 +58,11 @@ const userController = new UserController(userService, recipeService);
  * @returns {ErrorResponse} 500 - Server/database issues
  * @produces application/json
 */
-router.get("/:id", isAuthenticated(), checkIdParam(), userController.getUsersData);
+router.get("/:id", isAuthenticated(), checkIdParam(), catchAsyncError(userController.getUsersData));
 
 /**
  * Update user with new password
+ * @todo for User Admin Panel
  * @route PATCH /users/password
  * @group Recipe Management - User data Update
  * @param {string} request.body.password.required
@@ -72,7 +73,7 @@ router.get("/:id", isAuthenticated(), checkIdParam(), userController.getUsersDat
  * @produces application/json
  * @consumes application/json
 */
-router.patch("/password", validateRequestBodyData(updatePasswordSchema), userController.userPasswordUpdate);
+// router.patch("/password", validateRequestBodyData(updatePasswordSchema), userController.userPasswordUpdate);
 
 /**
  * Update User.recipes array
@@ -89,6 +90,6 @@ router.patch("/password", validateRequestBodyData(updatePasswordSchema), userCon
  * @produces application/json
  * @consumes application/json
 */
-router.patch("/:id/recipes", checkIdParam(), isAuthenticated(), validateRequestBodyData(FeUpdateUsersRecipesSchema), userController.updateUserRecipes);
+router.patch("/:id/recipes", checkIdParam(), isAuthenticated(), validateRequestBodyData(FeUpdateUsersRecipesSchema), catchAsyncError(userController.updateUserRecipes));
 
 export default router;

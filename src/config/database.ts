@@ -1,7 +1,7 @@
 import { Db, MongoClient } from 'mongodb';
 import { DbIndexManager } from './dbIndexManager';
 import { retryFunction } from '../util/retry';
-import { AppError } from '../util/appError';
+import { AppError } from "../errors";
 
 export class Database {
     private static instance: Database;
@@ -30,7 +30,9 @@ export class Database {
 
     public getDb(): Db {
         if (!this.db) {
-            throw new AppError('Database Not Initialized, Must Connect() first.', 404)
+            const dbError = new AppError('Database Not Initialized, Must Connect() first.', 404);
+            dbError.isOperational = false;
+            throw dbError;
         }
         return this.db;
     }

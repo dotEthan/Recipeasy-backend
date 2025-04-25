@@ -5,7 +5,7 @@ import { Recipe, RecipeDocument } from "../types/recipe";
 import { PaginateResponse, StandardRecipeResponse } from "../types/responses";
 import { User } from "../types/user";
 import { Visibility } from "../types/enums";
-import { AppError } from "../util/appError";
+import { AppError, NotFoundError } from "../errors";
 import { ensureObjectId } from "../util/ensureObjectId";
 import { mergeAlterations } from "../util/mergeAlterations";
 
@@ -40,13 +40,10 @@ export class RecipeService {
         const recipeSaveResponse = await this.recipesRepository.createRecipe(recipe)
         const userUpdateRes = await this.userRepository.addToUsersRecipesArray(userId,  recipeSaveResponse._id);
         
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { createdAt, updatedAt, ...feRecipe } = recipeSaveResponse;
-
         if (userUpdateRes?.modifiedCount && userUpdateRes?.modifiedCount > 0) success = true;
 
-        console.log(`Save Successful: ${success}, recipe going back: ${feRecipe}`)
-        return {success, recipe: feRecipe}
+        console.log(`Save Successful: ${success}, recipe going back: ${recipeSaveResponse}`)
+        return {success, recipe: recipeSaveResponse}
     }
 
     /**   
@@ -95,7 +92,6 @@ export class RecipeService {
     /**   
      * Update Existing Recipes
      * @group Recipe Management - Updating
-     * @todo add user.recipes.alteratoins once public recipe add to new user
      * @param {Recipe} recipe - Updated Recipe
      * @param {number} userId - User's _id
      * @return {StandardRecipeResponse} - Success status and updated Recipe
@@ -119,10 +115,8 @@ export class RecipeService {
             recipeResponse = recipeSaveResponse;
         } else {
             console.log('user is NOT OG Creator');
-            // User.recipes.alterations - save there and overwrite when loading User Recipes
 
             const alterations = this.findRecipeAlterations(originalRecipe, recipe);
-            // save to user.recipes.alterations
             const updateResponse = await this.userRepository.updateAlterationsOnUserRecipes(userId, recipeId, alterations);
 
             if (!updateResponse) throw new AppError('Updating User.recipes.alterations failed', 500);
@@ -131,7 +125,6 @@ export class RecipeService {
             console.log('updateResponse: ', updateResponse);
 
             recipeResponse = mergeAlterations(originalRecipe, alterations);
-            // update Get User Recipes to add alternations
         }
 
         console.log('Recipe Updated', userId)
@@ -141,14 +134,12 @@ export class RecipeService {
 
     /**   
      * Get User's personal recipes with queries
-     * @todo Update when Alterations complete
-     * @todo Pagination
      * @group Recipe Management - retrieval
-     * @param {UsersRecipeData[]} usersRecipeData - User.recipes[] - All recipes user linked to
-     * @return {Recipe[]} - All recipes listed in the User.recipes[]
+     * @param {User} user - User to get recipes for
+     * @return {PaginateResponse} - userRecipes set up for pagination
      * @example
      * const recipeService = useRecipeService();
-     * await recipeService.getUsersRecipes([ObjectId('1234abcd')]);
+     * await recipeService.getUsersRecipes(currentUser);
      */  
     async getUsersRecipes(user: User): Promise<PaginateResponse> {
         console.log('getUserRecipes: ');
@@ -184,17 +175,17 @@ export class RecipeService {
 
     /**   
      * Delete Recipe
-     * @group Recipe Management - retrieval
-     * @todo add user.recipes.alteratoins once public recipe add to new user
+     * @group Recipe Management - deletion
      * @param {ObjectId} userId - Id of user requesting Deletion
      * @param {ObjectId} recipeId - Id of recipe to delete
+     * @returns {ErrorResponse} 400 - Validation Error
      * @example
      * const recipeService = useRecipeService();
      * await recipeService.deleteRecipe(ObjectId('1234abcd'), ObjectId('9876zyxw'));
      */  
     async deleteRecipe(userId: ObjectId, recipeId: ObjectId): Promise<StandardRecipeResponse> {
         const thisRecipe = await this.recipesRepository.findById(recipeId);
-        if (!thisRecipe) throw new Error('Deletion Failed: Recipe Not Found');
+        if (!thisRecipe) throw new NotFoundError('Deletion Failed: Recipe Not Found');
         const recipesOwnersId = ensureObjectId(thisRecipe.userId);
         
         let updateRecipeResponse;
@@ -214,6 +205,15 @@ export class RecipeService {
         return {success: true}
     }
 
+    /**   
+     * Compares and returns all changes to updateRecipe compared to originalRecipe
+     * @group Recipe Management - retrieval
+     * @param {Recipe} originalRecipe - original recipe
+     * @param {Recipe} updatedRecipe - updated Recipe
+     * @return {Partial<Recipe>} - a object filled with all altered values
+     * @example
+     * await this.findRecipeAlterations(oldRecipe, updateRecipe);
+     */ 
     private findRecipeAlterations(originalRecipe: Recipe, updatedRecipe: Recipe): Partial<Recipe>{
         const changes: Partial<Recipe> = {};
 

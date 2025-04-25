@@ -10,7 +10,7 @@ import { EmailService } from "./emailService";
 import { ObjectId, WithId } from "mongodb";
 import { UserRepository } from "../repositories/user/userRepository";
 import { StandardResponse } from "../types/responses";
-import { AppError } from "../util/appError";
+import { AppError, BadRequestError, ServerError, UnauthorizedError } from "../errors";
 
 /**
  * Handles all Authorization related services
@@ -68,21 +68,18 @@ export class AuthService {
      */
     public async setAndSendVerificationCode(email: string, displayName: string, userId: ObjectId): Promise<boolean> {
         const verificationCode = Math.floor(100000 + Math.random() * 900000);
-        console.log('verificationCode: ', verificationCode.toString())
-        const response = await this.authVerificationCodesRepository.createVerificationCode({ 
+        await this.authVerificationCodesRepository.createVerificationCode({ 
             userId,
             code: verificationCode.toString(),
             createdAt: new Date(),
             updatedAt: new Date()
         });
         
-        console.log(`sending email: ${email} for ${displayName}`)
         const info = await this.emailService.sendEmailToUser('emailVerificationCode', displayName, email, 'test');
-        if (!info) throw Error('email sending failed');
-        console.log(`Message sent: ${info.messageId} message response: ${info.response}`);
-        if (info.rejected.length > 0) throw new AppError('email rejected, what now?', 500);
-        // TODO Look at this, and what to send back, or all
-        console.log('create verificationCode response: ', response);
+        if (!info) throw new AppError('email sending failed', 500);
+        if (info.rejected.length > 0) throw new AppError('email rejected, retry or new email, 3 retries, new email', 500);
+
+        console.log(`Verification Email sent: ${info.messageId} message response: ${info.response}`);
         return true;
     }
 
@@ -148,16 +145,16 @@ export class AuthService {
      */
     public async validatePasswordToken(token: string, type: string): Promise<StandardResponse> {
         const secret = (process.env.NODE_ENV !== 'prod') ? process.env.JWT_SECRET_PROD : process.env.JWT_SECRET_DEV;
-        if (!secret) throw new AppError('validatePasswordToken - Env JWT_SECRET_PROD/DEV not set', 500);
+        if (!secret) throw new ServerError('validatePasswordToken - Env JWT_SECRET_PROD/DEV not set');
 
         const decoded = jwt.verify(token, secret) as JwtPayload;
         if (decoded.type !== type) {
-            throw new AppError('validatePasswordToken - Invalid token type', 400);
+            throw new BadRequestError('validatePasswordToken - Invalid token type');
         }
 
         const userId = decoded.userId;
         
-        if (!userId) throw new AppError('validatePasswordToken - Token UserId not found', 401);
+        if (!userId) throw new UnauthorizedError('validatePasswordToken - Token UserId not found');
         return {success: true, data: userId};
     }
 }

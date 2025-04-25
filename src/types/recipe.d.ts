@@ -19,10 +19,9 @@ export type Recipe = {
   equipment?: string[];
   updatedAt: Date;
   createdAt: Date;
-  passwordResetInProgress?: boolean;
 }
 
-export type FeRecipe = Omit<Recipe, 'passwordResetInProgress', 'createdAt'>;
+export type FeRecipe = Omit<Recipe, 'createdAt'>;
 
 export type RecipeInfo = {
   mealType?: string[];
