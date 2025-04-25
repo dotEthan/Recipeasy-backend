@@ -1,4 +1,4 @@
-import { FeSavedRecipeArray, FeSavedRecipe, FeUpdateRecipe } from "../../schemas/recipe.schema";
+import { FeSavedRecipeArraySchema, FeSavedRecipeSchema, FeUpdateRecipeSchema } from "../../schemas/recipe.schema";
 import { FindByIdSchema } from "../../schemas/user.schema";
 import { PaginationOptions } from "../../types/express";
 import { Recipe, RecipeDocument } from "../../types/recipe";
@@ -20,7 +20,7 @@ export class RecipesRepository extends BaseRepository<RecipeDocument> {
     
     async createRecipes(recipes: Omit<RecipeDocument, '_id'>[]): Promise <InsertManyResult> {
         console.log('creating reciperepo')
-        FeSavedRecipeArray.parse({recipes});
+        FeSavedRecipeArraySchema.parse({recipes});
         const recipeResponse =  await this.createMany(recipes);
         console.log('recipes return: ', recipeResponse)
         return recipeResponse;
@@ -28,14 +28,14 @@ export class RecipesRepository extends BaseRepository<RecipeDocument> {
 
     async createRecipe(recipe: Omit<RecipeDocument, '_id'>): Promise <CreatedDataResponse<RecipeDocument>> {
         console.log('creating reciperepo')
-        FeSavedRecipe.parse({recipe});
+        FeSavedRecipeSchema.parse({recipe});
         const recipeResponse =  await this.create(recipe);
         console.log('recipes return: ', recipeResponse)
         return recipeResponse;
     }
 
     async updateRecipe(filter: Filter<Recipe>, recipe: RecipeDocument): Promise <CreatedDataResponse<RecipeDocument> | null> {
-        FeUpdateRecipe.parse({recipe});
+        FeUpdateRecipeSchema.parse({recipe});
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const {_id, ...recipeNoId} = recipe;
         const recipeResponse =  await this.findOneAndReplace({'_id': filter}, recipeNoId);

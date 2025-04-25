@@ -4,7 +4,6 @@ import { BaseRepository } from "../base/baseRepository";
 import { CreatedDataResponse } from "../../types/responses";
 import { 
     BeCreateUserSchema,
-    DeleteUserByIdSchema,
     FindByEmailSchema, 
     FindByIdSchema
 } from "../../schemas/user.schema";
@@ -89,7 +88,6 @@ export class UserRepository extends BaseRepository<UserDocument> {
 
     // For Admin Dashboard
     async deleteUser(_id: ObjectId) {
-        DeleteUserByIdSchema.parse({_id});
         return await this.delete({_id})
     }
 }

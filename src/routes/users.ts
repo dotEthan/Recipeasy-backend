@@ -13,6 +13,7 @@ import { AuthLoginAttemptRepository, AuthVerificationCodesRepository } from "../
 import { RecipeService } from "../services/recipeService";
 import { RecipesRepository } from "../repositories/recipes/recipesRepository";
 import { updatePasswordSchema } from "../schemas/admin.schema";
+import { checkIdParam } from "../middleware/checkIdParam";
 // import { registrationLimiter } from "../middleware/rateLimiters";
 
 /**
@@ -57,7 +58,7 @@ const userController = new UserController(userService, recipeService);
  * @returns {ErrorResponse} 500 - Server/database issues
  * @produces application/json
 */
-router.get("/:id", isAuthenticated(), userController.getUsersData);
+router.get("/:id", isAuthenticated(), checkIdParam(), userController.getUsersData);
 
 /**
  * Update user with new password
@@ -75,6 +76,7 @@ router.patch("/password", validateRequestBodyData(updatePasswordSchema), userCon
 
 /**
  * Update User.recipes array
+ * @todo send in missing ':id' see what happens
  * @route PATCH /users/:id/recipes
  * @group User Management - User data Update
  * @param {string} request.body.recipeId.required
@@ -87,6 +89,6 @@ router.patch("/password", validateRequestBodyData(updatePasswordSchema), userCon
  * @produces application/json
  * @consumes application/json
 */
-router.patch("/:id/recipes", isAuthenticated(), validateRequestBodyData(FeUpdateUsersRecipesSchema), userController.updateUserRecipes);
+router.patch("/:id/recipes", checkIdParam(), isAuthenticated(), validateRequestBodyData(FeUpdateUsersRecipesSchema), userController.updateUserRecipes);
 
 export default router;

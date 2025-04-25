@@ -125,7 +125,7 @@ export abstract class BaseRepository<T extends Document> implements IBaseReposit
 
     async delete(filter: Filter<T>): Promise<DeleteResult> {
         const response = await this.collection.deleteOne(filter);
-        console.log(response);
+        console.log('deleted: ', response);
         return response;
     }
 

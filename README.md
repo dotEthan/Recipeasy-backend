@@ -35,13 +35,13 @@ It's spun up and working with passportjs for authorization. Full Authorization f
 - password resets
 - Schema Creation & Validation for Incoming, DB saves, and Outgoing data
 - Recipe CRUD
+- Cloudinary based image upload and deleting
 - User Persistence (User Alterations of Public Recipes)
 - data persistence
 
 ### Working on Now:
 
 - Global Error Handler - Auth Errors, verification: 3 tries and you need new email token to 'unlock' the account. 
-- Image Upload
 
 ### To Come:
 
@@ -58,7 +58,7 @@ It's spun up and working with passportjs for authorization. Full Authorization f
     - Backups
 - Recipe Search
 - Propogate the 'retry.ts' method for all calls, update 'shouldretry' error list. 
-- Cron based softdeleted/unref'd recipe deletion (only if no user.recipes has ref'd)
+- Cron based softdeleted/unref'd recipe deletion (only if no user.recipes has ref'd), also if last user ref'ing, delete image in cloudinary
 - Logging (Sonar? others)
 - Testing
 - Full Documentation

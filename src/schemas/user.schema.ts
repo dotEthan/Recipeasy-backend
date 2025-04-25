@@ -28,8 +28,8 @@ export const UserRatingsSchema = z.object({
 export const CopyDetailsSchema = z.object({
     originalCreatorId: ObjectIdSchema,
     originalRecipeId: ObjectIdSchema,
-    copiedAt: z.date(),
-    updatedAt: z.date(),
+    copiedAt: z.coerce.date(),
+    updatedAt: z.coerce.date(),
     modified: z.boolean()
 }).strict();
 
@@ -45,14 +45,14 @@ export const UserRecipesIdSchema = z.object({
 
 export const PreviousPassword = z.object({
     hash: z.string(),
-    deprecatedAt: z.date()
+    deprecatedAt: z.coerce.date()
 }).strict();
 
 export const PasswordResetData = z.object({
     resetInProgress: z.boolean(),
     attempts: z.number(),
-    expiresAt: z.date(),
-    resetRequestedAt: z.date()
+    expiresAt: z.coerce.date(),
+    resetRequestedAt: z.coerce.date()
 }).strict();
   
 export const BeUserSchema = z
@@ -75,8 +75,8 @@ export const BeUserSchema = z
     password: z.string(),
     passwordResetData: PasswordResetData.optional(),
     previousPasswords: z.array(PreviousPassword).optional(),
-    createdAt: z.date(),
-    updatedAt: z.date()
+    createdAt: z.coerce.date(),
+    updatedAt: z.coerce.date()
 }).strict();
 
 export const BeCreateUserSchema = BeUserSchema.omit({ _id: true}).strict();
