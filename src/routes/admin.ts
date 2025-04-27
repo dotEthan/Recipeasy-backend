@@ -1,15 +1,13 @@
-import express, { Request, Response } from "express";
-import { AuthController } from "../controllers/authController";
-import { CodeSchema, ResetPasswordSchema, ResetFlowSetPasswordSchema } from "../schemas/user.schema";
+import express from "express";
+
+
+import { AdminController } from "../controllers/adminController";
+import { emailVerificationService, passwordService, userService } from "../services";
 import { validateRequestBodyData } from "../middleware/validateRequestData";
-import { AuthLoginAttemptRepository, AuthVerificationCodesRepository } from "../repositories/auth/authRepository";
-import { UserRepository } from "../repositories/user/userRepository";
-import { RecipesRepository } from "../repositories/recipes/recipesRepository";
-import { EmailService } from "../services/emailService";
-import { AuthService } from "../services/authService";
-import { UserService } from "../services/userService";
-import { RecipeService } from "../services/recipeService";
 import { catchAsyncError } from "../util/catchAsyncErrors";
+
+import { ResetFlowSetPasswordSchema } from "../schemas/user.schema";
+import { IsEmailSchema, IsStringSchema } from "../schemas/shared.schema";
 
 /**
  * Handles all Administration based routes
@@ -20,28 +18,7 @@ import { catchAsyncError } from "../util/catchAsyncErrors";
 // 
 
 const router = express.Router();
-
-const authLoginAttemptRepository = new AuthLoginAttemptRepository();
-const authVerificationCodesRepository = new AuthVerificationCodesRepository();
-const userRepository = new UserRepository();
-const recipeRepository = new RecipesRepository();
-
-const emailService = new EmailService();
-
-const authService = new AuthService(
-  authLoginAttemptRepository,
-  authVerificationCodesRepository,
-  emailService, 
-  userRepository
-)
-const userService = new UserService(
-  userRepository, 
-  emailService, 
-  authService
-);
-const recipeService = new RecipeService(recipeRepository, userRepository);
-
-const authController = new AuthController(userService, authService, recipeService);
+const adminController = new AdminController(passwordService, userService, emailVerificationService);
 
 /**
  * Gets Csurf token for user
@@ -51,20 +28,7 @@ const authController = new AuthController(userService, authService, recipeServic
  * @returns {ErrorResponse} 500 - Token not generated
  * @produces application/json
  */
-router.get('/csrf-token', (req: Request, res: Response) => {
-  try {
-    const csrfToken = req.csrfToken();
-    console.log(`C'Surfing CANADA! - ${csrfToken}`);
-    res.header('X-CSRF-Token', csrfToken); 
-    res.status(200).json({success: true});
-  } catch (error) {
-    console.log('Security token not generated: ', error);
-    res.status(500).json({
-      success: false,
-      message: 'Security Token Not Generated. Oh no!'
-    })
-  }
-});
+router.get('/csrf-token', catchAsyncError(adminController.getCsurf));
 
 /**
  * Verify a user's authentication code
@@ -77,7 +41,7 @@ router.get('/csrf-token', (req: Request, res: Response) => {
  * @produces application/json
  * @consumes application/json
  */
-router.post('/verification-codes/verify', validateRequestBodyData(CodeSchema), catchAsyncError(authController.verifyCode));
+router.post('/verification-codes/verify', validateRequestBodyData(IsStringSchema), catchAsyncError(adminController.verifyCode));
 
 
 /**
@@ -92,7 +56,7 @@ router.post('/verification-codes/verify', validateRequestBodyData(CodeSchema), c
  * @produces application/json
  * @consumes application/json
  */
-router.post('/password-reset-requests', validateRequestBodyData(ResetPasswordSchema), catchAsyncError(authController.resetPasswordRequest));
+router.post('/password-reset-requests', validateRequestBodyData(IsEmailSchema), catchAsyncError(adminController.resetPasswordRequest));
 
 /**
  * Validate Password Reset Token input by User
@@ -106,7 +70,7 @@ router.post('/password-reset-requests', validateRequestBodyData(ResetPasswordSch
  * @produces application/json
  * @consumes application/json
  */
-router.post('/password-reset/validate', validateRequestBodyData(CodeSchema), catchAsyncError(authController.validatePasswordToken));
+router.post('/password-reset/validate', validateRequestBodyData(IsStringSchema), catchAsyncError(adminController.validatePasswordToken));
 
 /**
  * Final step in user password reset Request - update with new password
@@ -121,6 +85,6 @@ router.post('/password-reset/validate', validateRequestBodyData(CodeSchema), cat
  * @produces application/json
  * @consumes application/json
 */
-router.patch("/user-password", validateRequestBodyData(ResetFlowSetPasswordSchema), catchAsyncError(authController.finishPasswordResetRequest));
+router.patch("/user-password", validateRequestBodyData(ResetFlowSetPasswordSchema), catchAsyncError(adminController.finishPasswordResetRequest));
 
 export default router;

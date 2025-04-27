@@ -9,12 +9,12 @@ import {
     InsertManyResult,
     FindCursor,
     UpdateFilter,
-    WithoutId
+    WithoutId,
+    InsertOneResult
 } from "mongodb";
 import { Database } from "../../config/database";
-import { CreatedDataResponse } from "../../types/responses";
 import { IBaseRepository } from "./baseRepository.interface";
-import { AppError } from "../../errors";
+import { ServerError } from "../../errors";
 import { PaginationOptions } from "../../types/express";
 
 /**
@@ -32,27 +32,26 @@ export abstract class BaseRepository<T extends Document> implements IBaseReposit
     }
     
     protected get collection(): Collection<T> {
-        console.log('getting')
         if (!this._collection) {
             const db = Database.getInstance().getDb();
             this._collection = db.collection<T>(this.collectionName);
         }
-        if (!this._collection) throw new AppError('MongDB Collection not found', 404);
+        if (!this._collection) {
+            const dbError = new ServerError('MongDB Collection not found', {}, false);
+            throw dbError;
+        }
         return this._collection;
     }
 
     async findOne(filter: Filter<T>, projection: Document = {}): Promise<WithId<T> | null> {
-        console.log('finding one: ', projection)
         return await this.collection.findOne(filter, {projection});
     }
 
     async findByIndex(filter: Filter<T>): Promise<FindCursor<WithId<T>>> {
-        console.log('finding one: ')
-        return this.collection.find(filter);
+        return await this.collection.find(filter);
     }
 
     async findPaginated(filter: Filter<T>, options: PaginationOptions<T>): Promise<WithId<T>[]> {
-        console.log('finding one: ', options)
         return this.collection
             .find(filter)
             .sort(options.sort || {})
@@ -62,7 +61,7 @@ export abstract class BaseRepository<T extends Document> implements IBaseReposit
             .toArray() as Promise<WithId<T>[]>;
     }
 
-    async create(data: Omit<T, '_id'>):  Promise<CreatedDataResponse<T>> {
+    async create(data: Omit<T, '_id'>):  Promise<InsertOneResult<T>> {
         const now = new Date();
         const insertingDocument = {
             ...data,
@@ -70,12 +69,10 @@ export abstract class BaseRepository<T extends Document> implements IBaseReposit
             updatedAt: now
         } as unknown as OptionalUnlessRequiredId<T>;
 
-        const response = await this.collection.insertOne(insertingDocument);
-        return { ...insertingDocument, _id: response.insertedId};
+        return await this.collection.insertOne(insertingDocument);
     }
 
     async createMany(data: Omit<T, '_id'>[]):  Promise<InsertManyResult> {
-        console.log('saving many')
         const now = new Date();
         const insertingDocuments = data.map(item => ({
             ...item,
@@ -87,29 +84,21 @@ export abstract class BaseRepository<T extends Document> implements IBaseReposit
     }
 
     async findOneAndReplace(filter: Filter<T>, updatedData: WithoutId<T>): Promise<WithId<T> | null> {
-        const response = await this.collection.findOneAndReplace(filter, updatedData, { returnDocument: 'after' });
-        console.log('replaced: ', response);
-        return response;
+        return await this.collection.findOneAndReplace(filter, updatedData, { returnDocument: 'after' });
     }
  
     async findOneAndUpdate(filter: Filter<T>, updatedData: UpdateFilter<T>): Promise<WithId<T> | null> {
-        const response = await this.collection.findOneAndUpdate(filter, updatedData, { returnDocument: 'after' });
-        console.log('updated: ', response);
-        return response;
+        return await this.collection.findOneAndUpdate(filter, updatedData, { returnDocument: 'after' });
     }
 
     // Will merge data over existing
     async updateOne(filter: Filter<T>, updatedData: Partial<T>): Promise<UpdateResult> {
-        const response = await this.collection.updateOne(filter, updatedData);
-        console.log(response);
-        return response;
+        return await this.collection.updateOne(filter, updatedData);
     }
 
     // Will merge data into existing, no duplicates
     async updateByMergeOneNoDupe(filter: Filter<T>, updatedData: Partial<T>): Promise<UpdateResult> {
-        const response = await this.collection.updateOne(filter, updatedData);
-        console.log(response);
-        return response;
+        return await this.collection.updateOne(filter, updatedData);
     }
 
     // Will merge data into existing, allows duplicates
@@ -118,15 +107,11 @@ export abstract class BaseRepository<T extends Document> implements IBaseReposit
             ...updatedData,
             updatedAt: new Date()
         }
-        const response = await this.collection.updateOne(filter, insertingDocument);
-        console.log(response);
-        return response;
+        return await this.collection.updateOne(filter, insertingDocument);
     }
 
     async delete(filter: Filter<T>): Promise<DeleteResult> {
-        const response = await this.collection.deleteOne(filter);
-        console.log('deleted: ', response);
-        return response;
+        return await this.collection.deleteOne(filter);
     }
 
     async getTotalDocuments(findByData: Filter<T>): Promise<number> {

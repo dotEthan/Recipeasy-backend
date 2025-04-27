@@ -14,7 +14,7 @@ import cookieParser from 'cookie-parser';
 import { csrfErrorHandler, csrfProtection } from './middleware/csrf';
 import { errorHandler } from './middleware/errorHandler';
 import appRouter from './routes/';
-import { AppError } from './errors';
+import { NotFoundError } from './errors';
 import { addRequestId } from './middleware/addRequestId';
 
 const app = express();
@@ -77,7 +77,7 @@ app.use(
     res: Response,
     next: NextFunction,
   ) => {
-    next(new AppError(`Not Found - ${req.originalUrl}`, 404));
+    next(new NotFoundError('404 - Not Found'));
   },
 );
 

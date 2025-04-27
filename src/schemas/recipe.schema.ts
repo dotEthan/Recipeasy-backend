@@ -91,3 +91,10 @@ export const FeSavedRecipeSchema = z.object({
 export const FeUpdateRecipeSchema = z.object({
     recipe: FeRecipeSchema
 }).strict();
+
+export const StandardRecipeResponseSchema = z.object({
+    success: z.boolean(),
+    message: z.string().optional(),
+    recipe: FeRecipeSchema.optional(),
+    error: z.string().optional()
+})

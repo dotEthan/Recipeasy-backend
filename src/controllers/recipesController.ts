@@ -3,9 +3,10 @@ import { v2 as cloudinary } from 'cloudinary';
 
 import { RecipeService } from "../services/recipeService";
 import { Recipe } from "../types/recipe";
-import { AppError } from "../errors";
+import { BadRequestError, NotFoundError, ServerError, UnauthorizedError } from "../errors";
 import { Visibility } from "../types/enums";
 import { ensureObjectId } from "../util/ensureObjectId";
+import { StandardRecipeResponseSchema } from "../schemas/recipe.schema";
 
 
 /**
@@ -23,14 +24,20 @@ export class RecipeController {
   public saveRecipe = async (req: Request,res: Response): Promise<void> => {
     const recipe = req.body.recipe;
     const userId = req.user?._id
-    if(!userId) throw new AppError('No user Logged in, please log in and try again', 401);
+    if(!userId) throw new UnauthorizedError('No user Logged in, please log in and try again', { userId });
+    if(!recipe) throw new BadRequestError('Recipe data not found', { recipe });
+    
     const response = await this.recipeService.saveRecipe(recipe, userId);
 
     console.log('saveRecipe - Saved');
-    // RecipeResponseSchema<re.parse(response);
+    StandardRecipeResponseSchema.parse(response)
     res.status(201).json(response);
   }
 
+  /**
+   * Get Public Recipes
+   */
+  // 
   public getRecipes = async (req: Request, res: Response): Promise<void> => {
     const visibility = req.query.visibility as Visibility | undefined;
     const page = parseInt(req.query.page as string || '1', 10);
@@ -39,21 +46,22 @@ export class RecipeController {
 
     console.log('getRecipe - Gotten');
     const response = await this.recipeService.getRecipes(visibility, limit, skip);
-    if (response === null) throw new AppError('No recipes found: ', 404);
+    if (response === null) throw new NotFoundError('getRecipes - No recipes found: ', { response });
 
+    // TODO Schema creation and parsing
+    // FeRecipeSchema
     res.status(200).json(response?.data);
   }
 
   public updateRecipe = async (req: Request,res: Response,): Promise<void> => {
     const recipeId = req.params.id;
     const recipe = req.body.recipe as Recipe;
-    if (!recipeId || recipeId !== recipe._id.toString())  throw new AppError('URL Recipe Id does not match Recipe Object ID', 400);
+    if (!recipeId || recipeId !== recipe._id.toString())  throw new BadRequestError('updateRecipe - URL Recipe Id does not match Recipe Object ID', { recipeId, recipe });
     const userId = req.user?._id
-    if(!userId) throw new AppError('No user Logged in, please log in and try again', 401);
+    if(!userId) throw new ServerError('updateRecipe - Session.user error, client log in and retry', { user: req.user });
     const response = await this.recipeService.updateRecipe(recipe, userId);
 
-    console.log('updateRecipe - Updated');
-    // RecipeResponseSchema<re.parse(response);
+    StandardRecipeResponseSchema.parse(response);
     res.status(201).json(response);
   }
 
@@ -61,18 +69,17 @@ export class RecipeController {
     console.log('deleting: ', req.params.id)
     const recipeId = ensureObjectId(req.params.id);
     const userId = req.user?._id
-    if (!recipeId) throw new AppError('Recipe id to delete not provided: relogin', 401);
-    if (!userId) throw new AppError('User Not Found: relogin', 401);
+    if (!recipeId) throw new BadRequestError('Recipe id to delete not provided: relogin', { recipeId });
+    if (!userId) throw new BadRequestError('User Not Found: relogin', { userId });
 
     await this.recipeService.deleteRecipe(userId, recipeId);
   
-    console.log('deleteRecipe - deleted');
     res.status(204).end();
   }
 
   public uploadRecipeImage = async (req: Request, res: Response): Promise<void> => {
     if (!req.file) {
-      throw new AppError("No file uploaded", 400);
+      throw new BadRequestError("No file uploaded");
     }
     const options = {
       folder: `recipeasy/user_uploads/${req.user?._id.toString()}`,
@@ -92,18 +99,17 @@ export class RecipeController {
     const base64File = req.file.buffer.toString('base64');
     const dataURI = `data:${req.file.mimetype};base64,${base64File}`
     const uploadResult = await cloudinary.uploader.upload(dataURI, options);
-    if (!uploadResult.secure_url) throw new AppError('Image upload URL missing, try again?', 500);
+    if (!uploadResult.secure_url) throw new ServerError('Image upload URL missing, try again?', { uploadResult });
 
-    console.log('uploadRecipeImage - uploaded');
     res.status(201).json({success: true, url: uploadResult.secure_url});
   }
 
   public deleteRecipeImage = async (req: Request, res: Response) => {
-    const imagePublicId = decodeURIComponent(req.params.id);
-    if (!imagePublicId) throw new AppError('deleteRecipeImage - imagePublicId malformed', 401);
+    const publicId = req.params.id
+    const imagePublicId = decodeURIComponent(publicId);
+    if (!imagePublicId) throw new BadRequestError('deleteRecipeImage - imagePublicId malformed', { publicId });
     await cloudinary.uploader.destroy(imagePublicId);
 
-    console.log('deleteRecipeImage - deleted');
     res.status(204).end();
   }
 }

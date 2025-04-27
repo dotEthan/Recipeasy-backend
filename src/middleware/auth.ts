@@ -7,7 +7,7 @@ import { NextFunction, Response, Request } from "express";
  */
 export const isAuthenticated = () =>  (req: Request, res: Response, next: NextFunction) => {
   if (req.isAuthenticated()) {
-    console.log('User Autheticated: ', req.user._id)
+    console.log('User Authenticated: ', req.user._id)
     next();
     return;
   }
@@ -22,7 +22,7 @@ export const isAuthenticated = () =>  (req: Request, res: Response, next: NextFu
  */
 export const hasOwnership = () =>  (req: Request, res: Response, next: NextFunction) => {
   if (req.isAuthenticated()) {
-    console.log('User Autheticated: ', req.user._id)
+    console.log('User Authenticated: ', req.user._id)
     next();
     return;
   }

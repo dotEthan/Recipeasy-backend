@@ -43,12 +43,12 @@ export const UserRecipesIdSchema = z.object({
     alterations: FeRecipeSchema.partial().optional()
 }).strict();
 
-export const PreviousPassword = z.object({
+export const PreviousPasswordSchema = z.object({
     hash: z.string(),
     deprecatedAt: z.coerce.date()
 }).strict();
 
-export const PasswordResetData = z.object({
+export const PasswordResetDataSchema = z.object({
     resetInProgress: z.boolean(),
     attempts: z.number(),
     expiresAt: z.coerce.date(),
@@ -73,8 +73,8 @@ export const BeUserSchema = z
     preferences: PreferencesSchema.optional(),
     role: z.string(),
     password: z.string(),
-    passwordResetData: PasswordResetData.optional(),
-    previousPasswords: z.array(PreviousPassword).optional(),
+    passwordResetData: PasswordResetDataSchema.optional(),
+    previousPasswords: z.array(PreviousPasswordSchema).optional(),
     createdAt: z.coerce.date(),
     updatedAt: z.coerce.date()
 }).strict();
@@ -106,26 +106,6 @@ export const LoginResSchema = z.object({
 export const ResetFlowSetPasswordSchema = z.object({
     code: z.string(),
     password: z.string().min(AUTH_PASSWORD_MIN)
-}).strict();
-
-export const CodeSchema = z.object({
-    code: z.string()
-}).strict();
-
-export const ResetPasswordSchema = z.object({
-    email: z.string().email(),
-}).strict();
-
-export const FindByIdSchema = z.object({
-    _id: z.custom<ObjectId>((val) => {
-        return ObjectId.isValid(val);
-    }, {
-        message: "Find By Id Invalid MongoDB ObjectId"
-    })
-}).strict();
-
-export const FindByEmailSchema = z.object({
-    email: z.string().email(),
 }).strict();
 
 export const UpdateUserByIdSchema = z.object({
@@ -176,3 +156,11 @@ export const BeUpdateUsersRecipesSchema = z.object({
     }),
     copyDetails: CopyDetailsSchema
 }).strict();
+
+
+export const StandardUserResponseSchema = z.object({
+    success: z.boolean(),
+    message: z.string().optional(),
+    user: FeUserSchema.optional(),
+    error: z.string().optional()
+})
