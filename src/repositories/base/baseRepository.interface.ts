@@ -1,10 +1,9 @@
-import { DeleteResult, Filter, FindCursor, InsertManyResult, UpdateResult, WithId } from 'mongodb';
-import { CreatedDataResponse } from '../../types/responses';
+import { DeleteResult, Filter, FindCursor, InsertManyResult, InsertOneResult, UpdateResult, WithId } from 'mongodb';
 
 export interface IBaseRepository<T> {
     findByIndex(filter: Filter<T>): Promise<FindCursor<WithId<T>>>;
     findOne(filter: Filter<T>): Promise<WithId<T> | null>;
-    create(data: Omit<T, '_id'>): Promise<CreatedDataResponse<T>>;
+    create(data: Omit<T, '_id'>): Promise<InsertOneResult<T>>;
     createMany(data: Omit<T, '_id'>[]): Promise<InsertManyResult<T>>;
     updateOne(filter: Filter<T>, updatedData: Partial<T>): Promise<UpdateResult>;
     updateByMergeOneNoDupe(filter: Filter<T>, updatedData: Partial<T>): Promise<UpdateResult>;

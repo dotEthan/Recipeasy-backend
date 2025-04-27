@@ -8,6 +8,7 @@ import { UnauthorizedError } from "../errors";
 /**
  * Global Error Handler Middleware
  * @todo Refactor all throw new error() to use
+ * @todo log login attempts and more
  * @param {Error/AppError} - Error thrown 
  * @param {Request, Response, Next} - The usual three from the call being wrapped 
  * @returns {Void} - Nothing, calls res as needed.

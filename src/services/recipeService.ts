@@ -5,9 +5,11 @@ import { Recipe, RecipeDocument } from "../types/recipe";
 import { PaginateResponse, StandardRecipeResponse } from "../types/responses";
 import { User } from "../types/user";
 import { Visibility } from "../types/enums";
-import { AppError, NotFoundError } from "../errors";
+import { BadRequestError, NotFoundError, ServerError } from "../errors";
 import { ensureObjectId } from "../util/ensureObjectId";
 import { mergeAlterations } from "../util/mergeAlterations";
+import { FeSavedRecipeSchema, FeUpdateRecipeSchema } from "../schemas/recipe.schema";
+import { IsObjectIdSchema } from "../schemas/shared.schema";
 
 /**
  * Handles all recipe related services
@@ -30,6 +32,7 @@ export class RecipeService {
      * @param {Recipe} recipe - Recipe to be saved
      * @param {ObjectId} userId - userId
      * @return {StandardRecipeResponse} - succes, message, recipe, error
+     * @throws {ServerError} 500 - if the create recipe fails
      * @example
      * const recipeService = useRecipeService();
      * await recipeService.saveRecipe(req, false, errorMessage);
@@ -37,13 +40,17 @@ export class RecipeService {
     public async saveRecipe(recipe: Recipe, userId: ObjectId): Promise<StandardRecipeResponse> {
         let success = false;
 
-        const recipeSaveResponse = await this.recipesRepository.createRecipe(recipe)
-        const userUpdateRes = await this.userRepository.addToUsersRecipesArray(userId,  recipeSaveResponse._id);
+        FeSavedRecipeSchema.parse({recipe});
+        const recipeSaveResponse = await this.recipesRepository.createRecipe(recipe);
+        if (!recipeSaveResponse.acknowledged || !recipeSaveResponse.insertedId) throw new ServerError('saveRecipe - Create recipe failed', { recipe, recipeSaveResponse })
         
+        const savedRecipe = await this.recipesRepository.findById(recipeSaveResponse.insertedId);
+        if (savedRecipe === null) throw new ServerError('saveRecipe - Saved Recipe not found after saving', { savedRecipe, insertedId: recipeSaveResponse.insertedId });
+
+        const userUpdateRes = await this.userRepository.addToUsersRecipesArray(userId,  recipeSaveResponse.insertedId);
         if (userUpdateRes?.modifiedCount && userUpdateRes?.modifiedCount > 0) success = true;
 
-        console.log(`Save Successful: ${success}, recipe going back: ${recipeSaveResponse}`)
-        return {success, recipe: recipeSaveResponse}
+        return {success, recipe: savedRecipe}
     }
 
     /**   
@@ -62,7 +69,6 @@ export class RecipeService {
      * await recipeService.getRecipes(Visibility.Public, 25, 75);
      */  
     public async getRecipes(visibility: Visibility | undefined, limit: number, skip: number): Promise<PaginateResponse> {
-        console.log('getPublicRecipes rec: ');
         const query: Filter<Recipe> = {
             "internalData.isDeleted": { $ne: true } 
         };
@@ -105,22 +111,24 @@ export class RecipeService {
         const userIsCreator = recipeCreatorId.equals(userId);
 
         const originalRecipe = await this.recipesRepository.findById(recipeId);
-        if (!originalRecipe) throw new AppError(`Can't find original recipe`, 404);
+        if (!originalRecipe) throw new ServerError('updateRecipe- Cannot find original recipe', { originalRecipe, recipeId });
 
         let recipeResponse: RecipeDocument;
         if (userIsCreator) {
-            console.log('user is OG Creator');
-            const recipeSaveResponse = await this.recipesRepository.updateRecipe(ensureObjectId(recipe._id), recipe);
-            if (recipeSaveResponse === null) throw new Error('Updating recipe failed: recipe does not exist');
+            FeUpdateRecipeSchema.parse({recipe});
+            IsObjectIdSchema.parse(recipeId);
+            const recipeSaveResponse = await this.recipesRepository.updateRecipe({ '_id': recipeId }, recipe);
+            if (recipeSaveResponse === null) throw new ServerError('Updating recipe failed: recipe does not exist', { recipeId, recipe});
             recipeResponse = recipeSaveResponse;
         } else {
-            console.log('user is NOT OG Creator');
+            console.log('user is NOT Creator');
 
             const alterations = this.findRecipeAlterations(originalRecipe, recipe);
             const updateResponse = await this.userRepository.updateAlterationsOnUserRecipes(userId, recipeId, alterations);
 
-            if (!updateResponse) throw new AppError('Updating User.recipes.alterations failed', 500);
-            if (updateResponse.matchedCount === 0 || updateResponse.modifiedCount === 0) throw new AppError('Did not update alterations object', 500);
+            if (updateResponse == null) throw new ServerError('updateRecipe - Updating User.recipes.alterations failed', { userId, recipeId, alterations });
+            if (updateResponse.matchedCount === 0 ) throw new BadRequestError('updateRecipe - No user matched userId', { userId });
+            if (updateResponse.modifiedCount === 0) throw new ServerError('updateRecipe - Did not update alterations object', { userId, recipeId, alterations });
 
             console.log('updateResponse: ', updateResponse);
 
@@ -142,7 +150,6 @@ export class RecipeService {
      * await recipeService.getUsersRecipes(currentUser);
      */  
     async getUsersRecipes(user: User): Promise<PaginateResponse> {
-        console.log('getUserRecipes: ');
         const recipeIdArray = user.recipes?.map((item) => ensureObjectId(item.id));
 
         const query: Filter<Recipe> = { _id: { $in: recipeIdArray } };
@@ -198,10 +205,11 @@ export class RecipeService {
         } else {
             updateUserResponse = await this.userRepository.updateOne({ '_id': userId }, { $pull: { recipes: { id: recipeId }}});
         }
-        if (updateRecipeResponse && (!updateRecipeResponse.acknowledged || updateRecipeResponse.modifiedCount === 0)) throw new Error('Deletion Failed: Recipe deletion failed');
-        if (!updateUserResponse.acknowledged || updateUserResponse.modifiedCount === 0) throw new Error('Deletion Failed: Updating User Recipe array failed');
+        if (updateRecipeResponse && (!updateRecipeResponse.acknowledged || updateRecipeResponse.modifiedCount === 0))
+            throw new ServerError('Deletion Failed: Recipe deletion failed', { recipeId });
+        if (!updateUserResponse.acknowledged || updateUserResponse.modifiedCount === 0)
+            throw new ServerError('Deletion Failed: Updating User Recipe array failed', { userId });
 
-        console.log('recipe deleted');
         return {success: true}
     }
 
@@ -229,7 +237,6 @@ export class RecipeService {
                 (changes as Partial<Recipe>)[typedKey] = updatedValue;
             }
         }
-        console.log('changes: ', changes)
         return changes;
     }
 }

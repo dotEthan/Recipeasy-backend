@@ -16,26 +16,20 @@ export const SaveLoginAttemptDataSchema = z.object({
 }).strict();
 
 export const createVerificationCodeSchema = z.object({
-    userId: z.custom<ObjectId>((val) => {
-        return ObjectId.isValid(val);
-    }, {
-        message: "Create VerificationCode Invalid MongoDB ObjectId"
-    }),
+    userId: ObjectIdSchema,
     code: z.string(),
     createdAt:z.date(),
     updatedAt: z.date()
 }).strict();
 
-export const GetVerificationCode = z.object({
+// TODO isObjectIdSchema dupe?
+export const GetVerificationCodeSchema = z.object({
     _id: ObjectIdSchema,
 }).strict();
 
-export const DeleteVerificationCode = z.object({
-    _id: z.custom<ObjectId>((val) => {
-        return ObjectId.isValid(val);
-    }, {
-        message: "Delete VerificationCode Invalid MongoDB ObjectId"
-    }),
+// TODO isObjectIdSchema dupe?
+export const DeleteVerificationCodeSchema = z.object({
+    _id: ObjectIdSchema
 }).strict();
 
 export const updatePasswordSchema = z.object({

@@ -5,15 +5,8 @@ import { validateRequestBodyData } from "../middleware/validateRequestData";
 import { FeUpdateUsersRecipesSchema } from "../schemas/user.schema";
 import { isAuthenticated } from "../middleware/auth";
 import { catchAsyncError } from "../util/catchAsyncErrors";
-import { UserService } from "../services/userService";
-import { UserRepository } from "../repositories/user/userRepository";
-import { EmailService } from "../services/emailService";
-import { AuthService } from "../services/authService";
-import { AuthLoginAttemptRepository, AuthVerificationCodesRepository } from "../repositories/auth/authRepository";
-import { RecipeService } from "../services/recipeService";
-import { RecipesRepository } from "../repositories/recipes/recipesRepository";
-// import { updatePasswordSchema } from "../schemas/admin.schema";
 import { checkIdParam } from "../middleware/checkIdParam";
+import { recipeService, userService } from "../services";
 // import { registrationLimiter } from "../middleware/rateLimiters";
 
 /**
@@ -24,25 +17,6 @@ import { checkIdParam } from "../middleware/checkIdParam";
  */
 // 
 const router = express.Router();
-
-const authLoginAttemptRepository = new AuthLoginAttemptRepository();
-const authVerificationCodesRepository = new AuthVerificationCodesRepository();
-const userRepository = new UserRepository();
-const recipeRepository = new RecipesRepository();
-
-const emailService = new EmailService();
-const authService = new AuthService(
-  authLoginAttemptRepository,
-  authVerificationCodesRepository,
-  emailService, 
-  userRepository
-)
-const userService = new UserService(
-  userRepository, 
-  emailService, 
-  authService
-);
-const recipeService = new RecipeService(recipeRepository, userRepository);
 
 const userController = new UserController(userService, recipeService);
 

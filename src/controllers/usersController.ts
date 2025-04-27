@@ -3,7 +3,7 @@ import { UserService } from "../services/userService";
 import { RecipeService } from "../services/recipeService";
 import { Recipe } from "../types/recipe";
 import { FeUserSchema } from "../schemas/user.schema";
-import { AppError } from "../errors";
+import { BadRequestError } from "../errors";
 import { ensureObjectId } from "../util/ensureObjectId";
 
 /**
@@ -40,15 +40,13 @@ export class UserController {
 
     public updateUserRecipes = async (req: Request, res: Response): Promise<void> => {
         const currentUserId = ensureObjectId(req.params.id);
-        if(!currentUserId) throw new AppError('Malformed User ID', 400);
+        if(!currentUserId) throw new BadRequestError('Malformed User ID', { currentUserId });
 
         const toBeAddedRecipeId = ensureObjectId(req.body.recipeId);
         const originalUserId = ensureObjectId(req.body.originalUserId);
 
         const updatedUserResponse = await this.userService.updateUserRecipes(currentUserId, originalUserId, toBeAddedRecipeId);
-        if (!updatedUserResponse) throw new AppError('No User data found', 404);
 
-        console.log('updateUserRecipes - updated:');
         FeUserSchema.parse(updatedUserResponse);
         res.status(201).json({success: true, user: updatedUserResponse});
     }

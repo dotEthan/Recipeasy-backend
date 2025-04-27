@@ -1,46 +1,81 @@
 export class AppError extends Error {
-  statusCode: number;
-  isOperational: boolean;
 
-  constructor(message: string, statusCode: number) {
+  constructor(
+    message: string,
+    public readonly context: unknown,
+    public readonly statusCode: number,
+    public readonly isOperational: boolean = true,
+  ) {
     super(message);
-    this.statusCode = statusCode;
-    this.isOperational = true;
     Error.captureStackTrace(this, this.constructor);
   }
 }
 export class BadRequestError extends AppError {
-  constructor(message: string = "Bad request Error - No Message") {
-      super(message, 400);
+  constructor(
+    message: string = "Bad request Error - No Message", 
+    context: unknown = null,
+    isOperational: boolean = true
+  ) {
+      super(message, context, 400, isOperational);
   }
 }
 
 export class UnauthorizedError extends AppError {
-  constructor(message: string = "Unauthorized Error - No Message") {
-      super(message, 401);
+  constructor(
+    message: string = "Unauthorized Error - No Message", 
+    context: unknown = null,
+    isOperational: boolean = true
+  ) {
+    super(message, context, 401, isOperational);
   }
 }
 
 export class ForbiddenError extends AppError {
-  constructor(message: string = "Forbidden - No Message") {
-    super(message, 403);
+  constructor(
+    message: string = "User Role Forbidden Error - No Message", 
+    context: unknown = null,
+    isOperational: boolean = true
+  ) {
+    super(message, context, 403, isOperational);
   }
 }
 
 export class NotFoundError extends AppError {
-  constructor(message: string = "Not Found - No Message") {
-    super(message, 404);
+  constructor(
+    message: string = "Resource Not Found Error - No Message", 
+    context: unknown = null,
+    isOperational: boolean = true
+  ) {
+    super(message, context, 404, isOperational);
   }
 }
 
 export class ConflictError extends AppError {
-  constructor(message: string = "Conflict - No Message") {
-    super(message, 409);
+  constructor(
+    message: string = "Data Conflict Error - No Message", 
+    context: unknown = null,
+    isOperational: boolean = true
+  ) {
+    super(message, context, 409, isOperational);
   }
 }
 
 export class ServerError extends AppError {
-  constructor(message: string = "Server Error - No Message") {
-    super(message, 500);
+  constructor(
+    message: string = "Internal Server Error - No Message", 
+    context: unknown = null,
+    isOperational: boolean = true
+  ) {
+    super(message, context, 500, isOperational);
+  }
+}
+
+export class LogOnlyError extends AppError {
+  constructor(
+    message: string = "Log Only Error - No Message", 
+    context: unknown = null,
+    isOperational: boolean = true
+  ) {
+    super(message, context, 418, isOperational);
   }
 }

@@ -1,15 +1,13 @@
 import express from "express";
 
-import { RecipeController } from "../controllers/recipesController";
-import { validateRequestBodyData } from "../middleware/validateRequestData";
-import { FeSavedRecipeSchema, FeUpdateRecipeSchema } from "../schemas/recipe.schema";
-import { hasOwnership, isAuthenticated } from "../middleware/auth";
-import { UserRepository } from "../repositories/user/userRepository";
-import { RecipesRepository } from "../repositories/recipes/recipesRepository";
-import { RecipeService } from "../services/recipeService";
 import { upload } from "../config/cloudinary";
+import { RecipeController } from "../controllers/recipesController";
+import { recipeService } from "../services";
+import { validateRequestBodyData } from "../middleware/validateRequestData";
+import { hasOwnership, isAuthenticated } from "../middleware/auth";
 import { checkIdParam } from "../middleware/checkIdParam";
 import { catchAsyncError } from "../util/catchAsyncErrors";
+import { FeSavedRecipeSchema, FeUpdateRecipeSchema } from "../schemas/recipe.schema";
 
 /**
  * Handles all Recipe based routes
@@ -20,11 +18,6 @@ import { catchAsyncError } from "../util/catchAsyncErrors";
 // 
 
 const router = express.Router();
-
-const userRepository = new UserRepository();
-const recipeRepository = new RecipesRepository();
-
-const recipeService = new RecipeService(recipeRepository, userRepository);
 
 const recipeController = new RecipeController(recipeService);
 
