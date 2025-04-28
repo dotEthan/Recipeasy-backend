@@ -7,7 +7,7 @@ import { validateRequestBodyData } from "../middleware/validateRequestData";
 import { hasOwnership, isAuthenticated } from "../middleware/auth";
 import { checkIdParam } from "../middleware/checkIdParam";
 import { catchAsyncError } from "../util/catchAsyncErrors";
-import { FeSavedRecipeSchema, FeUpdateRecipeSchema } from "../schemas/recipe.schema";
+import { NewRecipeSchema, FeUpdateRecipeSchema } from "../schemas/recipe.schema";
 
 /**
  * Handles all Recipe based routes
@@ -37,7 +37,7 @@ const recipeController = new RecipeController(recipeService);
  * // Client-side usage:
  * fetch('/recipes/`, { method: 'POST', body: recipe  });
  */
-router.post("/", isAuthenticated(), hasOwnership(),  validateRequestBodyData(FeSavedRecipeSchema), catchAsyncError(recipeController.saveRecipe));
+router.post("/", isAuthenticated(), hasOwnership(),  validateRequestBodyData(NewRecipeSchema), catchAsyncError(recipeController.saveRecipe));
 
 /**
  * Get Public Recipe data
@@ -56,7 +56,7 @@ router.post("/", isAuthenticated(), hasOwnership(),  validateRequestBodyData(FeS
  * // Client-side usage:
  * fetch('/recipes/`, { method: 'GET' });
  */
-router.get("/", catchAsyncError(recipeController.getRecipes));
+router.get("/", catchAsyncError(recipeController.getPublicRecipes));
 
 /**
  * Update Recipe data

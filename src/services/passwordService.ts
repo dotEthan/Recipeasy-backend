@@ -1,14 +1,17 @@
 import jwt, { JwtPayload } from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
-
+import { z } from 'zod';
 import { ObjectId, UpdateResult } from "mongodb";
-import { StandardResponse } from "../types/responses";
+
 import { UserRepository } from "../repositories/user/userRepository";
+import { EmailService } from './emailService';
 import { UserService } from "./userService";
 import { ensureObjectId } from "../util/ensureObjectId";
+import { PW_RESET_TOKEN_TTL } from '../constants';
+import { PreviousPasswordSchema, UpdateByIdSchema } from '../schemas/user.schema';
 import { TokenTypes } from "../types/enums";
 import { User, UserDocument } from '../types/user';
-import { PreviousPasswordSchema, UpdateByIdSchema } from '../schemas/user.schema';
+import { StandardResponse } from "../types/responses";
 import { 
     BadRequestError, 
     ConflictError, 
@@ -18,10 +21,6 @@ import {
     ServerError, 
     UnauthorizedError 
 } from "../errors";
-import { EmailService } from './emailService';
-import { PW_RESET_TOKEN_TTL } from '../constants';
-import { z } from 'zod';
-import { IsEmailSchema } from '../schemas/shared.schema';
 
 /**
  * Handles all Password related logic
@@ -51,7 +50,6 @@ export class PasswordService {
      */
     
     public async startPasswordResetFlow(email: string): Promise<StandardResponse> {
-        IsEmailSchema.parse({ email });
         const userId = await this.userRepository.findIdByEmail(email);
         if (!userId) throw new NotFoundError(`startPasswordResetFlow - User Not Found with email: ${email}, relogin`);
 
@@ -74,7 +72,7 @@ export class PasswordService {
             attempts: 0,
             expiresAt: new Date(Date.now() + PW_RESET_TOKEN_TTL) 
         }
-        const updatedData = { passwordResetData: passwordResetData };
+        const updatedData = { passwordResetData: passwordResetData, updatedAt: new Date() };
         UpdateByIdSchema.parse({updatedData});
         const updateUserRes = await this.userRepository.updateById(userId, { $set: updatedData});
 
@@ -123,7 +121,7 @@ export class PasswordService {
      */  
     public async passwordResetFinalStep(token: string, newPassword: string): Promise<StandardResponse> {
         
-        const validationRes = await this.validatePasswordToken(token, TokenTypes.PasswordReset);
+        const validationRes = await this.validatePasswordToken(token, TokenTypes.PASSWORD_RESET);
         const userId = validationRes.data as string;
         
         const user = await this.userService.findUserById(ensureObjectId(userId));
@@ -153,7 +151,6 @@ export class PasswordService {
      * await userService.deleteUserPwResetData('xyz987');
      */
     public async checkIfPwResetInProgress(userEmail: string): Promise<void> {
-        IsEmailSchema.parse({email: userEmail});
         const userResponse =  await this.userRepository.findByEmail(userEmail);
         if (!userResponse) throw new NotFoundError(`checkIfPwResetInProgress - User with email: ${userEmail} not found`);
         
@@ -199,7 +196,7 @@ export class PasswordService {
             const hashedPassword = await bcrypt.hash(password, 12);
             await this.cachePreviousPassword(user._id, password, hashedPassword);
             
-            const updatedData = {password: hashedPassword};
+            const updatedData = { password: hashedPassword };
             UpdateByIdSchema.parse({updatedData});
             const updateResponse = await this.userRepository.updateById(ensureObjectId(user._id), { $set: updatedData});
             if (updateResponse && updateResponse.matchedCount === 0) {

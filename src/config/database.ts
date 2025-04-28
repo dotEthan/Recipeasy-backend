@@ -2,6 +2,7 @@ import { Db, MongoClient } from 'mongodb';
 import { DbIndexManager } from './dbIndexManager';
 import { retryFunction } from '../util/retry';
 import { ServerError } from "../errors";
+import { ErrorCode } from '../types/enums';
 
 export class Database {
     private static instance: Database;
@@ -24,20 +25,26 @@ export class Database {
         return retryFunction(async () => {
             await this.client.connect();
             this.db = this.client.db();
-            console.log('connected');
         }, {})
     }
 
     public getDb(): Db {
         if (!this.db) {
-            const dbError = new ServerError('Database Not Initialized, Must Connect() first.', null, false);
+            const dbError = new ServerError('Database Not Initialized, Must Connect() first.', { location: 'database.getDb' }, ErrorCode.MONGODB_GET_DB_FAILED, false);
             throw dbError;
         }
         return this.db;
     }
 
     public async initializeIndexes(): Promise<void> {
-      if (!this.db) throw new ServerError('Database Not Initialized, Must Connect() first.');
+      if (!this.db) {
+        throw new ServerError(
+            'Database Not Initialized, Must Connect() first',
+            { location: 'database.getDb' },
+            ErrorCode.MONGODB_INIT_INDICES,
+            false
+        );
+      }
       await DbIndexManager.initialize(this.db);
     }
 

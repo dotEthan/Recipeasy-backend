@@ -11,7 +11,7 @@ Structure set up and organized, now functionality is being built.
 
 ### What's Working
 
-It's spun up and working with passportjs for authorization. Full Authorization flow is now in place with Email Verification and Password Reset, along with validation of all incoming data and DB calls.  
+Backend Functionality has now surpassed Front-end, and contains full login, verficiation, and PW reset flows, and a fully working Recipe CRUD structure that allows for public VS private recipes, soft deletes to ensure shared recipes retain functionality beyond creator deletion and the structure for global error handling, schema parsing, and a variety of middleware to ensure security and deter bots and 'attacks'. 
 
 ### What isn't working
 
@@ -20,7 +20,8 @@ It's spun up and working with passportjs for authorization. Full Authorization f
 
 ### Code Choices
 
-- Functional VS OOP - a bit mixed, trying to implement more with OOP as I haven't used it as much as functional in past projects
+- Functional VS OOP - a bit mixed, trying to implement more with classes as I haven't used it as much as functional in past projects
+- JSDoc galore - I both wanted to practice JSDoc and as this is soemthign i will likely be coming back to (I use it for myself), I know having well laid out docs of everything is a joy two years later. 
 - No Mongoose - I have worked with Mongoose, but I wanted to get a better feel for MongoDB directly. If I did it again, I'd use Mongoose.
 
 ## Where are we?
@@ -43,8 +44,12 @@ It's spun up and working with passportjs for authorization. Full Authorization f
 ### Working on Now:
 
 - Retries where needed: 3 tries, fail and notify - Verification retries > 3 = new code, . 
-- Code Cleaning (removing console logs, refactoring, etc), and Validation parsing & middleware, prioritizing TODOs (now VS later)
-    - organize schemas, 'DRY' object IDs using multiple structures
+- Code Cleaning 
+    - removing console logs 
+    - Validation parsing 
+    - middleware 
+    - prioritizing TODOs (now VS later)
+    - organize schemas
     - All "Update" flows add "updatedAt"
 
 ### To Come:
@@ -60,9 +65,12 @@ It's spun up and working with passportjs for authorization. Full Authorization f
     - Monitoring for sus action. 
     - Backups
     - Logging (Sonar? others)
+
+    
+- setup retry-ables
 - Look into OpenAPIdocs just to show jsDoc in structured format
 - Testing
-- Recipe Search
+- Recipe Search/ingredient auto complete
 - Cron based softdeleted/unref'd recipe deletion (only if no user.recipes has ref'd), also if last user ref'ing, delete image in cloudinary
 - Full Documentation (more than Jsdo)
 - User Admin (update/delete)

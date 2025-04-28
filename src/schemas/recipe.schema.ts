@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { RECIPE_DESC_MAX, RECIPE_NAME_MIN } from "../constants";
 import { ObjectIdSchema } from "./shared.schema";
+import { Visibility } from "../types/enums";
 
 export const DurationSchema = z.object({
     value: z.string(),
@@ -68,7 +69,7 @@ export const BeRecipeSchema = z
   url: z.string().optional(),
   ingredients: z.array(IngredientsSchema),
   directions: z.array(DirectionsSchema),
-  visibility: z.string().default('public'), // Enum
+  visibility: z.nativeEnum(Visibility).default(Visibility.PUBLIC),
   tags: z.array(z.string()),
   notes: z.array(z.string()),
   userId: ObjectIdSchema,
@@ -80,12 +81,8 @@ export const BeRecipeSchema = z
 
 export const FeRecipeSchema = BeRecipeSchema.omit({internalState: true, createdAt: true });
 
-export const FeSavedRecipeArraySchema = z.object({
-    recipes: z.array(FeRecipeSchema.omit({_id: true}))
-}).strict();
-
-export const FeSavedRecipeSchema = z.object({
-    recipe: FeRecipeSchema.omit({_id: true})
+export const NewRecipeSchema = z.object({
+    recipe: FeRecipeSchema.omit({_id: true, updatedAt: true})
 }).strict();
 
 export const FeUpdateRecipeSchema = z.object({

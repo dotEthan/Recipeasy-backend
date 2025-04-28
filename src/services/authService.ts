@@ -17,7 +17,6 @@ import { ConflictError, LogOnlyError } from "../errors";
  * Handles all Authorization related services
  * @todo Ensure all errors are handled
  * @todo Add logging
- * @todo BOW TO ZOD PARSING!
  */
 // 
 

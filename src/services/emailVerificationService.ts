@@ -3,7 +3,7 @@ import { ObjectId, WithId } from "mongodb";
 import { AuthVerificationCodesRepository } from "../repositories/auth/authRepository";
 import { EmailService } from "./emailService";
 import { EmailAuthCodeDocument } from "../types/auth";
-import { ServerError } from "../errors";
+import { ForbiddenError, ServerError } from "../errors";
 import { createVerificationCodeSchema } from "../schemas/admin.schema";
 import { StandardResponse } from "../types/responses";
 
@@ -11,7 +11,6 @@ import { StandardResponse } from "../types/responses";
  * Handles all new user Email Verification related services
  * @todo Ensure all errors are handled
  * @todo Add logging
- * @todo BOW TO ZOD PARSING!
  */
 // 
 
@@ -80,6 +79,7 @@ export class EmailVerificationService {
      * @param {ObjectId} userId - User's _id
      * @param {string} code - client entered verification code
      * @return {boolean} true - verification success
+     * @throws  {ForbiddenError} 403 - Code verification failed
      * @example
      * const authService = useAuthService();
      * await authService.getVerificationCode('1234abcd', 'xyz987);
@@ -87,15 +87,12 @@ export class EmailVerificationService {
     public async checkVerificationCode(userId: ObjectId, code: string): Promise<boolean> {
         let isVerified = false;
         
-        console.log('userId: ', userId)
         const vCode = await this.authVerificationCodesRepository.getVerificationCode(userId);
-        console.log('storedcode: ', vCode?.code)
-        console.log('storedcode: ', typeof vCode?.code)
-        console.log('sentcode: ', code)
-        console.log('sentcode: ', typeof code)
         if (vCode?.code && code === vCode.code) isVerified = true;
-        console.log('isVerfied: ', isVerified);
 
+        if (!isVerified) {
+            throw new ForbiddenError('Code Verification Failed', { code, userId });
+        }
         return isVerified;
     }
     
@@ -109,7 +106,6 @@ export class EmailVerificationService {
      */
     public async deleteVerificationCode(userId: ObjectId) {
         await this.authVerificationCodesRepository.deleteVerificationCode(userId);
-        console.log('deleted email verifciation code')
     }
 
 }
