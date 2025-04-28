@@ -6,7 +6,6 @@ import {
     Filter,
     DeleteResult,
     UpdateResult,
-    InsertManyResult,
     FindCursor,
     UpdateFilter,
     WithoutId,
@@ -20,7 +19,8 @@ import { ErrorCode } from "../../types/enums";
 
 /**
  * Base Mongodb Related calls
- * @todo ensure Interface udpated
+ * @todo Add updatedAt where needed here or earlier
+ * @todo Remove any not currently used
  */
 // 
 
@@ -73,17 +73,6 @@ export abstract class BaseRepository<T extends Document> implements IBaseReposit
         return await this.collection.insertOne(insertingDocument);
     }
 
-    async createMany(data: Omit<T, '_id'>[]):  Promise<InsertManyResult> {
-        const now = new Date();
-        const insertingDocuments = data.map(item => ({
-            ...item,
-            createdAt: now,
-            updatedAt: now
-        }) as unknown as OptionalUnlessRequiredId<T>);
-
-        return await this.collection.insertMany(insertingDocuments);
-    }
-
     async findOneAndReplace(filter: Filter<T>, updatedData: WithoutId<T>): Promise<WithId<T> | null> {
         const insertingDocument = {
             ...updatedData,
@@ -91,36 +80,19 @@ export abstract class BaseRepository<T extends Document> implements IBaseReposit
         }
         return await this.collection.findOneAndReplace(filter, insertingDocument, { returnDocument: 'after' });
     }
- 
+
     async findOneAndUpdate(filter: Filter<T>, updatedData: UpdateFilter<T>): Promise<WithId<T> | null> {
-        const insertingDocument = {
-            ...updatedData,
-            updatedAt: new Date()
-        }
         return await this.collection.findOneAndUpdate(filter, updatedData, { returnDocument: 'after' });
     }
 
     // Will merge data over existing
     async updateOne(filter: Filter<T>, updatedData: Partial<T>): Promise<UpdateResult> {
-        const insertingDocument = {
-            ...updatedData,
-            updatedAt: new Date()
-        }
         return await this.collection.updateOne(filter, updatedData);
     }
 
     // Will merge data into existing, no duplicates
     async updateByMergeOneNoDupe(filter: Filter<T>, updatedData: Partial<T>): Promise<UpdateResult> {
         return await this.collection.updateOne(filter, updatedData);
-    }
-
-    // Will merge data into existing, allows duplicates
-    async updateByMergeOne(filter: Filter<T>, updatedData: Partial<T>): Promise<UpdateResult> {
-        const insertingDocument = {
-            ...updatedData,
-            updatedAt: new Date()
-        }
-        return await this.collection.updateOne(filter, insertingDocument);
     }
 
     async delete(filter: Filter<T>): Promise<DeleteResult> {

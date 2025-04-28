@@ -11,6 +11,7 @@ import { FeRecipeSchema } from './recipe.schema';
 /**
  * Authorization based req and res handling
  * @todo is copyDetails need in FE?
+ * @todo Rename and refactor (dupes?)
  */
 // 
 export const ShoppingListSchema = z.object({}).strict();  // TODO Import once other schema added

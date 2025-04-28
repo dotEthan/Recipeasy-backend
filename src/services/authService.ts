@@ -12,6 +12,7 @@ import { LoginResponse, PaginateResponse } from "../types/responses";
 import {LoginAttempt } from "../types/auth";
 import { RecipeDocument } from "../types/recipe";
 import { ConflictError, LogOnlyError } from "../errors";
+import { ErrorCode } from "../types/enums";
 
 /**
  * Handles all Authorization related services
@@ -43,7 +44,11 @@ export class AuthService {
     public async registerNewUser(displayName: string, email: string, password: string): Promise<UserDocument> {
         const hashedPassword = await bcrypt.hash(password, 12);
         const emailInUse = await this.userService.findUserByEmail(email);
-        if(emailInUse != null) throw new ConflictError('Email already in use', { email });
+        if(emailInUse != null) throw new ConflictError(
+            'Email already in use', 
+            { email, location: 'authService.registerNewUser' },
+            ErrorCode.EMAIL_ALREADY_IN_USE
+        );
 
         const userResponse = await this.userService.createNewUser(displayName, email, hashedPassword);
         return userResponse;
@@ -51,6 +56,7 @@ export class AuthService {
 
     /**
      * User login
+     * @todo No errors thrown? Intentional?
      * @group Authorization - User login
      * @param {User} user - User logging in
      * @returns {LoginResponse} user: User, newEmailVerifyCodeCreated: boolean, recipeResponse: recipe
@@ -102,7 +108,6 @@ export class AuthService {
      * await authService.logLoginAttempt(req, false, errorMessage);
      */  
     public async logLoginAttempt(req: Request, success: boolean, errorMessage?: string)  {
-        console.log('errormsg:', errorMessage)
         const loginData: LoginAttempt = {
             userId: req.user?._id,
             ipAddress: req.ip,
@@ -113,7 +118,11 @@ export class AuthService {
         };
         SaveLoginAttemptDataSchema.parse(loginData);
         const loginAttemptDoc = await this.authLoginAttemptRepository.create(loginData);
-        if (!loginAttemptDoc) throw new LogOnlyError('Logging login attempts failed, log and move on');
+        if (!loginAttemptDoc) throw new LogOnlyError(
+            'Logging login attempts failed, log and move on',
+        { location: "authService.logLoginAttempt"},
+        ErrorCode.LOGGING_FAILED
+    );
     }
 
 }

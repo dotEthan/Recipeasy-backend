@@ -5,11 +5,12 @@ import { Recipe } from "../types/recipe";
 import { FeUserSchema } from "../schemas/user.schema";
 import { BadRequestError } from "../errors";
 import { ensureObjectId } from "../util/ensureObjectId";
+import { FeRecipeSchema } from "../schemas/recipe.schema";
+import { z } from "zod";
+import { ErrorCode } from "../types/enums";
 
 /**
  * User based req and res handling
- * @todo BOW TO ZOD PARSING!
- * @todo console.logs
  * @todo Error Handling
  */
 // 
@@ -20,10 +21,11 @@ export class UserController {
 
     public getUsersData = async (req: Request, res: Response): Promise<void> => {
         const userId = req.params.id;
-        if (!userId) {
-            res.status(401).json({success: false, message: 'User Id missing from request'});
-            return;
-        }
+        if (!userId) throw new BadRequestError(
+            'UserId missing from request', 
+            { location: 'usersController.getUsersData', reqParams: req.params}, 
+            ErrorCode.RESOURCE_ID_PARAM_MISSING
+        );
 
         const freshUser = await this.userService.getUserData(ensureObjectId(userId));
 
@@ -34,13 +36,18 @@ export class UserController {
             userRecipes = paginatedResponse.data;
             totalRecipes = paginatedResponse.totalDocs
         }
-        console.log('getUsersData - retrieved:');
+        FeUserSchema.parse(freshUser);
+        z.array(FeRecipeSchema).parse(userRecipes);
         res.status(200).json({ user: freshUser, userRecipes, totalRecipes });
     }
 
     public updateUserRecipes = async (req: Request, res: Response): Promise<void> => {
         const currentUserId = ensureObjectId(req.params.id);
-        if(!currentUserId) throw new BadRequestError('Malformed User ID', { currentUserId });
+        if(!currentUserId) throw new BadRequestError(
+            'User Id Param not valid', 
+            { currentUserId, location: 'usersController.updateUserRecipes' }, 
+            ErrorCode.RESOURCE_ID_PARAM_MISSING
+        );
 
         const toBeAddedRecipeId = ensureObjectId(req.body.recipeId);
         const originalUserId = ensureObjectId(req.body.originalUserId);

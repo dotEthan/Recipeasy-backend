@@ -11,7 +11,7 @@ export class DbIndexManager {
             await this.createRecipeIndexes(db);
             this.initialized = true;
         } catch (error) {
-            console.log('DB index initialization error: ', error);
+            console.error('DB index initialization error: ', error);
         }
     }
 

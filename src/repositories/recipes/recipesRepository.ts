@@ -8,21 +8,24 @@ import { IRecipeRepository } from "./recipeRepository.interface";
 
 /**
  * Recipes Collection specific Mongodb Related calls
- * @todo create and implement Interface
- * @todo Try to make more generic and ensure best practices
+ * @todo refactor with coming calls - Generic VS Specific
  */
 // 
 export class RecipesRepository extends BaseRepository<RecipeDocument> implements IRecipeRepository<RecipeDocument> {
     constructor() {
         super('recipes');
     }
-    
+
     async createRecipe(recipe: Omit<RecipeDocument, '_id'>): Promise <InsertOneResult<RecipeDocument>> {
         return await this.create(recipe);
     }
 
     async updateRecipe(filter: Filter<Recipe>, recipe: FeRecipeOmitId): Promise <CreatedDataResponse<RecipeDocument> | null> {
         return await this.findOneAndReplace(filter, recipe);
+    }
+    
+    async updateRecipeObject(filter: Filter<Recipe>, updatedData: Partial<Recipe>) {
+        return await this.updateOne(filter, { $set: { ...updatedData }});
     }
 
     async paginatedFindByIndex(filterBy: Filter<Recipe>, options: PaginationOptions<Recipe>): Promise<WithId<RecipeDocument>[]>  {

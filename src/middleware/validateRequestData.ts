@@ -8,12 +8,9 @@ import { AnyZodObject } from "zod";
 export const validateRequestBodyData = (schema: AnyZodObject) => 
   (req: Request, res: Response, next: NextFunction) => {
     try {
-      console.log('validating Request Data Middleware: ', req.body)
-      // console.log('validating Request Data schema: ', schema)
       schema.parse(req.body);
       next();
     } catch (error) {
-      console.log('validateRequestBodyData error: ', error)
       next(error);
     }
 };

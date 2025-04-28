@@ -17,6 +17,7 @@ export type Recipe = {
   notes: string[];
   userId: ObjectId;
   equipment?: string[];
+  internalState: InternalState;
   updatedAt: Date;
   createdAt: Date;
 }
@@ -76,4 +77,10 @@ export type RatingItem = {
 export type MetaDetails = {
   createdAt: Date;
   updatedAt: Date;
+}
+
+export type InternalState = {
+    isDeleted: boolean;
+    wasDeletedAt: Date;
+    deletedBy:  ObjectId;
 }

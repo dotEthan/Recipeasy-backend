@@ -38,7 +38,6 @@ export async function initialize(passport: PassportStatic) {
                 return done(null, false, { message: 'Password incorrect'});
             };
         } catch(error: unknown) {
-            console.log('passport.authenticateUser error: ', error);
             if (error instanceof UnauthorizedError || error instanceof ServerError) {
                 return done(error);
             } else if (error instanceof Error) {

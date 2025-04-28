@@ -1,5 +1,7 @@
 import { NextFunction, Request, Response } from "express";
 import { UserRoles } from "../enums";
+import { ForbiddenError, UnauthorizedError } from "../errors";
+import { ErrorCode } from "../types/enums";
 
 /**
  * Validate Image Upload Data
@@ -12,12 +14,17 @@ import { UserRoles } from "../enums";
  */  
 export const validateImageUpload = (req: Request, res: Response, next: NextFunction): void => {
 
-    if (!req.isAuthenticated()) res.status(401).json('User not logged in');
+    if (!req.isAuthenticated()) throw new UnauthorizedError(
+        'User not autheticated, relogin',
+        { location: 'validateImageUpload.validateImageUpload', autheticated: req.isAuthenticated },
+        ErrorCode.USER_NOT_AUTHETICATED
+    )
 
-    if (req.user?.role === UserRoles.testMode) res.status(403).json('User not allowed to upload');
+    if (req.user?.role === UserRoles.testMode) throw new ForbiddenError(
+        'User role not allowed to upload',
+        { location: 'validateImageUpload.validateImageUpload', role: req.user.role},
+        ErrorCode.USER_ROLE_FORBIDDEN
+    )
 
-    console.log('fileSize: ', req.file?.size);
-
-    console.log('image upload Validated');
     next();
 }

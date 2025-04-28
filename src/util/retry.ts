@@ -9,7 +9,7 @@ import { RetryOptions } from "../types/utiil";
  * @throws {unknownError} - Throws whatever error is last thrown after retries fail
  * @example
  * import retryFunction = './retry';
- * retryFunction(() => this.collection.findOneAndUpdate(), { numOfAttempts: 3, delay: 3000 });
+ * retryFunction(() => this.collection.findOneAndUpdate('_id', { $set: { updatedAt: new Date() }}), { numOfAttempts: 3, delay: 3000 });
  */  
 
 export async function retryFunction<T>(operation: () => Promise<T>, options: RetryOptions): Promise<T> {

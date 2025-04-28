@@ -6,6 +6,7 @@ import { EmailAuthCodeDocument } from "../types/auth";
 import { ForbiddenError, ServerError } from "../errors";
 import { createVerificationCodeSchema } from "../schemas/admin.schema";
 import { StandardResponse } from "../types/responses";
+import { ErrorCode } from "../types/enums";
 
 /**
  * Handles all new user Email Verification related services
@@ -47,13 +48,20 @@ export class EmailVerificationService {
         await this.authVerificationCodesRepository.createVerificationCode(createVerifyCodeData);
 
         const info = await this.emailService.sendEmailToUser('emailVerificationCode', displayName, email, verificationCode);
-        if (!info) throw new ServerError('email sending failed');
+        if (!info) throw new ServerError(
+            'email sending failed',
+            { location: 'emailVerificationService.setAndSendVerificationCode' },
+            ErrorCode.EMAIL_SENDING_FAILED
+        );
         if (info.rejected.length > 0) {
-            console.log('setAndSendVerificationCode info.response: ', info.response)
             // (SMTP error codes)
             // const match = info.response.match(/^\d{3}| \d{3}/); // Match first 3 digits or 3 digits after a space
             // const code = match ? parseInt(match[0].trim()) : null;
-            throw new ServerError('email rejected, retry or new email, 3 retries, new email');
+            throw new ServerError(
+                'email rejected, retry or new email, 3 retries, new email', 
+                { location: 'emailVerificationService.setAndSendVerificationCode' },
+                ErrorCode.SENT_EMAIL_REJECTED
+            );
         }
 
         console.log(`Verification Email sent: ${info.messageId}, code: ${verificationCode}, message response: ${info.response}`);
@@ -91,7 +99,11 @@ export class EmailVerificationService {
         if (vCode?.code && code === vCode.code) isVerified = true;
 
         if (!isVerified) {
-            throw new ForbiddenError('Code Verification Failed', { code, userId });
+            throw new ForbiddenError(
+                'Code Verification Failed', 
+                { code, userId, location: 'emailVerificationService.setAndSendVerificationCode' },
+                ErrorCode.TOKEN_VERIFICATION_FAILED
+            );
         }
         return isVerified;
     }
