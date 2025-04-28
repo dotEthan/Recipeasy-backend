@@ -56,7 +56,7 @@ export const InternalStateSchema = z.object({
     isDeleted: z.boolean().default(false),
     wasDeletedAt: z.coerce.date(),
     deletedBy:  ObjectIdSchema
-})
+}).strict();
 
 export const BeRecipeSchema = z
 .object({
@@ -79,7 +79,7 @@ export const BeRecipeSchema = z
   updatedAt: z.coerce.date()
 }).strict(); 
 
-export const FeRecipeSchema = BeRecipeSchema.omit({internalState: true, createdAt: true });
+export const FeRecipeSchema = BeRecipeSchema.omit({internalState: true, createdAt: true }).strict();
 
 export const NewRecipeSchema = z.object({
     recipe: FeRecipeSchema.omit({_id: true, updatedAt: true})
@@ -94,4 +94,6 @@ export const StandardRecipeResponseSchema = z.object({
     message: z.string().optional(),
     recipe: FeRecipeSchema.optional(),
     error: z.string().optional()
-})
+}).strict();
+
+export const PartialRecipeSchema = BeRecipeSchema.partial().strict();

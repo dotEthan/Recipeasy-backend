@@ -46,7 +46,6 @@ export class EmailService {
                 pass: 'nXCbfzUBxW1ynTUkuk', // ethermail accounts
             },
         });
-        console.log(template.text(displayName, code));
         return await transporter.sendMail({
             from: '"Recipeasy Admin" <dotethan@ethanstrauss.com>',
             to: email,

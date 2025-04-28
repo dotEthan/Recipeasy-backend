@@ -65,3 +65,5 @@ export type PreviousPasssword = {
 }
 
 export interface UserDocument extends User, Document{};
+
+export type MongoDbUserProjection = Partial<Record<keyof UserDocument, 0 | 1 | boolean>>;

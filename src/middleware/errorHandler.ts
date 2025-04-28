@@ -3,12 +3,14 @@ import jwt from 'jsonwebtoken';
 import { AppError } from "../errors";
 import { ZodError } from "zod";
 import { MongoError } from "mongodb";
-import { UnauthorizedError } from "../errors";
+import { ErrorCode } from "../types/enums";
 
 /**
  * Global Error Handler Middleware
  * @todo Refactor all throw new error() to use
+ * @todo handle MongoDB erorr codes
  * @todo log login attempts and more
+ * @todo Error Stack implementation in development
  * @param {Error/AppError} - Error thrown 
  * @param {Request, Response, Next} - The usual three from the call being wrapped 
  * @returns {Void} - Nothing, calls res as needed.
@@ -22,16 +24,14 @@ export const errorHandler = (error: unknown, req: Request, res: Response, next: 
     let statusCode: number = 500;
     let message = 'Internal Server Error';
     let errorDetails = {};
+    let errorCode: ErrorCode = ErrorCode.SERVER_DEFAULT;
 
     // console.log(`name: ${error.name} message: ${error.message} stack: ${error.stack}`);
-    console.log('error handler: ', error);
 
     if (error instanceof AppError) {
         statusCode = error.statusCode;
+        errorCode = error.errorCode ?? ErrorCode.SERVER_DEFAULT;
         message = error.message;
-    } else if (error instanceof UnauthorizedError) {
-        statusCode = 401;
-        message = 'Validation Error';
     } else if (error instanceof ZodError) {
         statusCode = 400;
         message = 'Validation Error';
@@ -59,7 +59,7 @@ export const errorHandler = (error: unknown, req: Request, res: Response, next: 
         statusCode = 401;
         message = 'Password reset token has expired';
     } else {
-        console.log('Unhandled error type', error);
+        console.error('Unhandled error type', error);
     }
 
     // TODO Get the error.stack working for
@@ -68,11 +68,11 @@ export const errorHandler = (error: unknown, req: Request, res: Response, next: 
     const resError = {
         status: statusCode,
         message,
+        errorCode,
         ...(statusCode === 400 && {details: errorDetails}),
        stack: {}
     }
 
-    console.log('error handler done: ');
     res.status(statusCode).json({ error: resError });
     return;
 }

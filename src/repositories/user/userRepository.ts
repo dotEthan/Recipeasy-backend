@@ -3,13 +3,13 @@ import { DeleteResult, InsertOneResult, ObjectId, UpdateResult } from "mongodb";
 import { BaseRepository } from "../base/baseRepository";
 
 import { IsEmailSchema, IsObjectIdSchema } from "../../schemas/shared.schema";
-import { UserDocument } from "../../types/user";
+import { MongoDbUserProjection, PreviousPasssword, UserDocument, UsersRecipeData } from "../../types/user";
 import { Recipe } from "../../types/recipe";
 import { IUserRepository } from "./userRepository.interface";
 
 /**
- * Users Collection specific Mongodb Related calls
- * @todo create and implement Interface
+ * 'users' Collection specific Mongodb Related calls
+ * @todo replace id/email with filter: Filter
  */
 // 
 export class UserRepository extends BaseRepository<UserDocument> implements IUserRepository<UserDocument> {
@@ -22,7 +22,7 @@ export class UserRepository extends BaseRepository<UserDocument> implements IUse
         return await this.create(data);
     }
 
-    async findById<T extends Partial<UserDocument> = UserDocument>(_id: ObjectId, addedProjection?: Partial<Record<keyof UserDocument, 0 | 1 | boolean>>): Promise<T | null> {
+    async findById<T extends Partial<UserDocument> = UserDocument>(_id: ObjectId, addedProjection?: MongoDbUserProjection): Promise<T | null> {
         IsObjectIdSchema.parse({_id});
         const defaultProjection = { createdAt: 0, previousPasswords: 0 };
         const projection = addedProjection ?? defaultProjection;
@@ -33,7 +33,7 @@ export class UserRepository extends BaseRepository<UserDocument> implements IUse
         return findResult ? findResult as T : null;
     };
 
-    async findPartialById(_id: ObjectId, addedProjection?: Partial<Record<keyof UserDocument, 0 | 1 | boolean>>): Promise<Partial<UserDocument> | null> {
+    async findPartialById(_id: ObjectId, addedProjection?: MongoDbUserProjection): Promise<Partial<UserDocument> | null> {
         IsObjectIdSchema.parse({_id});
         const defaultProjection = { createdAt: 0, previousPasswords: 0 };
         const projection = addedProjection ?? defaultProjection;
@@ -43,7 +43,7 @@ export class UserRepository extends BaseRepository<UserDocument> implements IUse
         );
     };
 
-    async findByEmail(email: string, addedProjection?: Document): Promise<UserDocument | null> {
+    async findByEmail(email: string, addedProjection?: MongoDbUserProjection): Promise<UserDocument | null> {
         IsEmailSchema.parse({email});
         const defaultProjection = { createdAt: 0, previousPasswords: 0 };
         const projection = addedProjection ?? defaultProjection;
@@ -53,7 +53,7 @@ export class UserRepository extends BaseRepository<UserDocument> implements IUse
         );
     };
 
-    async findIdByEmail(email: string, addedProjection?: Document): Promise<ObjectId | undefined> {
+    async findIdByEmail(email: string, addedProjection?: MongoDbUserProjection): Promise<ObjectId | undefined> {
         IsEmailSchema.parse({email});
         const defaultProjection = { createdAt: 0, previousPasswords: 0 };
         const projection = addedProjection ?? defaultProjection;
@@ -65,31 +65,58 @@ export class UserRepository extends BaseRepository<UserDocument> implements IUse
     };
     
     async updateById(_id: ObjectId, update: Partial<UserDocument>): Promise<UpdateResult | null> {
-        IsObjectIdSchema.parse({_id});
-        const updatedData = {...update, updatedAt: new Date()}
-        return await this.updateOne({_id}, updatedData);
+        IsObjectIdSchema.parse({ _id });
+        return await this.updateOne({ _id }, update);
     };
+    
+    async updateCachedPasswords(_id: ObjectId, cachedPasswordArray: PreviousPasssword[]) {
+        IsObjectIdSchema.parse({_id});
+        return await this.updateOne(
+            { _id },
+            { $set: {
+                previousPasswords: cachedPasswordArray,
+                updatedAt: new Date()
+            } }
+        );
+    }
 
     // No Dupes
-    async addToUsersRecipesArray(_id: ObjectId, recipeId: ObjectId): Promise<UpdateResult | null> {
-        IsObjectIdSchema.parse({_id});
-        return await this.updateByMergeOneNoDupe({_id}, {$addToSet: {recipes: {id: recipeId} }});
+    // TODO combine these three? updateUserObject
+    async addToUsersRecipesArray(_id: ObjectId, usersRecipesObject: UsersRecipeData): Promise<UpdateResult | null> {
+        IsObjectIdSchema.parse({ _id });
+        return await this.updateByMergeOneNoDupe(
+            {_id}, 
+            {
+                $addToSet: { recipes: usersRecipesObject },
+                $set: { updatedAt: new Date() }
+            }
+        );
     };
-
+    
     // No Dupes
     async updateAlterationsOnUserRecipes(_id: ObjectId, recipeId: ObjectId, alterations: Partial<Recipe>): Promise<UpdateResult | null> {
-        IsObjectIdSchema.parse({_id});
-        IsObjectIdSchema.parse({_id: recipeId});
+        IsObjectIdSchema.parse({ _id });
+        IsObjectIdSchema.parse({ _id: recipeId });
         return await this.updateOne({
             _id,
             "recipes.id": recipeId
         }, {
             $set: {
                 "recipes.$.alterations": alterations,
-                "recipes.$.copyDetails.modified": true
+                "recipes.$.copyDetails.modified": true,
+                "updatedAt": new Date()
             }
         });
     };
+
+    
+    async removeFromUserRecipeArray(_id: ObjectId, dataToRemove: UsersRecipeData) {
+        IsObjectIdSchema.parse({ _id });
+        return await this.updateOne({ _id }, {
+            $pull: { recipes: dataToRemove },
+            $set: { updatedAt: new Date() }
+        });
+    }
 
     // For Admin Dashboard
     async deleteUser(_id: ObjectId): Promise<DeleteResult> {

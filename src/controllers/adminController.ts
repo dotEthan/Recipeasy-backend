@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 
 import { PasswordService } from "../services/passwordService";
-import { TokenTypes } from "../types/enums";
+import { ErrorCode, TokenTypes } from "../types/enums";
 import { StandardResponseSchema } from "../schemas/shared.schema";
 import { ensureObjectId } from "../util/ensureObjectId";
 import { BadRequestError, UnauthorizedError } from "../errors";
@@ -40,7 +40,11 @@ export class AdminController {
      */
     public resetPasswordRequest =  async (req: Request, res: Response): Promise<void> => {
         const email: string = req.body.email;
-        if (!email) throw new BadRequestError('resetPasswordRequest - email missing from req.body', { body: req.body });
+        if (!email) throw new BadRequestError(
+            'resetPasswordRequest - email missing from req.body', 
+            { body: req.body },
+            ErrorCode.MISSING_REQUIRED_BODY_DATA
+        );
         const passwordReset = await this.passwordService.startPasswordResetFlow(email);
 
         StandardResponseSchema.parse(passwordReset);
@@ -56,7 +60,11 @@ export class AdminController {
      */
     public validatePasswordToken = async (req: Request, res: Response) => {
         const token = req.body.code;
-        if (!token) throw new BadRequestError('resetPasswordRequest - code missing from req.body', { body: req.body });
+        if (!token) throw new BadRequestError(
+            'resetPasswordRequest - code missing from req.body', 
+            { body: req.body, location: "adminController.validatePasswordToken" },
+            ErrorCode.MISSING_REQUIRED_BODY_DATA
+        );
         const response = await this.passwordService.validatePasswordToken(token, TokenTypes.PASSWORD_RESET);
 
         StandardResponseSchema.parse(response);
@@ -73,7 +81,11 @@ export class AdminController {
      */
     public finishPasswordResetRequest = async (req: Request, res: Response) => {
         const { code: token, password } = req.body;
-        if (!token || !password) throw new BadRequestError('resetPasswordRequest - code or password missing from req.body', { body: req.body });
+        if (!token || !password) throw new BadRequestError(
+            'resetPasswordRequest - code or password missing from req.body', 
+            { body: req.body, location: "adminController.finishPasswordResetRequest" },
+            ErrorCode.MISSING_REQUIRED_BODY_DATA
+        );
         const success = await this.passwordService.passwordResetFinalStep(token, password);
 
         StandardResponseSchema.parse(success);
@@ -93,8 +105,16 @@ export class AdminController {
     public verifyCode = async (req: Request, res: Response): Promise<void> => {
         const code = req.body.code as string;
         const currentUserId = req.session.unverifiedUserId || req.user?._id;
-        if (!currentUserId) throw new UnauthorizedError('User Session Ended, please log in again');
-        if (!code) throw new BadRequestError('verifyCode - Code not present', { code, currentUserId})
+        if (!currentUserId) throw new UnauthorizedError(
+            'User Session Ended, please log in again',
+            { location: 'adminController.verifyCode'},
+            ErrorCode.USER_SESSION_NOT_FOUND
+        );
+        if (!code) throw new BadRequestError(
+            'verifyCode - Code not present', 
+            { code, currentUserId,  location: 'adminController.verifyCode' },
+            ErrorCode.MISSING_REQUIRED_BODY_DATA
+        )
 
         const userId = ensureObjectId(currentUserId);
         const verified = await this.emailVerificationService.checkVerificationCode(userId, code);

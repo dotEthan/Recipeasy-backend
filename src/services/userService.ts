@@ -4,19 +4,19 @@ import { UserRepository } from "../repositories/user/userRepository";
 import { createNewUserUtility } from "../util/createNewuser";
 
 import { BeCreateUserSchema, BeUpdateUsersRecipesSchema, UpdateByIdSchema } from "../schemas/user.schema";
-import { UserDocument, UsersRecipeData } from "../types/user";
+import { User, UserDocument, UsersRecipeData } from "../types/user";
 import { CreatedDataResponse, StandardResponse } from "../types/responses";
 import { NotFoundError, ServerError } from "../errors";
 import { EmailVerificationService } from "./emailVerificationService";
-import { IsObjectIdSchema } from "../schemas/shared.schema";
+import { IsEmailSchema, IsObjectIdSchema } from "../schemas/shared.schema";
 import { ensureObjectId } from "../util/ensureObjectId";
+import { ErrorCode } from "../types/enums";
 
 /**
  * Handles all user related services
  * @todo previousPasswords hash TLL = 1yr for hash
  * @todo Ensure all errors are handled
  * @todo Add logging
- * @todo BOW TO ZOD PARSING!
  */
 // 
 export class UserService {
@@ -30,35 +30,56 @@ export class UserService {
         const newUserData = createNewUserUtility(displayName, email, hashedPassword);
         
         BeCreateUserSchema.parse(newUserData);
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const creationResult = await this.userRepository.createUser(newUserData);
-        if (!creationResult.acknowledged || !creationResult.insertedId) throw new ServerError('createNewUser - Create new user failed', { newUserData })
+        if (!creationResult.acknowledged || !creationResult.insertedId) throw new ServerError(
+            'Create new user failed', 
+            { newUserData, location: 'userService.createNewUser' },
+            ErrorCode.MONGODB_RESOURCE_CREATE_FAILED
+        )
 
         const userId = ensureObjectId(creationResult.insertedId);
-        IsObjectIdSchema.parse(userId);
-        const user = await this.userRepository.findById(creationResult.insertedId);
-        if (!user) throw new ServerError(`createNewUser - User not created`, { createdUserId: creationResult.insertedId });
+        const user = await this.userRepository.findById(userId);
+        if (!user) throw new NotFoundError(
+            `Newly created user not found`, 
+            { createdUserId: userId, location: 'userService.createNewUser' },
+            ErrorCode.NO_USER_WITH_ID
+        );
 
         const verificationSetAndSent = await this.emailVerificationService.setAndSendVerificationCode(email, displayName, user._id );
-        if (!verificationSetAndSent.success) throw new ServerError(`createNewUser - Verificatin Code not set or sent`);
+        if (!verificationSetAndSent.success) throw new ServerError(
+            `Verificatin Code not set or sent`, 
+            { location: 'userService.createNewUser' },
+            ErrorCode.OPERATION_FAILED
+        );
 
         return user;
     }
 
-    public async getUserData(_id: ObjectId): Promise<UserDocument> {    
+    public async getUserData(_id: ObjectId): Promise<UserDocument> {
         const userResponse = await this.userRepository.findById(_id);
-        if(!userResponse) throw new NotFoundError(`getUserData - User Not Found relogin`, { userId: _id});
+        if(!userResponse) throw new NotFoundError(
+            `User Not Found relogin`, 
+            { userId: _id, location: 'userService.getUserData' },
+            ErrorCode.NO_USER_WITH_ID
+        );
         return userResponse as UserDocument;
     }
 
     public async setUserVerified(_id: ObjectId): Promise<StandardResponse> {
-        console.log('Setting user to Verified');
         const hasUser = await this.userRepository.findById(_id);
-        if (!hasUser) throw new NotFoundError(`setUserVerified - User Not Found, relogin`, { _id });
-        const updatedData = {verified: true};
+        if (!hasUser) throw new NotFoundError(
+            `User Not Found, relogin`, 
+            { _id, location: 'userService.setUserVerified' },
+            ErrorCode.NO_USER_WITH_ID
+        );
+        const updatedData = { verified: true, updatedAt: new Date() } as Partial<User>;
         UpdateByIdSchema.parse({updatedData});
         const updateResult = await this.userRepository.updateById(_id, { $set: updatedData});
-        if(!updateResult?.acknowledged || updateResult?.modifiedCount === 0) throw new ServerError('update not successful', { _id, updatedData});
+        if(!updateResult?.acknowledged || updateResult?.modifiedCount === 0) throw new ServerError(
+            'update not successful', 
+            { _id, updatedData, location: 'userService.setUserVerified' },
+            ErrorCode.MONGODB_RESOURCE_UPDATE_FAILED
+        );
         return {success: (updateResult.modifiedCount > 0)};
     }
 
@@ -85,9 +106,14 @@ export class UserService {
             }
         } as UsersRecipeData
         BeUpdateUsersRecipesSchema.parse(dataToAdd);
+        IsObjectIdSchema.parse(userId);
+        const user = await this.userRepository.findOneAndUpdate({ _id: userId }, { $addToSet: { recipes: dataToAdd }, $set: { updatedAt: new Date() }});
 
-        const user = await this.userRepository.findOneAndUpdate({ '_id': userId }, { $addToSet: { recipes: dataToAdd }});
-        if(!user) throw new ServerError('updateUserRecipes - Update User Failed', { userId, dataToAdd });
+        if(!user) throw new ServerError(
+            'Update User Failed', 
+            { userId, dataToAdd, location: 'userService.updateUserRecipes' },
+            ErrorCode.MONGODB_RESOURCE_UPDATE_FAILED
+        );
 
         return user;
     }
@@ -102,7 +128,7 @@ export class UserService {
      * await userService.findUserById('test@test.com');
      */
     public async findUserByEmail(email: string): Promise<WithId<UserDocument> | null> {
-        // parse
+        IsEmailSchema.parse({ email });
         return await this.userRepository.findOne({'email': email})
     }
 
@@ -116,7 +142,7 @@ export class UserService {
      * await userService.findUserById('12332132');
      */
     public async findUserById(_id: ObjectId): Promise<WithId<UserDocument> | null> {
-        // parse
-        return await this.userRepository.findOne({_id});
+        IsObjectIdSchema.parse({ _id })
+        return await this.userRepository.findOne({ _id });
     }
 }

@@ -45,12 +45,9 @@ Backend Functionality has now surpassed Front-end, and contains full login, verf
 
 - Retries where needed: 3 tries, fail and notify - Verification retries > 3 = new code, . 
 - Code Cleaning 
-    - removing console logs 
-    - Validation parsing 
     - middleware 
     - prioritizing TODOs (now VS later)
-    - organize schemas
-    - All "Update" flows add "updatedAt"
+    - csurf -> async-csrf
 
 ### To Come:
 
@@ -66,8 +63,11 @@ Backend Functionality has now surpassed Front-end, and contains full login, verf
     - Backups
     - Logging (Sonar? others)
 
-    
+
+- /types/enums.ts VS /enums/index.ts    
+- organize schemas
 - setup retry-ables
+- Final erorr sweep, missing and duplicates
 - Look into OpenAPIdocs just to show jsDoc in structured format
 - Testing
 - Recipe Search/ingredient auto complete

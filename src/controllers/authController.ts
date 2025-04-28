@@ -3,8 +3,6 @@ import passport, { AuthenticateOptions } from "passport";
 
 import { AuthService } from "../services/authService";
 import { PasswordService } from "../services/passwordService";
-import { RecipeService } from "../services/recipeService";
-import { UserService } from "../services/userService";
 
 import { User } from "../types/user";
 import { FeUserSchema, LoginResSchema } from "../schemas/user.schema";
@@ -13,17 +11,13 @@ import { ErrorCode } from "../types/enums";
 
 /**
  * Authorization based req and res handling
- * @todo BOW TO ZOD PARSING!
- * @todo console.logs
  * @todo Error Handling
  */
 // 
 export class AuthController {
 
     constructor(
-        private userService: UserService, 
         private authService: AuthService,
-        private recipeService: RecipeService,
         private passwordService: PasswordService
     ) { }
     
@@ -40,7 +34,11 @@ export class AuthController {
     
     public register = async (req: Request, res: Response): Promise<void> => {
         const {displayName, email, password} = req.body;
-        if (!displayName || !email || !password) throw new BadRequestError('register - req.body missing required data', { body: req.body })
+        if (!displayName || !email || !password) throw new BadRequestError(
+            'register - req.body missing required data', 
+            { body: req.body },
+            ErrorCode.RESOURCE_ID_PARAM_MISSING
+        )
 
         const registeredUser = await this.authService.registerNewUser(displayName, email, password);
 
@@ -62,8 +60,12 @@ export class AuthController {
      * @throws {ZodError} 401 - Validation failed
      */
     public login = async (req: Request, res: Response): Promise<void> => {
-        const email = req.body.email;
-        if (!email) throw new BadRequestError('register - req.body missing required data', { body: req.body })
+        const { email, password } = req.body;
+        if (!email || ! password) throw new BadRequestError(
+            'register - req.body missing required data', 
+            { body: req.body },
+            ErrorCode.MISSING_REQUIRED_BODY_DATA
+        )
         await this.passwordService.checkIfPwResetInProgress(email);
 
         const authenticatedUser = await this.authenticateUser(req, res);
@@ -121,12 +123,16 @@ export class AuthController {
      * @throws {ZodError} 401 - Validation failed
      */
     public checkSession = (req: Request, res: Response) => {
-        if (req.isAuthenticated()) {
-            const user = req.user;
+        const user = req.user;
+        if (req.isAuthenticated() && user) {
             FeUserSchema.parse(user)
             res.status(200).json({ success: true, user });
         } else {
-            res.status(401).json({success: false, message: 'User Not Autheticated'})
+            throw new UnauthorizedError(
+                'User session not found', 
+                { location: 'authController.checkSession' }, 
+                ErrorCode.REQ_USER_MISSING
+            );
         }
     }
 
