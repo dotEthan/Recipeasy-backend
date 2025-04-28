@@ -7,13 +7,25 @@ import { VerifiedUserOrErrorFunc } from '../types/passport';
 import { UserRepository } from '../repositories/user/userRepository';
 import { ObjectId } from 'mongodb';
 import { User } from '../types/user';
+import { ServerError, UnauthorizedError } from '../errors';
 
+/**
+ * Initializes Passport for authentication, working with express-sessions
+ * @function initialize
+ * @param {PassportStatic} passport - An async function to be retried 
+ * @example
+ * import passport from 'passport';
+ * import initialize from './config/passport';
+ * 
+ * initialize(passport);
+ * app.use(passport.initialize());
+ * app.use(passport.session());
+ */  
 
 export async function initialize(passport: PassportStatic) {
     const userRepository = new UserRepository();
     
     const authenticateUser = async (email: string, password: string, done: VerifiedUserOrErrorFunc) => {
-        console.log('authetication: ', email)
         try {
             const user = await userRepository.findByEmail(email);
             if (user == null) {
@@ -27,23 +39,32 @@ export async function initialize(passport: PassportStatic) {
             };
         } catch(error: unknown) {
             console.log('passport.authenticateUser error: ', error);
-            if (error instanceof Error) {
+            if (error instanceof UnauthorizedError || error instanceof ServerError) {
                 return done(error);
+            } else if (error instanceof Error) {
+                return done(
+                    new ServerError('Passport failed to create session',
+                        { 
+                            location:'authController.authenticateUser', 
+                            originalError: {
+                                name: error.name, 
+                                message: error.message, 
+                                stack: error.stack
+                            } 
+                        },
+                    )
+                );
             };
-
-            return done(new Error(String(error)));
         }
     };
 
     passport.use(new Strategy({ usernameField: 'email' }, authenticateUser));
 
     passport.serializeUser((user: Express.User, done: (err: Error | null, id?: string | undefined) => void) => {
-        console.log('serialization: ', user._id)
         done(null, user._id.toString());
     });
 
     passport.deserializeUser(async (id: string, done) => {
-        console.log('deserialization: ', id)
         try {
             const user = await userRepository.findById(new ObjectId(id)) as User;
             done(null, user);

@@ -8,7 +8,7 @@ import { Visibility } from "../types/enums";
 import { BadRequestError, NotFoundError, ServerError } from "../errors";
 import { ensureObjectId } from "../util/ensureObjectId";
 import { mergeAlterations } from "../util/mergeAlterations";
-import { FeSavedRecipeSchema, FeUpdateRecipeSchema } from "../schemas/recipe.schema";
+import { NewRecipeSchema, FeUpdateRecipeSchema } from "../schemas/recipe.schema";
 import { IsObjectIdSchema } from "../schemas/shared.schema";
 
 /**
@@ -40,7 +40,7 @@ export class RecipeService {
     public async saveRecipe(recipe: Recipe, userId: ObjectId): Promise<StandardRecipeResponse> {
         let success = false;
 
-        FeSavedRecipeSchema.parse({recipe});
+        NewRecipeSchema.parse({recipe});
         const recipeSaveResponse = await this.recipesRepository.createRecipe(recipe);
         if (!recipeSaveResponse.acknowledged || !recipeSaveResponse.insertedId) throw new ServerError('saveRecipe - Create recipe failed', { recipe, recipeSaveResponse })
         
@@ -66,7 +66,7 @@ export class RecipeService {
      * @return {PaginateResponse} - succes, message, recipe, error
      * @example
      * const recipeService = useRecipeService();
-     * await recipeService.getRecipes(Visibility.Public, 25, 75);
+     * await recipeService.getRecipes(Visibility.PUBLIC, 25, 75);
      */  
     public async getRecipes(visibility: Visibility | undefined, limit: number, skip: number): Promise<PaginateResponse> {
         const query: Filter<Recipe> = {
@@ -115,9 +115,12 @@ export class RecipeService {
 
         let recipeResponse: RecipeDocument;
         if (userIsCreator) {
-            FeUpdateRecipeSchema.parse({recipe});
-            IsObjectIdSchema.parse(recipeId);
-            const recipeSaveResponse = await this.recipesRepository.updateRecipe({ '_id': recipeId }, recipe);
+            console.log('user is Creator');
+            FeUpdateRecipeSchema.parse({ recipe });
+            IsObjectIdSchema.parse({ _id: recipeId });
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            const {_id, ...recipeNoId} = recipe;
+            const recipeSaveResponse = await this.recipesRepository.updateRecipe({ '_id': recipeId }, recipeNoId);
             if (recipeSaveResponse === null) throw new ServerError('Updating recipe failed: recipe does not exist', { recipeId, recipe});
             recipeResponse = recipeSaveResponse;
         } else {

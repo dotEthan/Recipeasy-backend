@@ -7,7 +7,7 @@ import { validateRequestBodyData } from "../middleware/validateRequestData";
 import { catchAsyncError } from "../util/catchAsyncErrors";
 
 import { ResetFlowSetPasswordSchema } from "../schemas/user.schema";
-import { IsEmailSchema, IsStringSchema } from "../schemas/shared.schema";
+import { IsCodeSchema, IsEmailSchema } from "../schemas/shared.schema";
 
 /**
  * Handles all Administration based routes
@@ -34,14 +34,14 @@ router.get('/csrf-token', catchAsyncError(adminController.getCsurf));
  * Verify a user's authentication code
  * @route POST /admin/verification-codes/verify
  * @group Authentication - Code verification
- * @param {VerifyCodeRequest} request.body.required - Code and user identifier
+ * @param {VerifyCodeRequest} request.body.code.required - Code and user identifier
  * @returns {SuccessResponse} 200 - Verification successful
  * @returns {ErrorResponse} 400 - Invalid code format
  * @returns {ErrorResponse} 401 - Code expired or incorrect
  * @produces application/json
  * @consumes application/json
  */
-router.post('/verification-codes/verify', validateRequestBodyData(IsStringSchema), catchAsyncError(adminController.verifyCode));
+router.post('/verification-codes/verify', validateRequestBodyData(IsCodeSchema), catchAsyncError(adminController.verifyCode));
 
 
 /**
@@ -70,7 +70,7 @@ router.post('/password-reset-requests', validateRequestBodyData(IsEmailSchema), 
  * @produces application/json
  * @consumes application/json
  */
-router.post('/password-reset/validate', validateRequestBodyData(IsStringSchema), catchAsyncError(adminController.validatePasswordToken));
+router.post('/password-reset/validate', validateRequestBodyData(IsCodeSchema), catchAsyncError(adminController.validatePasswordToken));
 
 /**
  * Final step in user password reset Request - update with new password

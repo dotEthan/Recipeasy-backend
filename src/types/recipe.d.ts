@@ -22,6 +22,7 @@ export type Recipe = {
 }
 
 export type FeRecipe = Omit<Recipe, 'createdAt'>;
+export type FeRecipeOmitId = Omit<Recipe, '_id'>;
 
 export type RecipeInfo = {
   mealType?: string[];

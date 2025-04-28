@@ -2,6 +2,8 @@
 import { v2 as cloudinary } from 'cloudinary';
 import multer from 'multer';
 import { Request } from 'express';
+import { BadRequestError } from '../errors';
+import { ErrorCode } from '../types/enums';
 
 cloudinary.config({
     cloud_name: process.env.CLOUDINARY_NAME,
@@ -17,7 +19,7 @@ const fileFilter = (req: Request, file: Express.Multer.File, cb: multer.FileFilt
     if (allowedMimeTypes.includes(file.mimetype)) {
       cb(null, true);
     } else {
-      cb(new Error('Invalid Type: only jpeg/png/gif/webp are allowed'));
+      cb(new BadRequestError('Invalid Type: only jpeg/png/gif/webp are allowed', { type: file.mimetype, location: 'cloudinary.fileFilter' }, ErrorCode.MULTER_FILE_FILTER_TYPES));
     }
 };
 

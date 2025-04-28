@@ -1,17 +1,18 @@
-import { InsertOneResult, ObjectId, UpdateResult } from "mongodb";
+import { DeleteResult, InsertOneResult, ObjectId, UpdateResult } from "mongodb";
 
 import { BaseRepository } from "../base/baseRepository";
 
 import { IsEmailSchema, IsObjectIdSchema } from "../../schemas/shared.schema";
 import { UserDocument } from "../../types/user";
 import { Recipe } from "../../types/recipe";
+import { IUserRepository } from "./userRepository.interface";
 
 /**
  * Users Collection specific Mongodb Related calls
  * @todo create and implement Interface
  */
 // 
-export class UserRepository extends BaseRepository<UserDocument> {
+export class UserRepository extends BaseRepository<UserDocument> implements IUserRepository<UserDocument> {
 
     constructor() {
         super('users');
@@ -65,7 +66,8 @@ export class UserRepository extends BaseRepository<UserDocument> {
     
     async updateById(_id: ObjectId, update: Partial<UserDocument>): Promise<UpdateResult | null> {
         IsObjectIdSchema.parse({_id});
-        return await this.updateOne({_id}, update);
+        const updatedData = {...update, updatedAt: new Date()}
+        return await this.updateOne({_id}, updatedData);
     };
 
     // No Dupes
@@ -77,7 +79,7 @@ export class UserRepository extends BaseRepository<UserDocument> {
     // No Dupes
     async updateAlterationsOnUserRecipes(_id: ObjectId, recipeId: ObjectId, alterations: Partial<Recipe>): Promise<UpdateResult | null> {
         IsObjectIdSchema.parse({_id});
-        IsObjectIdSchema.parse({recipeId});
+        IsObjectIdSchema.parse({_id: recipeId});
         return await this.updateOne({
             _id,
             "recipes.id": recipeId
@@ -90,7 +92,7 @@ export class UserRepository extends BaseRepository<UserDocument> {
     };
 
     // For Admin Dashboard
-    async deleteUser(_id: ObjectId) {
+    async deleteUser(_id: ObjectId): Promise<DeleteResult> {
         IsObjectIdSchema.parse({_id});
         return await this.delete({_id})
     }

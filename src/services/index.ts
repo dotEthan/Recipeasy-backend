@@ -10,8 +10,7 @@ import { RecipeService } from './recipeService';
 import { UserService } from './userService';
 
 /**
- * Handles dependency injection to keep code "cleaner". 
- * @todo Should be used everywhere? 
+ * Handles dependency injection instead of doing it in /routes
  */
 // 
 

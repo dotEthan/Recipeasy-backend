@@ -1,9 +1,10 @@
 import { IsObjectIdSchema } from "../../schemas/shared.schema";
 import { PaginationOptions } from "../../types/express";
-import { Recipe, RecipeDocument } from "../../types/recipe";
+import { FeRecipeOmitId, Recipe, RecipeDocument } from "../../types/recipe";
 import { CreatedDataResponse } from "../../types/responses";
 import { BaseRepository } from "../base/baseRepository";
-import { Filter, InsertOneResult, ObjectId } from "mongodb";
+import { Filter, InsertOneResult, ObjectId, WithId } from "mongodb";
+import { IRecipeRepository } from "./recipeRepository.interface";
 
 /**
  * Recipes Collection specific Mongodb Related calls
@@ -11,7 +12,7 @@ import { Filter, InsertOneResult, ObjectId } from "mongodb";
  * @todo Try to make more generic and ensure best practices
  */
 // 
-export class RecipesRepository extends BaseRepository<RecipeDocument> {
+export class RecipesRepository extends BaseRepository<RecipeDocument> implements IRecipeRepository<RecipeDocument> {
     constructor() {
         super('recipes');
     }
@@ -20,13 +21,11 @@ export class RecipesRepository extends BaseRepository<RecipeDocument> {
         return await this.create(recipe);
     }
 
-    async updateRecipe(filter: Filter<Recipe>, recipe: RecipeDocument): Promise <CreatedDataResponse<RecipeDocument> | null> {
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const {_id, ...recipeNoId} = recipe;
-        return await this.findOneAndReplace(filter, recipeNoId);
+    async updateRecipe(filter: Filter<Recipe>, recipe: FeRecipeOmitId): Promise <CreatedDataResponse<RecipeDocument> | null> {
+        return await this.findOneAndReplace(filter, recipe);
     }
 
-    async paginatedFindByIndex(filterBy: Filter<Recipe>, options: PaginationOptions<Recipe>) {
+    async paginatedFindByIndex(filterBy: Filter<Recipe>, options: PaginationOptions<Recipe>): Promise<WithId<RecipeDocument>[]>  {
         return await this.findPaginated(filterBy, options);
     }
     

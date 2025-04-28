@@ -19,7 +19,7 @@ export const RECIPE_DESC_MAX = 500 // TODO FInd a nice balance
 
 // Retry and debounce
 export const RETRY_MAX_ATTEMPTS = 3;
-export const RETRY_MIN_DELAY = 1000;
+export const RETRY_MIN_DELAY = 5000;
 
 // TTL tokens
 export const PW_RESET_TOKEN_TTL = 3600000

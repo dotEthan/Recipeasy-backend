@@ -16,6 +16,7 @@ import { Database } from "../../config/database";
 import { IBaseRepository } from "./baseRepository.interface";
 import { ServerError } from "../../errors";
 import { PaginationOptions } from "../../types/express";
+import { ErrorCode } from "../../types/enums";
 
 /**
  * Base Mongodb Related calls
@@ -37,7 +38,7 @@ export abstract class BaseRepository<T extends Document> implements IBaseReposit
             this._collection = db.collection<T>(this.collectionName);
         }
         if (!this._collection) {
-            const dbError = new ServerError('MongDB Collection not found', {}, false);
+            const dbError = new ServerError('MongDB Collection not found', { location: 'baseRepository.get.collection'}, ErrorCode.MONGODB_COLLECTION_NOT_FOUND, false);
             throw dbError;
         }
         return this._collection;
@@ -84,15 +85,27 @@ export abstract class BaseRepository<T extends Document> implements IBaseReposit
     }
 
     async findOneAndReplace(filter: Filter<T>, updatedData: WithoutId<T>): Promise<WithId<T> | null> {
-        return await this.collection.findOneAndReplace(filter, updatedData, { returnDocument: 'after' });
+        const insertingDocument = {
+            ...updatedData,
+            updatedAt: new Date()
+        }
+        return await this.collection.findOneAndReplace(filter, insertingDocument, { returnDocument: 'after' });
     }
  
     async findOneAndUpdate(filter: Filter<T>, updatedData: UpdateFilter<T>): Promise<WithId<T> | null> {
+        const insertingDocument = {
+            ...updatedData,
+            updatedAt: new Date()
+        }
         return await this.collection.findOneAndUpdate(filter, updatedData, { returnDocument: 'after' });
     }
 
     // Will merge data over existing
     async updateOne(filter: Filter<T>, updatedData: Partial<T>): Promise<UpdateResult> {
+        const insertingDocument = {
+            ...updatedData,
+            updatedAt: new Date()
+        }
         return await this.collection.updateOne(filter, updatedData);
     }
 

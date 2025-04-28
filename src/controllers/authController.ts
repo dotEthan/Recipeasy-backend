@@ -8,7 +8,8 @@ import { UserService } from "../services/userService";
 
 import { User } from "../types/user";
 import { FeUserSchema, LoginResSchema } from "../schemas/user.schema";
-import { BadRequestError, UnauthorizedError } from "../errors";
+import { BadRequestError, ServerError, UnauthorizedError } from "../errors";
+import { ErrorCode } from "../types/enums";
 
 /**
  * Authorization based req and res handling
@@ -32,16 +33,18 @@ export class AuthController {
      * @param {string} req.body.displayName - User's Displayed Name
      * @param {string} req.body.email.required - User's email
      * @param {string} req.body.password.required - User's password
-     * @throws {LogOnlyError} 400 - missing user data
-     * @return  {StandardResponse} success: boolean, data: userResponse
+     * @return {StandardResponse} success: boolean, data: userResponse
+     * @throws {BadRequestError} 400 - req.body missing displayName, email, or password
+     * @throws {ZodError} 401 - Validation failed
      */
     
     public register = async (req: Request, res: Response): Promise<void> => {
         const {displayName, email, password} = req.body;
-        if (!email || !password) throw new BadRequestError('Missing email or password', { email, password })
+        if (!displayName || !email || !password) throw new BadRequestError('register - req.body missing required data', { body: req.body })
 
         const registeredUser = await this.authService.registerNewUser(displayName, email, password);
 
+        // for email validation
         req.session.unverifiedUserId = registeredUser._id;
 
         FeUserSchema.parse(registeredUser)
@@ -55,9 +58,12 @@ export class AuthController {
      * @param {string} req.body.email - User's email
      * @param {string} req.body.password - User's password
      * @return  {LoginResponse} user: User, newEmailVerifyCodeCreated: boolean, recipeResponse: Recipe[], totalRecipes: number
+     * @throws {BadRequestError} 400 - req.body missing email
+     * @throws {ZodError} 401 - Validation failed
      */
     public login = async (req: Request, res: Response): Promise<void> => {
         const email = req.body.email;
+        if (!email) throw new BadRequestError('register - req.body missing required data', { body: req.body })
         await this.passwordService.checkIfPwResetInProgress(email);
 
         const authenticatedUser = await this.authenticateUser(req, res);
@@ -112,11 +118,11 @@ export class AuthController {
      * Checks if user session active on page reload
      * @group User Session - Checks Session
      * @return  {StandardUserResponse} success, message, data, error - Stardard response for generic calls
+     * @throws {ZodError} 401 - Validation failed
      */
     public checkSession = (req: Request, res: Response) => {
         if (req.isAuthenticated()) {
             const user = req.user;
-            console.log('session check')
             FeUserSchema.parse(user)
             res.status(200).json({ success: true, user });
         } else {
@@ -124,22 +130,29 @@ export class AuthController {
         }
     }
 
+    /**
+     * Passport's authenticate User
+     * @group Authorization - Autheticates User
+     * @return  {StandardUserResponse} success, message, data, error - Stardard response for generic calls
+     * @throws {ZodError} 401 - Validation failed
+     * @throws {PassportErrors} 401 - Validation failed
+     */
     private authenticateUser = (req: Request, res: Response): Promise<User> => {
         const passportOptions = {
             failureWithError: true
         } as AuthenticateOptions;
         return new Promise((resolve, reject) => {
-            passport.authenticate('local', passportOptions, (err: Error, user: User, info: { message: string}) => {
-                if (err) {
-                    return reject(err);
+            passport.authenticate('local', passportOptions, (error: Error, user: User, info: { message: string}) => {
+                if (error) {
+                    return reject(new ServerError('authenticateUsererror', { location: 'authController.authenticateUser' }, ErrorCode.PASSPORT_FAILED));
                 }
                 if (!user) {
-                    return reject(new UnauthorizedError(info.message));
+                    return reject(new UnauthorizedError(info.message, { location: 'authController.authenticateUser' }, ErrorCode.PASSPORT_UNAUTH));
                 }
 
-                req.logIn(user, (loginErr: Error | null) => {
-                    if (loginErr) {
-                        return reject(loginErr);
+                req.logIn(user, (loginError: Error | null) => {
+                    if (loginError) {
+                        return reject(loginError);
                     }
 
                     resolve(user); 

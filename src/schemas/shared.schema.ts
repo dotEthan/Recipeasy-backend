@@ -13,21 +13,15 @@ export const IsObjectIdSchema = z.object({
     }, {
         message: "isObjectIdSchema Invalid MongoDB ObjectId"
     })
+    
 }).strict();
-
-export const ObjectIdSchema2 = z.custom<ObjectId>((val) => {
-    // Check if it's an actual ObjectId instance
-    return val instanceof ObjectId;
-  }, {
-    message: "Expected MongoDB ObjectId instance"
-  });
 
 export const IsEmailSchema = z.object({
     email: z.string().email()
 }).strict();
 
-export const IsStringSchema = z.object({
-    email: z.string()
+export const IsCodeSchema = z.object({
+    code: z.string()
 }).strict();
 
 export const StandardResponseSchema = z.object({
