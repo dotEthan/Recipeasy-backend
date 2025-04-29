@@ -82,7 +82,7 @@ export const BeUserSchema = z
 
 export const BeCreateUserSchema = BeUserSchema.omit({ _id: true}).strict();
 
-export const FeUserSchema = BeUserSchema.omit({ previousPasswords: true, createdAt: true}).strict();
+export const FeUserSchema = BeUserSchema.omit({ previousPasswords: true, createdAt: true, password: true }).strict();
 
 export const UpdateFeUserSchema = FeUserSchema.partial().strict();
 

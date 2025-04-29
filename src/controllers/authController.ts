@@ -8,6 +8,7 @@ import { User } from "../types/user";
 import { FeUserSchema, LoginResSchema } from "../schemas/user.schema";
 import { BadRequestError, ServerError, UnauthorizedError } from "../errors";
 import { ErrorCode } from "../types/enums";
+import { sanitizeUser } from "../util/sanitizeUser";
 
 /**
  * Authorization based req and res handling
@@ -66,10 +67,31 @@ export class AuthController {
             { body: req.body },
             ErrorCode.MISSING_REQUIRED_BODY_DATA
         )
+
         await this.passwordService.checkIfPwResetInProgress(email);
 
+        const csrfToken = req.session.csrfToken;
+        console.log('CSRF token before authentication:', csrfToken);
+
         const authenticatedUser = await this.authenticateUser(req, res);
-        const responseData = await this.authService.userLogin(authenticatedUser);
+        const autheticatedSantizedUser = sanitizeUser(authenticatedUser);
+        
+        console.log('Restoring CSRF token after session regeneration');
+        req.session.csrfToken = csrfToken;
+        
+        // Force save the session with the restored token
+        await new Promise<void>((resolve, reject) => {
+            req.session.save((err) => {
+                if (err) {
+                    console.error('Failed to save session with restored CSRF token:', err);
+                    reject(err);
+                } else {
+                    console.log('Session saved with restored CSRF token: ', req.session.csrfToken);
+                    resolve();
+                }
+            });
+        });
+        const responseData = await this.authService.userLogin(autheticatedSantizedUser);
 
 
         LoginResSchema.parse(responseData);
@@ -84,6 +106,10 @@ export class AuthController {
      * @return  {StandardResponse} success, message, data, error - Stardard response for generic calls
      */
     public logUserOut = async (req: Request, res: Response) => {
+
+        const csrfToken = req.session.csrfToken;
+        console.log('CSRF token before logout:', csrfToken);
+        
         await new Promise<void>((resolve, reject) => {
             req.logOut((error) => {
                 if (error) return reject(error);
@@ -97,18 +123,27 @@ export class AuthController {
             sameSite: 'strict'
         });
 
+        // still needed?
         res.clearCookie('XSRF-TOKEN', {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
             sameSite: 'strict'
         });
         
+        // regenerating to maintain csrfToken
         await new Promise<void>((resolve, reject) => {
-            req.session.destroy((error) => {
+            req.session.regenerate((error) => {
                 if (error) return reject(error);
-                resolve();
+                
+                req.session.csrfToken = csrfToken;
+                
+                req.session.save((saveErr) => {
+                    if (saveErr) return reject(saveErr);
+                    resolve();
+                });
             });
         });
+        req.session.csrfToken = csrfToken;
 
         res.status(200).json({
             success: true,
@@ -123,7 +158,7 @@ export class AuthController {
      * @throws {ZodError} 401 - Validation failed
      */
     public checkSession = (req: Request, res: Response) => {
-        const user = req.user;
+        const user = req.user ? sanitizeUser(req.user) : undefined;
         if (req.isAuthenticated() && user) {
             FeUserSchema.parse(user)
             res.status(200).json({ success: true, user });
@@ -147,8 +182,10 @@ export class AuthController {
         const passportOptions = {
             failureWithError: true
         } as AuthenticateOptions;
+
         return new Promise((resolve, reject) => {
             passport.authenticate('local', passportOptions, (error: Error, user: User, info: { message: string}) => {
+                console.log('authenticating: ', error)
                 if (error) {
                     return reject(new ServerError('authenticateUsererror', { location: 'authController.authenticateUser' }, ErrorCode.PASSPORT_FAILED));
                 }

@@ -7,6 +7,7 @@ import { isAuthenticated } from "../middleware/auth";
 import { catchAsyncError } from "../util/catchAsyncErrors";
 import { checkIdParam } from "../middleware/checkIdParam";
 import { recipeService, userService } from "../services";
+import { csrfMiddleware } from "../middleware/csrf";
 // import { registrationLimiter } from "../middleware/rateLimiters";
 
 /**
@@ -32,7 +33,12 @@ const userController = new UserController(userService, recipeService);
  * @returns {ErrorResponse} 500 - Server/database issues
  * @produces application/json
 */
-router.get("/:id", isAuthenticated(), checkIdParam(), catchAsyncError(userController.getUsersData));
+router.get(
+    "/:id", 
+    isAuthenticated(), 
+    checkIdParam(), 
+    catchAsyncError(userController.getUsersData)
+);
 
 /**
  * Update user with new password
@@ -64,6 +70,12 @@ router.get("/:id", isAuthenticated(), checkIdParam(), catchAsyncError(userContro
  * @produces application/json
  * @consumes application/json
 */
-router.patch("/:id/recipes", checkIdParam(), isAuthenticated(), validateRequestBodyData(FeUpdateUsersRecipesSchema), catchAsyncError(userController.updateUserRecipes));
+router.patch(
+    "/:id/recipes", 
+    csrfMiddleware(),
+    checkIdParam(), 
+    isAuthenticated(), 
+    validateRequestBodyData(FeUpdateUsersRecipesSchema), 
+    catchAsyncError(userController.updateUserRecipes));
 
 export default router;

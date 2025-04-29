@@ -43,11 +43,10 @@ Backend Functionality has now surpassed Front-end, and contains full login, verf
 
 ### Working on Now:
 
-- Retries where needed: 3 tries, fail and notify - Verification retries > 3 = new code, . 
 - Code Cleaning 
     - middleware 
     - prioritizing TODOs (now VS later)
-    - csurf -> async-csrf
+    - User object return without password
 
 ### To Come:
 

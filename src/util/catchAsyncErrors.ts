@@ -1,7 +1,8 @@
 import { NextFunction, Request, Response } from "express";
-import { AppError, BadRequestError, UnknownError } from "../errors";
+import { AppError, BadRequestError, ServerError, UnknownError } from "../errors";
 import { ErrorCode } from "../types/enums";
 import { ZodError } from "zod";
+import { MongoServerError } from "mongodb";
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
 export const catchAsyncError = (fn: Function) => {
@@ -23,6 +24,24 @@ export const catchAsyncError = (fn: Function) => {
                 );
 
                 return next(validationError);
+            }
+
+            if(error instanceof MongoServerError) {
+                let newError;
+                if (error.code === 8000) {
+                    newError = new ServerError(
+                        'Database req malformed or missing values', 
+                        { location: 'catchAsyncError', originalError: error },
+                        ErrorCode.MONGODB_CALL_FAILED,
+                    );
+                } else {
+                    newError = new ServerError(
+                        'Unknonwn Error Thrown', 
+                        { location: 'catchAsyncError', originalError: error },
+                        ErrorCode.UNHANDLED_ERROR,
+                    );
+                }
+                next(newError);
             }
 
             if(error instanceof Error) {

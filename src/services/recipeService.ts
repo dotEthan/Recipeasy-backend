@@ -131,11 +131,13 @@ export class RecipeService {
 
         let recipeResponse: RecipeDocument;
         if (userIsCreator) {
+            console.log(' creator')
             FeUpdateRecipeSchema.parse({ recipe });
             IsObjectIdSchema.parse({ _id: recipeId });
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
             const {_id, ...recipeNoId} = recipe;
             const recipeSaveResponse = await this.recipesRepository.updateRecipe({ _id: recipeId }, recipeNoId);
+            console.log(' creator')
             if (recipeSaveResponse === null) throw new ServerError(
                 'Updating recipe failed: recipe does not exist', 
                 { recipeId, recipe},
@@ -143,9 +145,11 @@ export class RecipeService {
             );
             recipeResponse = recipeSaveResponse;
         } else {
+            console.log('not creator')
             const alterations = this.findRecipeAlterations(originalRecipe, recipe);
             PartialRecipeSchema.parse(alterations);
             const updateResponse = await this.userRepository.updateAlterationsOnUserRecipes(userId, recipeId, alterations);
+            console.log('not creator')
 
             if (updateResponse == null) throw new ServerError(
                 'updateRecipe - Updating User.recipes.alterations failed', 
@@ -163,9 +167,11 @@ export class RecipeService {
                 ErrorCode.MONGODB_RESOURCE_UPDATE_FAILED
             );
 
+            console.log('not creator')
             recipeResponse = mergeAlterations(originalRecipe, alterations);
         }
         
+        console.log('not creator')
         return {success: true, recipe: recipeResponse as Recipe}
     }
 
@@ -238,7 +244,7 @@ export class RecipeService {
                 deletedBy: userId
             };
             InternalStateSchema.parse(internalState);
-            updateRecipeResponse = await this.recipesRepository.updateRecipeObject(recipeId, { internalState });   
+            updateRecipeResponse = await this.recipesRepository.updateRecipeObject({ _id: recipeId }, { internalState });   
         }
         if (
             updateRecipeResponse && 

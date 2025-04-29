@@ -8,6 +8,7 @@ import { catchAsyncError } from "../util/catchAsyncErrors";
 
 import { ResetFlowSetPasswordSchema } from "../schemas/user.schema";
 import { IsCodeSchema, IsEmailSchema } from "../schemas/shared.schema";
+import { csrfMiddleware } from "../middleware/csrf";
 
 /**
  * Handles all Administration based routes
@@ -41,7 +42,7 @@ router.get('/csrf-token', catchAsyncError(adminController.getCsurf));
  * @produces application/json
  * @consumes application/json
  */
-router.post('/verification-codes/verify', validateRequestBodyData(IsCodeSchema), catchAsyncError(adminController.verifyCode));
+router.post('/verification-codes/verify', csrfMiddleware(true), validateRequestBodyData(IsCodeSchema), catchAsyncError(adminController.verifyCode));
 
 
 /**
@@ -56,7 +57,7 @@ router.post('/verification-codes/verify', validateRequestBodyData(IsCodeSchema),
  * @produces application/json
  * @consumes application/json
  */
-router.post('/password-reset-requests', validateRequestBodyData(IsEmailSchema), catchAsyncError(adminController.resetPasswordRequest));
+router.post('/password-reset-requests', csrfMiddleware(true), validateRequestBodyData(IsEmailSchema), catchAsyncError(adminController.resetPasswordRequest));
 
 /**
  * Validate Password Reset Token input by User
@@ -70,7 +71,7 @@ router.post('/password-reset-requests', validateRequestBodyData(IsEmailSchema), 
  * @produces application/json
  * @consumes application/json
  */
-router.post('/password-reset/validate', validateRequestBodyData(IsCodeSchema), catchAsyncError(adminController.validatePasswordToken));
+router.post('/password-reset/validate', csrfMiddleware(true), validateRequestBodyData(IsCodeSchema), catchAsyncError(adminController.validatePasswordToken));
 
 /**
  * Final step in user password reset Request - update with new password
@@ -85,6 +86,6 @@ router.post('/password-reset/validate', validateRequestBodyData(IsCodeSchema), c
  * @produces application/json
  * @consumes application/json
 */
-router.patch("/user-password", validateRequestBodyData(ResetFlowSetPasswordSchema), catchAsyncError(adminController.finishPasswordResetRequest));
+router.patch("/user-password", csrfMiddleware(true), validateRequestBodyData(ResetFlowSetPasswordSchema), catchAsyncError(adminController.finishPasswordResetRequest));
 
 export default router;

@@ -11,7 +11,6 @@ import helmet from 'helmet';
 import MongoStore from 'connect-mongo';
 import cookieParser from 'cookie-parser';
 
-import { csrfErrorHandler, csrfProtection } from './middleware/csrf';
 import { errorHandler } from './middleware/errorHandler';
 import appRouter from './routes/';
 import { NotFoundError } from './errors';
@@ -41,6 +40,8 @@ app.use(session({
     mongoUrl: process.env.MONGODB_URI,
     collectionName: 'sessions',
     ttl: 7 * 24 * 60 * 60,
+    autoRemove: 'interval',
+    autoRemoveInterval: 10,
     touchAfter: 24 * 3600,
   }),
   cookie: {
@@ -53,9 +54,6 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 
-app.use(csrfProtection);
-app.use(csrfErrorHandler);
-
 //TODO on deploy update to production domain
 app.use(cors({
   origin: 'https://localhost:5173', //process.env.CORS_ORIGIN
@@ -67,6 +65,14 @@ app.use(cors({
 
 app.use('/images', express.static(path.join(__dirname, 'images')));
 
+// TODO this is to test sessions for csrf inconsistency - Remove it, I dare you. 
+app.use((req: Request, res: Response, next: NextFunction) => {
+  console.log('Session Debug1:');
+  console.log('Session ID1:', req.sessionID);
+  console.log('CSRF Token1:', req.session.csrfToken);
+  console.log('Session1:', req.session);
+  next();
+});
 app.use(addRequestId)
 app.use('/api/v1', appRouter);
 

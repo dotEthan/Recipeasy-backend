@@ -24,7 +24,7 @@ export class UserRepository extends BaseRepository<UserDocument> implements IUse
 
     async findById<T extends Partial<UserDocument> = UserDocument>(_id: ObjectId, addedProjection?: MongoDbUserProjection): Promise<T | null> {
         IsObjectIdSchema.parse({_id});
-        const defaultProjection = { createdAt: 0, previousPasswords: 0 };
+        const defaultProjection = { createdAt: 0, previousPasswords: 0, password: 0 };
         const projection = addedProjection ?? defaultProjection;
         const findResult = await this.findOne(
             {_id}, 
@@ -35,7 +35,7 @@ export class UserRepository extends BaseRepository<UserDocument> implements IUse
 
     async findPartialById(_id: ObjectId, addedProjection?: MongoDbUserProjection): Promise<Partial<UserDocument> | null> {
         IsObjectIdSchema.parse({_id});
-        const defaultProjection = { createdAt: 0, previousPasswords: 0 };
+        const defaultProjection = { createdAt: 0, previousPasswords: 0, password: 0 };
         const projection = addedProjection ?? defaultProjection;
         return await this.findOne(
             {_id}, 
@@ -45,7 +45,7 @@ export class UserRepository extends BaseRepository<UserDocument> implements IUse
 
     async findByEmail(email: string, addedProjection?: MongoDbUserProjection): Promise<UserDocument | null> {
         IsEmailSchema.parse({email});
-        const defaultProjection = { createdAt: 0, previousPasswords: 0 };
+        const defaultProjection = { createdAt: 0, previousPasswords: 0, password: 0 };
         const projection = addedProjection ?? defaultProjection;
         return await this.findOne(
             {email} as Partial<UserDocument>, 
@@ -53,9 +53,16 @@ export class UserRepository extends BaseRepository<UserDocument> implements IUse
         );
     };
 
+    async findByEmailWithInternals(email: string): Promise<UserDocument | null> {
+        IsEmailSchema.parse({email});
+        return await this.findOne(
+            {email} as Partial<UserDocument>
+        );
+    };
+
     async findIdByEmail(email: string, addedProjection?: MongoDbUserProjection): Promise<ObjectId | undefined> {
         IsEmailSchema.parse({email});
-        const defaultProjection = { createdAt: 0, previousPasswords: 0 };
+        const defaultProjection = { createdAt: 0, previousPasswords: 0, password: 0 };
         const projection = addedProjection ?? defaultProjection;
         const user = await this.findOne(
             {email} as Partial<UserDocument>, 

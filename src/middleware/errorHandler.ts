@@ -27,7 +27,7 @@ export const errorHandler = (error: unknown, req: Request, res: Response, next: 
     let errorCode: ErrorCode = ErrorCode.SERVER_DEFAULT;
 
     // console.log(`name: ${error.name} message: ${error.message} stack: ${error.stack}`);
-
+    console.error('here is Johnny: ', error)
     if (error instanceof AppError) {
         statusCode = error.statusCode;
         errorCode = error.errorCode ?? ErrorCode.SERVER_DEFAULT;

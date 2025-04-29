@@ -9,6 +9,7 @@ import { checkIdParam } from "../middleware/checkIdParam";
 import { catchAsyncError } from "../util/catchAsyncErrors";
 import { NewRecipeSchema, FeUpdateRecipeSchema } from "../schemas/recipe.schema";
 import { validateImageUpload } from "../middleware/validateImageUpload";
+import { csrfMiddleware } from "../middleware/csrf";
 
 /**
  * Handles all Recipe based routes
@@ -38,7 +39,7 @@ const recipeController = new RecipeController(recipeService);
  * // Client-side usage:
  * fetch('/recipes/`, { method: 'POST', body: recipe  });
  */
-router.post("/", isAuthenticated(), hasOwnership(),  validateRequestBodyData(NewRecipeSchema), catchAsyncError(recipeController.saveNewRecipe));
+router.post("/", isAuthenticated(), csrfMiddleware(), hasOwnership(),  validateRequestBodyData(NewRecipeSchema), catchAsyncError(recipeController.saveNewRecipe));
 
 /**
  * Get Public Recipe data
@@ -75,7 +76,15 @@ router.get("/", catchAsyncError(recipeController.getPublicRecipes));
  * // Client-side usage:
  * fetch('/recipes/${recipeId}`, { method: 'PUT', body: updatedRecipe  });
  */
-router.put("/:id", checkIdParam(), isAuthenticated(), hasOwnership(), validateRequestBodyData(FeUpdateRecipeSchema), catchAsyncError(recipeController.updateRecipe));
+router.put(
+    "/:id", 
+    csrfMiddleware(), 
+    checkIdParam(), 
+    isAuthenticated(), 
+    hasOwnership(), 
+    validateRequestBodyData(FeUpdateRecipeSchema), 
+    catchAsyncError(recipeController.updateRecipe)
+);
 
 
 /**
@@ -93,7 +102,13 @@ router.put("/:id", checkIdParam(), isAuthenticated(), hasOwnership(), validateRe
  * // Client-side usage:
  * fetch('/recipes/${recipeId}`, { method: 'DELETE' });
  */
-router.delete("/:id", checkIdParam(), isAuthenticated(), catchAsyncError(recipeController.deleteRecipe));
+router.delete(
+    "/:id",
+    csrfMiddleware(),
+    checkIdParam(), 
+    isAuthenticated(), 
+    catchAsyncError(recipeController.deleteRecipe)
+);
 
 /**
  * Image upload for recipes
@@ -117,7 +132,13 @@ router.delete("/:id", checkIdParam(), isAuthenticated(), catchAsyncError(recipeC
  * formData.append('image', fileInput.files[0]);
  * fetch('/recipes/image-upload', { method: 'POST', body: formData });
  */
-router.post("/image", upload.single('image'), validateImageUpload, catchAsyncError(recipeController.uploadRecipeImage));
+router.post(
+    "/image", 
+    csrfMiddleware(),
+    upload.single('image'), 
+    validateImageUpload, 
+    catchAsyncError(recipeController.uploadRecipeImage)
+);
 
 /**
  * Deleted Image uploaded for recipe
@@ -135,6 +156,11 @@ router.post("/image", upload.single('image'), validateImageUpload, catchAsyncErr
  * // Client-side usage:
  * fetch(`/recipes/image/${imageId}`, { method: 'DELETE' });
  */
-router.delete("/image/:id", checkIdParam(), catchAsyncError(recipeController.deleteRecipeImage));
+router.delete(
+    "/image/:id", 
+    csrfMiddleware(),
+    checkIdParam(), 
+    catchAsyncError(recipeController.deleteRecipeImage)
+);
 
 export default router;
