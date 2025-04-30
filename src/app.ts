@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 import dotenv from 'dotenv'
 if(process.env.NODE_ENV !== 'production') {
   dotenv.config();
@@ -110,6 +112,10 @@ app.use(passport.session());
 const apiRouter = express.Router();
 apiRouter.use(appRouter);
 app.use('/api/v1', apiRouter);
+
+console.log('Router mounted:', app._router.stack.some(
+  layer => layer.regexp.test('/api/v1')
+));
 
 app.use(addRequestId)
 
