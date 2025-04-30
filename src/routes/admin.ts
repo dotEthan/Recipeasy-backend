@@ -29,7 +29,7 @@ const adminController = new AdminController(passwordService, userService, emailV
  * @returns {ErrorResponse} 500 - Token not generated
  * @produces application/json
  */
-router.get('/api/v1/health', adminController.healthCheck);
+router.get('/health', adminController.healthCheck);
 
 /**
  * Gets Csurf token for user
