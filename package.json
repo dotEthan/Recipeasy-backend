@@ -6,8 +6,9 @@
   "scripts": {
     "start": "nodemon dist/server.js",
     "start:prod": "node dist/server.js",
-    "build": "tsc",
+    "build": "tsc --outDir ./dist",
     "start:dev": "npm run build && npm run start",
+    "render-build": "npm install && npm run build",
     "test": "test"
   },
   "repository": {
