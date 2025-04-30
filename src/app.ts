@@ -109,7 +109,18 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 
-app.use('/api/v1', appRouter);
+app.use((req, res, next) => {
+  console.log('Incoming request to:', req.originalUrl);
+  next();
+});
+
+
+app.use('/api/v1', (req, res, next) => {
+  console.log('Router handling:', req.path);
+  appRouter(req, res, next);
+});
+
+// app.use('/api/v1', appRouter);
 
 console.log('Final Route Count:', app._router.stack
   .filter(layer => layer.name === 'router' && layer.regexp.test('/api/v1'))
