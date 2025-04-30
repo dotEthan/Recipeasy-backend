@@ -17,6 +17,14 @@ export class AdminController {
 
     constructor(private passwordService: PasswordService, private userService: UserService, private emailVerificationService: EmailVerificationService) { }
 
+  
+    /**
+     * Health Check for Render hosting
+     * @group Security - Health Check
+     * @returns {status} 200 - Healthy
+     */
+    public healthCheck = (req: Request, res: Response) => { res.sendStatus(200); }
+
     /**
      * Gets csrf-async token for user
      * @group Security - session tracking
@@ -25,9 +33,9 @@ export class AdminController {
      * @produces application/json
      */
     public getCsurf = (req: Request, res: Response) => {
-        const token = generateCsrfToken(req); // Explicit generation
+        const token = generateCsrfToken(req);
         res.header("X-CSRF-Token", token);
-        res.json({ token }); // Send both header and body
+        res.json({ token });
     }
     
     /**
