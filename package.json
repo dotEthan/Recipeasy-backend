@@ -5,6 +5,7 @@
   "main": "app.js",
   "scripts": {
     "start": "nodemon dist/server.js",
+    "start:prod": "node dist/server.js",
     "build": "tsc",
     "start:dev": "npm run build && npm run start",
     "test": "test"
