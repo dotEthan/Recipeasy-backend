@@ -1,5 +1,3 @@
-// @ts-nocheck
-
 import dotenv from 'dotenv'
 if(process.env.NODE_ENV !== 'production') {
   dotenv.config();
@@ -24,18 +22,10 @@ import timeout from 'connect-timeout';
 /**
  * configs app setup and middleware
  */
+
 const app = express();
 
-// === DEBUG START ===
-console.log('Imported router:', appRouter?.stack ? 'Valid Router' : 'INVALID ROUTER');
-console.log('\n=== ENVIRONMENT VARIABLES ===');
-console.log('NODE_ENV:', process.env.NODE_ENV);
-console.log('MONGODB_URI exists:', !!process.env.MONGODB_URI);
-console.log('CORS_ORIGIN:', process.env.CORS_ORIGIN);
-
-console.log('\n=== PATH VERIFICATION ===');
-console.log('__dirname:', __dirname);
-// === DEBUG END ===
+app.set('trust proxy', 1);
 
 app.use(helmet({
   contentSecurityPolicy: {
@@ -114,37 +104,10 @@ app.use((req, res, next) => {
   next();
 });
 
+app.use('/api/v1', appRouter);
 
-app.use('/api/v1', (req, res, next) => {
-  console.log('Router handling:', req.path);
-  appRouter(req, res, next);
-});
-
-// app.use('/api/v1', appRouter);
-
-console.log('Final Route Count:', app._router.stack
-  .filter(layer => layer.name === 'router' && layer.regexp.test('/api/v1'))
-  .flatMap(layer => layer.handle.stack)
-  .length
-);
-
-console.log('Router mounted:', app._router.stack.some(
-  layer => layer.regexp.test('/api/v1')
-));
 
 app.use(addRequestId)
-
-// === POST-ROUTE DEBUG ===
-console.log('\n=== REGISTERED ROUTES ===');
-app._router.stack.forEach((layer: any) => {
-  if (layer.route) {
-    const methods = layer.route.methods;
-    const method = Object.keys(methods).find(m => methods[m]);
-    console.log(`- ${method?.toUpperCase()} ${layer.route.path}`);
-  }
-});
-process.stdout.write('RAW OUTPUT TEST\n');
-console.log('Regular console.log test');
 
 app.use(
   (req: Request, res: Response, next: NextFunction) => {
