@@ -49,7 +49,7 @@ export type CopyDetails = {
   originalRecipeId: ObjectId;
   copiedAt: Date;
   updatedAt?: Date;
-  modified: boolean; // TODO Should be 'modified'
+  modified: boolean;
 }
 
 export type PasswordResetData = {

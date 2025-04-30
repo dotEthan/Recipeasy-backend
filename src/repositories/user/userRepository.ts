@@ -9,7 +9,7 @@ import { IUserRepository } from "./userRepository.interface";
 
 /**
  * 'users' Collection specific Mongodb Related calls
- * @todo replace id/email with filter: Filter
+ * @todo - post - replace id/email with filter: Filter
  */
 // 
 export class UserRepository extends BaseRepository<UserDocument> implements IUserRepository<UserDocument> {
@@ -88,7 +88,7 @@ export class UserRepository extends BaseRepository<UserDocument> implements IUse
     }
 
     // No Dupes
-    // TODO combine these three? updateUserObject
+    // TODO - post - combine these three? updateUserObject
     async addToUsersRecipesArray(_id: ObjectId, usersRecipesObject: UsersRecipeData): Promise<UpdateResult | null> {
         IsObjectIdSchema.parse({ _id });
         return await this.updateByMergeOneNoDupe(

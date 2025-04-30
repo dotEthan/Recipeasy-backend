@@ -10,12 +10,12 @@ export const catchAsyncError = (fn: Function) => {
         Promise.resolve(fn(req, res, next)).catch((error: unknown) => {
             
             if (error instanceof AppError) {
-                next(error);
+                return next(error);
             }
 
             if (error instanceof ZodError) {
                 const validationError = new BadRequestError(
-                    'Bow before Zod! Validation failed', 
+                    `Bow Before Zod! Validation Error: ${error.message}`, 
                     { 
                         location: 'catchAsyncError', 
                         originalError: error,
@@ -41,7 +41,7 @@ export const catchAsyncError = (fn: Function) => {
                         ErrorCode.UNHANDLED_ERROR,
                     );
                 }
-                next(newError);
+                return next(newError);
             }
 
             if(error instanceof Error) {
@@ -50,7 +50,7 @@ export const catchAsyncError = (fn: Function) => {
                     { location: 'catchAsyncError', originalError: error },
                     ErrorCode.UNHANDLED_ERROR
                 );
-                next(unknownError);
+                return next(unknownError);
             }
 
             next(new UnknownError(

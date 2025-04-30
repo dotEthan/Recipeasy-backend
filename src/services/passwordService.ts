@@ -24,9 +24,8 @@ import {
 
 /**
  * Handles all Password related logic
- * @todo Ensure all errors are handled
- * @todo Add logging
- * @todo BOW TO ZOD PARSING!
+ * @todo - post - Ensure all errors are handled
+ * @todo - post - Add logging
  */
 
 export class PasswordService {
@@ -38,7 +37,7 @@ export class PasswordService {
     
     /**
      * Start the "Forgot Password" reset flow
-     * @todo log if deleteUserPwResetData fails (non-breaking)
+     * @todo - post - log if deleteUserPwResetData fails (non-breaking)
      * @group Password Management - Email Token & Add Reset Data
      * @param {string} email - User email
      * @throws {NotFoundError} 404 - User Not found
@@ -185,7 +184,7 @@ export class PasswordService {
         
     /**
      * Delete passwordResetData - No flow in process
-     * @todo log if deleteUserPwResetData fails (non-breaking)
+     * @todo - post - log if deleteUserPwResetData fails (non-breaking)
      * @group Security - Bot trap
      * @param {UserDocument} userResponse - User to delete object from
      * @throws {ForbiddenError} 403 - Password Reset in progress, can't login

@@ -44,35 +44,17 @@ export const csrfMiddleware = (rotateToken: boolean = false) => {
       )
 
       if (typeof req.session.csrfToken === 'undefined') {
-        const token = generateCsrfToken(req, true);
-        // Important: Make sure session is saved synchronously before proceeding
-        // await new Promise<void>((resolve, reject) => {
-        //   req.session.save((err) => {
-        //     if (err) reject(err);
-        //     else resolve();
-        //   });
-        // });
-        console.log('Initialized new CSRF token:', token);
+        generateCsrfToken(req, true);
       }
 
       csrfSynchronisedProtection(req, res, async (err) => {
         if (err) {
-          console.error('CSRF validation error:', err);
           return csrfErrorHandler(err, req, res, next);
         }
 
-        console.log('rotateToken: ', rotateToken);
-
         if (rotateToken) {
-          console.log('Old token:', req.session.csrfToken);
-          // delete req.session.csrfToken; 
           const newToken = generateCsrfToken(req, true);
-          console.log('New token:', req.session.csrfToken); // Should differ
           res.header('X-CSRF-Token', newToken);
-          // TODO probably not needed, testing csrf-sync, try removing it... 
-          await new Promise<void>((resolve, reject) => {
-            req.session.save((error) => (error) ? reject(error) : resolve()); // Force save after rotation
-          });
         }
         
         next();
@@ -87,8 +69,6 @@ const { generateToken, csrfSynchronisedProtection } = csrfSync({
   getTokenFromRequest: (req: Request): string => {
     
     const token = req.headers["x-csrf-token"];
-    console.log('Received token:', token);
-    console.log('Session token:', req.session.csrfToken);
     if (!token) {
       throw new ForbiddenError(
         "CSRF token missing from headers",
@@ -96,7 +76,6 @@ const { generateToken, csrfSynchronisedProtection } = csrfSync({
         ErrorCode.CSRF_MISSING_IN_HEADERS
       );
     }
-    console.log('csrf token: ', token)
     return Array.isArray(token) ? token[0] : token;
   },
 
@@ -110,7 +89,6 @@ const { generateToken, csrfSynchronisedProtection } = csrfSync({
 
 export const generateCsrfToken = (req: Request, shouldCreateNew: boolean = false) => {
   const token = generateToken(req, shouldCreateNew);
-  console.log('generated token: ', token)
   return token;
 };
 
@@ -122,8 +100,6 @@ export const csrfErrorHandler = (
   res: Response,
   next: NextFunction
 ) => {
-  console.log('Session ID at error time:', req.sessionID);
-  console.log('CSRF Token in session at error time:', req.session.csrfToken);
   
   const csrfError = new ForbiddenError(
     "CSRF token mismatch",

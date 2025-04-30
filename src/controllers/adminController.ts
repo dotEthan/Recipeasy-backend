@@ -19,7 +19,6 @@ export class AdminController {
 
     /**
      * Gets csrf-async token for user
-     * @todo replace with non deprecated async-surf/csrf-csrf
      * @group Security - session tracking
      * @param {VerifyCodeRequest} request.body.required - Code and user identifier
      * @returns {SuccessResponse} 200 - Verification successful
@@ -95,7 +94,7 @@ export class AdminController {
 
     /**
      * Check client token for email Verification
-     * @todo 3 strikes you're out
+     * @todo - post - Retry emails? 
      * @group Admin - Email Verfication Validation
      * @param {string} req.body.code - User's email verification code
      * @param {Response} userId - User's _id

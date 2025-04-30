@@ -7,10 +7,10 @@ import { ErrorCode } from "../types/enums";
 
 /**
  * Global Error Handler Middleware
- * @todo Refactor all throw new error() to use
- * @todo handle MongoDB erorr codes
- * @todo log login attempts and more
- * @todo Error Stack implementation in development
+ * @todo - post - Refactor all throw new error() to use
+ * @todo - post - handle MongoDB erorr codes
+ * @todo - post - log login attempts and more
+ * @todo - post - Error Stack implementation in development
  * @param {Error/AppError} - Error thrown 
  * @param {Request, Response, Next} - The usual three from the call being wrapped 
  * @returns {Void} - Nothing, calls res as needed.
@@ -27,7 +27,7 @@ export const errorHandler = (error: unknown, req: Request, res: Response, next: 
     let errorCode: ErrorCode = ErrorCode.SERVER_DEFAULT;
 
     // console.log(`name: ${error.name} message: ${error.message} stack: ${error.stack}`);
-    console.error('here is Johnny: ', error)
+    console.error('Error Handler error: ', error)
     if (error instanceof AppError) {
         statusCode = error.statusCode;
         errorCode = error.errorCode ?? ErrorCode.SERVER_DEFAULT;

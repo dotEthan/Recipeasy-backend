@@ -12,7 +12,7 @@ import { sanitizeUser } from "../util/sanitizeUser";
 
 /**
  * Authorization based req and res handling
- * @todo Error Handling
+ * @todo - post - Double check for unhandled errors
  */
 // 
 export class AuthController {
@@ -52,7 +52,7 @@ export class AuthController {
     
     /**
      * Log User In
-     * @todo 3 strikes you're out
+     * @todo - post - 3 failed attempts triggers password reset required
      * @group Authorization - Create session
      * @param {string} req.body.email - User's email
      * @param {string} req.body.password - User's password
@@ -71,22 +71,18 @@ export class AuthController {
         await this.passwordService.checkIfPwResetInProgress(email);
 
         const csrfToken = req.session.csrfToken;
-        console.log('CSRF token before authentication:', csrfToken);
 
         const authenticatedUser = await this.authenticateUser(req, res);
         const autheticatedSantizedUser = sanitizeUser(authenticatedUser);
         
-        console.log('Restoring CSRF token after session regeneration');
         req.session.csrfToken = csrfToken;
         
-        // Force save the session with the restored token
+        // csrf-sync not working with passportjs to add csrftokens after new session creation
         await new Promise<void>((resolve, reject) => {
             req.session.save((err) => {
                 if (err) {
-                    console.error('Failed to save session with restored CSRF token:', err);
                     reject(err);
                 } else {
-                    console.log('Session saved with restored CSRF token: ', req.session.csrfToken);
                     resolve();
                 }
             });
@@ -108,7 +104,6 @@ export class AuthController {
     public logUserOut = async (req: Request, res: Response) => {
 
         const csrfToken = req.session.csrfToken;
-        console.log('CSRF token before logout:', csrfToken);
         
         await new Promise<void>((resolve, reject) => {
             req.logOut((error) => {
@@ -185,20 +180,36 @@ export class AuthController {
 
         return new Promise((resolve, reject) => {
             passport.authenticate('local', passportOptions, (error: Error, user: User, info: { message: string}) => {
-                console.log('authenticating: ', error)
                 if (error) {
-                    return reject(new ServerError('authenticateUsererror', { location: 'authController.authenticateUser' }, ErrorCode.PASSPORT_FAILED));
+                    return reject(new ServerError(
+                        'authenticateUsererror', 
+                        { location: 'authController.authenticateUser' }, 
+                        ErrorCode.PASSPORT_FAILED
+                    ));
                 }
                 if (!user) {
-                    return reject(new UnauthorizedError(info.message, { location: 'authController.authenticateUser' }, ErrorCode.PASSPORT_UNAUTH));
+                    return reject(new UnauthorizedError(
+                        info.message, 
+                        { location: 'authController.authenticateUser' }, 
+                        ErrorCode.PASSPORT_UNAUTH
+                    ));
                 }
 
-                req.logIn(user, (loginError: Error | null) => {
-                    if (loginError) {
-                        return reject(loginError);
+                req.session.regenerate((err) => {
+                    if (err) {
+                        return reject(new ServerError(
+                            'Session regeneration failed',
+                            { location: 'authController.authenticateUser' },
+                            ErrorCode.SESSION_REGEN_FAILED
+                        ));
                     }
+                    req.logIn(user, (loginError: Error | null) => {
+                        if (loginError) {
+                            return reject(loginError);
+                        }
 
-                    resolve(user); 
+                        resolve(user); 
+                    });
                 });
             })(req, res);
         })

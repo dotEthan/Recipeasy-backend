@@ -16,8 +16,7 @@ import { ErrorCode } from "../types/enums";
 
 /**
  * Handles all Authorization related services
- * @todo Ensure all errors are handled
- * @todo Add logging
+ * @todo - post - Ensure all errors are handled
  */
 // 
 
@@ -56,7 +55,7 @@ export class AuthService {
 
     /**
      * User login
-     * @todo No errors thrown? Intentional?
+     * @todo - post - No errors thrown? Intentional?
      * @group Authorization - User login
      * @param {User} user - User logging in
      * @returns {LoginResponse} user: User, newEmailVerifyCodeCreated: boolean, recipeResponse: recipe
@@ -98,7 +97,7 @@ export class AuthService {
     /**
      * Logs all login attempts
      * @group Logging - Auth logs
-     * @todo test req.ip is working in production
+     * @todo - post - test req.ip is working in production
      * @param {Request} req - Request object
      * @param {boolean} success - successful
      * @param {string} errorMessage - Error message

@@ -10,11 +10,12 @@ import { FeRecipeSchema } from './recipe.schema';
 
 /**
  * Authorization based req and res handling
- * @todo is copyDetails need in FE?
- * @todo Rename and refactor (dupes?)
+ * @todo - post - is copyDetails need in FE?
+ * @todo - post - Rename and refactor (dupes?)
+ * @todo - post - ShoppingListSchema, here or separte (BE - always on user)
  */
 // 
-export const ShoppingListSchema = z.object({}).strict();  // TODO Import once other schema added
+export const ShoppingListSchema = z.object({}).strict();
 
 export const PreferencesSchema = z.object({
     personalFilters: z.array(z.string()),

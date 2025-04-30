@@ -8,7 +8,7 @@ import { IRecipeRepository } from "./recipeRepository.interface";
 
 /**
  * Recipes Collection specific Mongodb Related calls
- * @todo refactor with coming calls - Generic VS Specific
+ * @todo - post - refactor with coming calls - Generic VS Specific
  */
 // 
 export class RecipesRepository extends BaseRepository<RecipeDocument> implements IRecipeRepository<RecipeDocument> {

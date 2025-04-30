@@ -14,8 +14,8 @@ import { UserRecipesIdSchema } from "../schemas/user.schema";
 
 /**
  * Handles all recipe related services
- * @todo Ensure all errors are handled
- * @todo Add logging
+ * @todo - post - Ensure all errors are handled
+ * @todo - post - Add logging
  */
 // 
 export class RecipeService {
@@ -68,10 +68,10 @@ export class RecipeService {
     /**   
      * Get Recipes with queries
      * @group Recipe Management - retrieval
-     * @todo Ensure 'get' stays one step ahead? eg: get 50 first time, then 25 per.
-     * @todo remove Users own recipes? or leave as little 'Oh that's mine' moments
-     * @todo Generic query args?
-     * @todo make 'sort' options in getRecipes
+     * @todo - post - Ensure 'get' stays one step ahead? eg: get 50 first time, then 25 per.
+     * @todo - post - remove Users own recipes? or leave as little 'Oh that's mine' moments
+     * @todo - post - Generic query args?
+     * @todo - post - make 'sort' options in getRecipes
      * @param {Visibility} public Status - 'public'/'private'
      * @param {number} limit - recipes per page
      * @param {number} skip - Start new results after N recipes
@@ -131,13 +131,11 @@ export class RecipeService {
 
         let recipeResponse: RecipeDocument;
         if (userIsCreator) {
-            console.log(' creator')
             FeUpdateRecipeSchema.parse({ recipe });
             IsObjectIdSchema.parse({ _id: recipeId });
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
             const {_id, ...recipeNoId} = recipe;
             const recipeSaveResponse = await this.recipesRepository.updateRecipe({ _id: recipeId }, recipeNoId);
-            console.log(' creator')
             if (recipeSaveResponse === null) throw new ServerError(
                 'Updating recipe failed: recipe does not exist', 
                 { recipeId, recipe},
@@ -145,11 +143,9 @@ export class RecipeService {
             );
             recipeResponse = recipeSaveResponse;
         } else {
-            console.log('not creator')
             const alterations = this.findRecipeAlterations(originalRecipe, recipe);
             PartialRecipeSchema.parse(alterations);
             const updateResponse = await this.userRepository.updateAlterationsOnUserRecipes(userId, recipeId, alterations);
-            console.log('not creator')
 
             if (updateResponse == null) throw new ServerError(
                 'updateRecipe - Updating User.recipes.alterations failed', 
@@ -167,11 +163,9 @@ export class RecipeService {
                 ErrorCode.MONGODB_RESOURCE_UPDATE_FAILED
             );
 
-            console.log('not creator')
             recipeResponse = mergeAlterations(originalRecipe, alterations);
         }
         
-        console.log('not creator')
         return {success: true, recipe: recipeResponse as Recipe}
     }
 

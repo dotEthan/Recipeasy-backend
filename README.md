@@ -43,16 +43,7 @@ Backend Functionality has now surpassed Front-end, and contains full login, verf
 
 ### Working on Now:
 
-- Code Cleaning 
-    - middleware 
-    - prioritizing TODOs (now VS later)
-    - User object return without password
-
-### To Come:
-
 - Deploy: 
-    - sameSite: 'strict/lax', httpOnly: true, secure: true, 
-    - ensure middleware security checks and limiters(readd). 
     - CORS allowed origins
     - Sanitize Middleware
     - Atlast - IP whitelist, Database User setup, network Encryption Enforced
@@ -62,7 +53,10 @@ Backend Functionality has now surpassed Front-end, and contains full login, verf
     - Backups
     - Logging (Sonar? others)
 
+### To Come:
 
+- Redis (caching)
+- Expand Validation (trim strings to be compared (names, email, inputs)), (toLowercase emails, usernames, capitalize on frontend if needed)
 - /types/enums.ts VS /enums/index.ts    
 - organize schemas
 - setup retry-ables

@@ -11,7 +11,7 @@ import { ErrorCode } from "../types/enums";
 
 /**
  * User based req and res handling
- * @todo Error Handling
+ * @todo - post - Error Handling
  */
 // 
 export class UserController {

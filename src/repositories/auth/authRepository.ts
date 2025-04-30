@@ -7,7 +7,7 @@ import { IAuthLoginAttemptRepository, IAuthVerficationCodeRepository } from "./a
 
 /**
  * Auth Collection specific Mongodb Related calls
- * @todo Are those TTL right?
+ * @todo - post - Are those TTL right?
  * 
  * - auth_verification_codes: email based verification codes, 1hr TTL
  * - auth_password_reset: email based verification token, 1 day TTL

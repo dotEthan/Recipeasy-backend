@@ -22,16 +22,19 @@ export const createVerificationCodeSchema = z.object({
     updatedAt: z.date()
 }).strict();
 
-// TODO isObjectIdSchema dupe?
+export const updatePasswordSchema = z.object({
+    password: z.string()
+})
+
+
+//---
+
+
+// TODO - post - Both are isObjectIdSchema dupe?
 export const GetVerificationCodeSchema = z.object({
     _id: ObjectIdSchema,
 }).strict();
 
-// TODO isObjectIdSchema dupe?
 export const DeleteVerificationCodeSchema = z.object({
     _id: ObjectIdSchema
 }).strict();
-
-export const updatePasswordSchema = z.object({
-    password: z.string()
-})
