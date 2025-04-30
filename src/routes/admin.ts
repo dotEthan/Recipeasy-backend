@@ -22,6 +22,16 @@ const router = express.Router();
 const adminController = new AdminController(passwordService, userService, emailVerificationService);
 
 /**
+ * Health check path for render
+ * @route GET /admin/health-check
+ * @group Security - Health Check
+ * @returns {SuccessResponse} 200 - Csurfing!
+ * @returns {ErrorResponse} 500 - Token not generated
+ * @produces application/json
+ */
+router.get('/api/v1/health', adminController.healthCheck);
+
+/**
  * Gets Csurf token for user
  * @route GET /admin/csrf-token
  * @group Security - user tracking
