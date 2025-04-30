@@ -109,9 +109,13 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 
-const apiRouter = express.Router();
-apiRouter.use(appRouter);
-app.use('/api/v1', apiRouter);
+app.use('/api/v1', appRouter);
+
+console.log('Final Route Count:', app._router.stack
+  .filter(layer => layer.name === 'router' && layer.regexp.test('/api/v1'))
+  .flatMap(layer => layer.handle.stack)
+  .length
+);
 
 console.log('Router mounted:', app._router.stack.some(
   layer => layer.regexp.test('/api/v1')
