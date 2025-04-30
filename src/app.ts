@@ -118,7 +118,26 @@ app._router.stack.forEach((middleware: any) => {
   }
 });
 console.log('Router methods:', appRouter?.stack?.map((layer: any) => layer.route?.path));
-
+console.log('\n=== FULL ROUTER STACK ===');
+appRouter.stack.forEach((layer: any) => {
+  if (layer.route) {
+    // Handle direct routes
+    console.log(`ROUTE: ${Object.keys(layer.route.methods).join(', ')} ${layer.route.path}`);
+  } else if (layer.name === 'router') {
+    // Handle nested routers (like usersRouter, recipesRouter)
+    console.log(`SUBPATH: ${layer.regexp}`);
+    layer.handle.stack.forEach((nestedLayer: any) => {
+      console.log(`  ↳ ${Object.keys(nestedLayer.route.methods).join(', ')} ${nestedLayer.route.path}`);
+    });
+  }
+});
+console.log('=== PRODUCTION ROUTE VERIFICATION ===');
+try {
+  require.resolve('./routes/index.js');
+  console.log('✅ Main route file found');
+} catch (err) {
+  console.error('❌ Route file missing:', err);
+}
 app.use('/api/v1', appRouter);
 
 // === POST-ROUTE DEBUG ===
