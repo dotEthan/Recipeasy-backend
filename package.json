@@ -10,6 +10,7 @@
     "build-exp": "tsc --outDir ./dist",
     "start:dev": "npm run build && npm run start",
     "render-build": "npm install && npm run build",
+    "inspect:build": "ls -R dist/ | grep -E 'routes|server'",
     "test": "test"
   },
   "repository": {
