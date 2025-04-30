@@ -7,6 +7,7 @@ import { ensureObjectId } from "../util/ensureObjectId";
 import { BadRequestError, UnauthorizedError } from "../errors";
 import { UserService } from "../services/userService";
 import { EmailVerificationService } from "../services/emailVerificationService";
+import { generateCsrfToken } from "../middleware/csrf";
 
 /**
  * Administration based req and res handling
@@ -17,17 +18,16 @@ export class AdminController {
     constructor(private passwordService: PasswordService, private userService: UserService, private emailVerificationService: EmailVerificationService) { }
 
     /**
-     * Gets Csurf token for user
-     * @todo replace with non deprecated async-surf/csrf-csrf
+     * Gets csrf-async token for user
      * @group Security - session tracking
      * @param {VerifyCodeRequest} request.body.required - Code and user identifier
      * @returns {SuccessResponse} 200 - Verification successful
      * @produces application/json
      */
     public getCsurf = (req: Request, res: Response) => {
-        const csrfToken = req.csrfToken();
-        res.header('X-CSRF-Token', csrfToken); 
-        res.status(200).json({success: true});
+        const token = generateCsrfToken(req); // Explicit generation
+        res.header("X-CSRF-Token", token);
+        res.json({ token }); // Send both header and body
     }
     
     /**
@@ -94,7 +94,7 @@ export class AdminController {
 
     /**
      * Check client token for email Verification
-     * @todo 3 strikes you're out
+     * @todo - post - Retry emails? 
      * @group Admin - Email Verfication Validation
      * @param {string} req.body.code - User's email verification code
      * @param {Response} userId - User's _id

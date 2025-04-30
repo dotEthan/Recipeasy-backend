@@ -10,8 +10,8 @@ import { ErrorCode } from "../types/enums";
 
 /**
  * Handles all new user Email Verification related services
- * @todo Ensure all errors are handled
- * @todo Add logging
+ * @todo - post - Ensure all errors are handled
+ * @todo - post - Add logging
  */
 // 
 
@@ -24,7 +24,7 @@ export class EmailVerificationService {
 
     /**
      * Create Verifaction Code and email to user email
-     * @todo Once email working, get error codes and map to proper statuscodes
+     * @todo - post - Once email working, get failure error codes and map to our errors
      * @group Registration Flow - Email Verification
      * @param {string} email - User's email
      * @param {string} displayName - User's display Name

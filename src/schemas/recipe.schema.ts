@@ -37,7 +37,7 @@ export const RatingsSchema = z.object({
 
 export const IngredientsStepSchema = z.object({
     name: z.string().optional(),
-    amount: z.string().optional(), // TODO set back to string
+    amount: z.string().optional(),
     unit: z.string().optional(),
     process: z.string().optional()
 }).strict();

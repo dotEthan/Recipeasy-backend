@@ -8,7 +8,7 @@ import { IRecipeRepository } from "./recipeRepository.interface";
 
 /**
  * Recipes Collection specific Mongodb Related calls
- * @todo refactor with coming calls - Generic VS Specific
+ * @todo - post - refactor with coming calls - Generic VS Specific
  */
 // 
 export class RecipesRepository extends BaseRepository<RecipeDocument> implements IRecipeRepository<RecipeDocument> {
@@ -36,7 +36,7 @@ export class RecipesRepository extends BaseRepository<RecipeDocument> implements
         IsObjectIdSchema.parse({ _id });
         return await this.findOne(
             {_id} as Partial<Recipe>,
-            { createdAt: 0 }
+            { createdAt: 0, internalData: 0 }
         );
     };
 }

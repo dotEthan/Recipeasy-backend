@@ -4,19 +4,21 @@ import { LoginSchema, RegisterUserSchema } from "../schemas/user.schema";
 import { catchAsyncError } from "../util/catchAsyncErrors";
 import { AuthController } from "../controllers/authController";
 import { isAuthenticated } from "../middleware/auth";
-import { authService, passwordService, recipeService, userService } from "../services";
+import { authService, passwordService } from "../services";
+import { csrfMiddleware } from "../middleware/csrf";
+import { apiLimiter, registrationLimiter } from "../middleware/rateLimiters";
 
 
 /**
  * Handles all Authorization based routes
  * @todo Add Authentication As needed
- * @todo Full Error Lists
+ * @todo - post - Full Error Lists
  */
 // 
 
 const router = express.Router();
 
-const authController = new AuthController(userService, authService, recipeService, passwordService);
+const authController = new AuthController(authService, passwordService);
 
 /**
  * Register new user
@@ -31,7 +33,13 @@ const authController = new AuthController(userService, authService, recipeServic
  * @produces application/json
  * @consumes application/json
  */
-router.post("/register", validateRequestBodyData(RegisterUserSchema), catchAsyncError(authController.register));
+router.post(
+    "/register", 
+    csrfMiddleware(true), 
+    validateRequestBodyData(RegisterUserSchema), 
+    registrationLimiter, 
+    catchAsyncError(authController.register)
+);
 
 /**
  * Log in user
@@ -45,7 +53,13 @@ router.post("/register", validateRequestBodyData(RegisterUserSchema), catchAsync
  * @produces application/json
  * @consumes application/json
  */
-router.post("/login", validateRequestBodyData(LoginSchema), catchAsyncError(authController.login));
+router.post(
+    "/login", 
+    apiLimiter, 
+    csrfMiddleware(true), 
+    validateRequestBodyData(LoginSchema), 
+    catchAsyncError(authController.login)
+);
 
 /**
  * Check to ensure user session is still active
@@ -56,11 +70,15 @@ router.post("/login", validateRequestBodyData(LoginSchema), catchAsyncError(auth
  * @returns {ErrorResponse} 500 - Server/database issues
  * @produces application/json
  */
-router.get('/session', isAuthenticated(), catchAsyncError(authController.checkSession));
+router.get(
+    '/session', 
+    apiLimiter, 
+    isAuthenticated(), 
+    catchAsyncError(authController.checkSession)
+);
 
 /**
  * Delete User session
- * @todo test for errors
  * @route DELETE /auth/session
  * @group Authorization - Session deletion
  * @returns {StandardResponse} 200 - Deletion successful
@@ -68,6 +86,12 @@ router.get('/session', isAuthenticated(), catchAsyncError(authController.checkSe
  * @produces application/json
  * @consumes application/json
  */
-router.delete("/session", isAuthenticated(), catchAsyncError(authController.logUserOut));
+router.delete(
+    "/session", 
+    apiLimiter, 
+    csrfMiddleware(true), 
+    isAuthenticated(), 
+    catchAsyncError(authController.logUserOut)
+);
 
 export default router;

@@ -14,9 +14,9 @@ import { ErrorCode } from "../types/enums";
 
 /**
  * Handles all user related services
- * @todo previousPasswords hash TLL = 1yr for hash
- * @todo Ensure all errors are handled
- * @todo Add logging
+ * @todo - post - previousPasswords hash TLL = 1yr for hash
+ * @todo - post - Ensure all errors are handled
+ * @todo - post - Add logging
  */
 // 
 export class UserService {

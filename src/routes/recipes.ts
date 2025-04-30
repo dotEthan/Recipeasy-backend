@@ -4,17 +4,18 @@ import { upload } from "../config/cloudinary";
 import { RecipeController } from "../controllers/recipesController";
 import { recipeService } from "../services";
 import { validateRequestBodyData } from "../middleware/validateRequestData";
-import { hasOwnership, isAuthenticated } from "../middleware/auth";
+import { isAuthenticated } from "../middleware/auth";
 import { checkIdParam } from "../middleware/checkIdParam";
 import { catchAsyncError } from "../util/catchAsyncErrors";
 import { NewRecipeSchema, FeUpdateRecipeSchema } from "../schemas/recipe.schema";
 import { validateImageUpload } from "../middleware/validateImageUpload";
+import { csrfMiddleware } from "../middleware/csrf";
+import { apiLimiter } from "../middleware/rateLimiters";
 
 /**
  * Handles all Recipe based routes
  * @todo Add middleware (authetnication, has ownership, ratelimiter, validateRequestData) As needed
- * @todo Full Error Lists
- * @todo catchAsyncError for errors?
+ * @todo - post - Full Error Lists
  */
 // 
 
@@ -38,11 +39,17 @@ const recipeController = new RecipeController(recipeService);
  * // Client-side usage:
  * fetch('/recipes/`, { method: 'POST', body: recipe  });
  */
-router.post("/", isAuthenticated(), hasOwnership(),  validateRequestBodyData(NewRecipeSchema), catchAsyncError(recipeController.saveNewRecipe));
+router.post(
+    "/", 
+    isAuthenticated(), 
+    csrfMiddleware(), 
+    validateRequestBodyData(NewRecipeSchema), 
+    catchAsyncError(recipeController.saveNewRecipe)
+);
 
 /**
  * Get Public Recipe data
- * @todo refactor to accomodate pagination 
+ * @todo - post - refactor to accomodate pagination 
  * @route GET /recipes/
  * @group Recipe Management - Recipe Retrieval
  * @param {Visibility} request.query.visibility - 'public'/'private'
@@ -75,7 +82,14 @@ router.get("/", catchAsyncError(recipeController.getPublicRecipes));
  * // Client-side usage:
  * fetch('/recipes/${recipeId}`, { method: 'PUT', body: updatedRecipe  });
  */
-router.put("/:id", checkIdParam(), isAuthenticated(), hasOwnership(), validateRequestBodyData(FeUpdateRecipeSchema), catchAsyncError(recipeController.updateRecipe));
+router.put(
+    "/:id", 
+    csrfMiddleware(), 
+    checkIdParam(), 
+    isAuthenticated(),
+    validateRequestBodyData(FeUpdateRecipeSchema), 
+    catchAsyncError(recipeController.updateRecipe)
+);
 
 
 /**
@@ -93,13 +107,18 @@ router.put("/:id", checkIdParam(), isAuthenticated(), hasOwnership(), validateRe
  * // Client-side usage:
  * fetch('/recipes/${recipeId}`, { method: 'DELETE' });
  */
-router.delete("/:id", checkIdParam(), isAuthenticated(), catchAsyncError(recipeController.deleteRecipe));
+router.delete(
+    "/:id",
+    apiLimiter, 
+    csrfMiddleware(),
+    checkIdParam(), 
+    isAuthenticated(), 
+    catchAsyncError(recipeController.deleteRecipe)
+);
 
 /**
  * Image upload for recipes
- * @todo fix this jsdoc once working
- * @todo add middleware - validateRequestBody once set
- * @route get /image-upload
+ * @route post /image
  * @group Recipe Management - image uploads
  * @param {File} request.file - Image file user Uploaded
  * @returns {StandardResponse} 201 - success: true url: secureUrl
@@ -117,11 +136,18 @@ router.delete("/:id", checkIdParam(), isAuthenticated(), catchAsyncError(recipeC
  * formData.append('image', fileInput.files[0]);
  * fetch('/recipes/image-upload', { method: 'POST', body: formData });
  */
-router.post("/image", upload.single('image'), validateImageUpload, catchAsyncError(recipeController.uploadRecipeImage));
+router.post(
+    "/image", 
+    apiLimiter,
+    csrfMiddleware(),
+    isAuthenticated(), 
+    upload.single('image'), 
+    validateImageUpload, 
+    catchAsyncError(recipeController.uploadRecipeImage)
+);
 
 /**
  * Deleted Image uploaded for recipe
- * @todo fix this jsdoc once working
  * @route delete /image/:id
  * @group Recipe Management - image deletion
  * @param {string} request.body.params.id - Public Id of the image to delete
@@ -135,6 +161,13 @@ router.post("/image", upload.single('image'), validateImageUpload, catchAsyncErr
  * // Client-side usage:
  * fetch(`/recipes/image/${imageId}`, { method: 'DELETE' });
  */
-router.delete("/image/:id", checkIdParam(), catchAsyncError(recipeController.deleteRecipeImage));
+router.delete(
+    "/image/:id", 
+    apiLimiter,
+    csrfMiddleware(),
+    checkIdParam(), 
+    isAuthenticated(), 
+    catchAsyncError(recipeController.deleteRecipeImage)
+);
 
 export default router;

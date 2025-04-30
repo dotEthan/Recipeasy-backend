@@ -7,13 +7,15 @@ import { isAuthenticated } from "../middleware/auth";
 import { catchAsyncError } from "../util/catchAsyncErrors";
 import { checkIdParam } from "../middleware/checkIdParam";
 import { recipeService, userService } from "../services";
+import { csrfMiddleware } from "../middleware/csrf";
+import { apiLimiter } from "../middleware/rateLimiters";
 // import { registrationLimiter } from "../middleware/rateLimiters";
 
 /**
  * Handles all User based routes
- * @todo Add Authentication As needed
- * @todo Full Error Lists
- * @todo catchAsyncError for errors?
+ * @todo Add Middleware
+ * @todo - post - Full Error Lists
+ * @todo - post - Test what happens if :id missing
  */
 // 
 const router = express.Router();
@@ -32,26 +34,16 @@ const userController = new UserController(userService, recipeService);
  * @returns {ErrorResponse} 500 - Server/database issues
  * @produces application/json
 */
-router.get("/:id", isAuthenticated(), checkIdParam(), catchAsyncError(userController.getUsersData));
-
-/**
- * Update user with new password
- * @todo for User Admin Panel
- * @route PATCH /users/password
- * @group Recipe Management - User data Update
- * @param {string} request.body.password.required
- * @returns {StandardResponse} 201 - success: true
- * @returns {ErrorResponse} 400 - Validation Error
- * @returns {ErrorResponse} 404 - User does not exist
- * @returns {ErrorResponse} 500 - Server/database issues
- * @produces application/json
- * @consumes application/json
-*/
-// router.patch("/password", validateRequestBodyData(updatePasswordSchema), userController.userPasswordUpdate);
+router.get(
+    "/:id", 
+    apiLimiter,
+    checkIdParam(), 
+    isAuthenticated(), 
+    catchAsyncError(userController.getUsersData)
+);
 
 /**
  * Update User.recipes array
- * @todo send in missing ':id' see what happens
  * @route PATCH /users/:id/recipes
  * @group User Management - User data Update
  * @param {string} request.body.recipeId.required
@@ -64,6 +56,13 @@ router.get("/:id", isAuthenticated(), checkIdParam(), catchAsyncError(userContro
  * @produces application/json
  * @consumes application/json
 */
-router.patch("/:id/recipes", checkIdParam(), isAuthenticated(), validateRequestBodyData(FeUpdateUsersRecipesSchema), catchAsyncError(userController.updateUserRecipes));
+router.patch(
+    "/:id/recipes", 
+    apiLimiter,
+    csrfMiddleware(),
+    checkIdParam(), 
+    isAuthenticated(), 
+    validateRequestBodyData(FeUpdateUsersRecipesSchema), 
+    catchAsyncError(userController.updateUserRecipes));
 
 export default router;

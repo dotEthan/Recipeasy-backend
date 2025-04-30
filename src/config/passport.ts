@@ -27,7 +27,7 @@ export async function initialize(passport: PassportStatic) {
     
     const authenticateUser = async (email: string, password: string, done: VerifiedUserOrErrorFunc) => {
         try {
-            const user = await userRepository.findByEmail(email);
+            const user = await userRepository.findByEmailWithInternals(email);
             if (user == null) {
                 // (error, user, message)
                 return done(null, false, { message: 'No user with that email'});
