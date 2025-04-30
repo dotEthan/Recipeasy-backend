@@ -107,38 +107,11 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 
+const apiRouter = express.Router();
+apiRouter.use(appRouter);
+app.use('/api/v1', apiRouter);
 
 app.use(addRequestId)
-
-// === ROUTE DEBUG ===
-console.log('\n=== PRE-ROUTE MIDDLEWARE STACK ===');
-app._router.stack.forEach((middleware: any) => {
-  if (middleware.handle) {
-    console.log(`- Middleware: ${middleware.handle.name || 'anonymous'}`);
-  }
-});
-console.log('Router methods:', appRouter?.stack?.map((layer: any) => layer.route?.path));
-console.log('\n=== FULL ROUTER STACK ===');
-appRouter.stack.forEach((layer: any) => {
-  if (layer.route) {
-    // Handle direct routes
-    console.log(`ROUTE: ${Object.keys(layer.route.methods).join(', ')} ${layer.route.path}`);
-  } else if (layer.name === 'router') {
-    // Handle nested routers (like usersRouter, recipesRouter)
-    console.log(`SUBPATH: ${layer.regexp}`);
-    layer.handle.stack.forEach((nestedLayer: any) => {
-      console.log(`  ↳ ${Object.keys(nestedLayer.route.methods).join(', ')} ${nestedLayer.route.path}`);
-    });
-  }
-});
-console.log('=== PRODUCTION ROUTE VERIFICATION ===');
-try {
-  require.resolve('./routes/index.js');
-  console.log('✅ Main route file found');
-} catch (err) {
-  console.error('❌ Route file missing:', err);
-}
-app.use('/api/v1', appRouter);
 
 // === POST-ROUTE DEBUG ===
 console.log('\n=== REGISTERED ROUTES ===');
@@ -149,7 +122,8 @@ app._router.stack.forEach((layer: any) => {
     console.log(`- ${method?.toUpperCase()} ${layer.route.path}`);
   }
 });
-
+process.stdout.write('RAW OUTPUT TEST\n');
+console.log('Regular console.log test');
 
 app.use(
   (req: Request, res: Response, next: NextFunction) => {
