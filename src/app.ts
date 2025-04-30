@@ -25,6 +25,17 @@ import timeout from 'connect-timeout';
  */
 const app = express();
 
+// === DEBUG START ===
+console.log('\n=== ENVIRONMENT VARIABLES ===');
+console.log('NODE_ENV:', process.env.NODE_ENV);
+console.log('MONGODB_URI exists:', !!process.env.MONGODB_URI);
+console.log('CORS_ORIGIN:', process.env.CORS_ORIGIN);
+
+console.log('\n=== PATH VERIFICATION ===');
+console.log('__dirname:', __dirname);
+console.log('Images path:', path.join(__dirname, '../images'));
+// === DEBUG END ===
+
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
@@ -98,10 +109,30 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 
-app.use('/images', express.static(path.join(__dirname, 'images')));
+app.use('/images', express.static(path.join(__dirname, '../images')));
 
 app.use(addRequestId)
+
+// === ROUTE DEBUG ===
+console.log('\n=== PRE-ROUTE MIDDLEWARE STACK ===');
+app._router.stack.forEach((middleware: any) => {
+  if (middleware.handle) {
+    console.log(`- Middleware: ${middleware.handle.name || 'anonymous'}`);
+  }
+});
+
 app.use('/api/v1', appRouter);
+
+// === POST-ROUTE DEBUG ===
+console.log('\n=== REGISTERED ROUTES ===');
+app._router.stack.forEach((layer: any) => {
+  if (layer.route) {
+    const methods = layer.route.methods;
+    const method = Object.keys(methods).find(m => methods[m]);
+    console.log(`- ${method?.toUpperCase()} ${layer.route.path}`);
+  }
+});
+
 
 app.use(
   (req: Request, res: Response, next: NextFunction) => {
