@@ -2,7 +2,6 @@ import dotenv from 'dotenv'
 if(process.env.NODE_ENV !== 'production') {
   dotenv.config();
 };
-import path from 'path';
 import cors from 'cors';
 import express, { NextFunction, Request, Response } from "express";
 import session from 'express-session';
@@ -12,7 +11,7 @@ import MongoStore from 'connect-mongo';
 import cookieParser from 'cookie-parser';
 
 import { errorHandler } from './middleware/errorHandler';
-import appRouter from './routes/';
+import appRouter from './routes/index';
 import { NotFoundError, ServerError } from './errors';
 import { addRequestId } from './middleware/addRequestId';
 import { ErrorCode } from './types/enums';
@@ -26,6 +25,7 @@ import timeout from 'connect-timeout';
 const app = express();
 
 // === DEBUG START ===
+console.log('Imported router:', appRouter?.stack ? 'Valid Router' : 'INVALID ROUTER');
 console.log('\n=== ENVIRONMENT VARIABLES ===');
 console.log('NODE_ENV:', process.env.NODE_ENV);
 console.log('MONGODB_URI exists:', !!process.env.MONGODB_URI);
@@ -33,7 +33,6 @@ console.log('CORS_ORIGIN:', process.env.CORS_ORIGIN);
 
 console.log('\n=== PATH VERIFICATION ===');
 console.log('__dirname:', __dirname);
-console.log('Images path:', path.join(__dirname, '../images'));
 // === DEBUG END ===
 
 app.use(helmet({
@@ -109,8 +108,6 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 
-app.use('/images', express.static(path.join(__dirname, '../images')));
-
 app.use(addRequestId)
 
 // === ROUTE DEBUG ===
@@ -120,6 +117,7 @@ app._router.stack.forEach((middleware: any) => {
     console.log(`- Middleware: ${middleware.handle.name || 'anonymous'}`);
   }
 });
+console.log('Router methods:', appRouter?.stack?.map((layer: any) => layer.route?.path));
 
 app.use('/api/v1', appRouter);
 
