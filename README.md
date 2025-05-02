@@ -44,17 +44,14 @@ Backend Functionality has now surpassed Front-end, and contains full login, verf
 ### Working on Now:
 
 - Deploy: 
-    - CORS allowed origins
     - Sanitize Middleware
-    - Atlast - IP whitelist, Database User setup, network Encryption Enforced
     - run OWASP ZAP (or other security scanner)
-    - pentests (Detectify or others)
-    - Monitoring for sus action. 
     - Backups
-    - Logging (Sonar? others)
+    
 
 ### To Come:
 
+- Logging (Sonar? others)
 - Redis (caching)
 - Expand Validation (trim strings to be compared (names, email, inputs)), (toLowercase emails, usernames, capitalize on frontend if needed)
 - /types/enums.ts VS /enums/index.ts    

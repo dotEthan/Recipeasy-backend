@@ -108,7 +108,7 @@ export class PasswordService {
      * await authService.validatePasswordToken('xyz987');
      */
     public async validatePasswordToken(token: string, type: string): Promise<StandardResponse> {
-        const secret = (process.env.NODE_ENV !== 'prod') ? process.env.JWT_SECRET_PROD : process.env.JWT_SECRET_DEV;
+        const secret = (process.env.NODE_ENV !== 'production') ? process.env.JWT_SECRET_PROD : process.env.JWT_SECRET_DEV;
         if (!secret) throw new ServerError(
             'validatePasswordToken - Env JWT_SECRET_PROD/DEV not set',
             { location: 'passwordService.validatePasswordToken' },
