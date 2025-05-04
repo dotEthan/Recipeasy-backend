@@ -73,6 +73,7 @@ router.post(
 router.get(
     '/session', 
     apiLimiter, 
+    csrfMiddleware(), 
     isAuthenticated(), 
     catchAsyncError(authController.checkSession)
 );
