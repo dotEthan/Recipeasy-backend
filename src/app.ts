@@ -46,7 +46,8 @@ app.use(cors({
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization', 'x-csrf-token'],
   credentials: true,
-  exposedHeaders: ['Set-Cookie']
+  exposedHeaders: ['Set-Cookie'],
+  maxAge: 86400
 }));
 app.use(compression()); 
 app.use(timeout('10s'));
@@ -80,7 +81,18 @@ app.get('/health', (req: Request, res: Response) => {
     res.sendStatus(404);
     return;
   }
+  // TODO check if needed. why calls to /
+  app.get('/', (req, res) => {
+    if (process.env.NODE_ENV === 'production') {
+      return res.redirect('/health');
+    }
+    res.sendStatus(404);
+  });
   
+  app.use((req, res, next) => {
+    console.log('Incoming request to:', req.originalUrl);
+    next();
+  });
   res.status(200).json({ 
     status: 'healthy' as const,
     timestamp: new Date().toISOString() 
@@ -114,10 +126,6 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 
-app.use((req, res, next) => {
-  console.log('Incoming request to:', req.originalUrl);
-  next();
-});
 
 app.use('/api/v1', appRouter);
 
