@@ -74,6 +74,12 @@ if (!MongoDbUri) {
     ErrorCode.UNSET_ENV_VARIABLE
   );
 }
+
+app.use((req, res, next) => {
+  console.log('Incoming request to:', req.originalUrl);
+  next();
+});
+
 app.get('/health', (req: Request, res: Response) => {
   if (process.env.NODE_ENV === 'production' && 
       !req.ip?.startsWith('10.') && 
@@ -81,22 +87,17 @@ app.get('/health', (req: Request, res: Response) => {
     res.sendStatus(404);
     return;
   }
-  // TODO check if needed. why calls to /
-  app.get('/', (req, res) => {
-    if (process.env.NODE_ENV === 'production') {
-      return res.redirect('/health');
-    }
-    res.sendStatus(404);
-  });
-  
-  app.use((req, res, next) => {
-    console.log('Incoming request to:', req.originalUrl);
-    next();
-  });
   res.status(200).json({ 
     status: 'healthy' as const,
     timestamp: new Date().toISOString() 
   });
+});
+  // TODO check if needed. why calls to /
+app.get('/', (req, res) => {
+  if (process.env.NODE_ENV === 'production') {
+    return res.redirect('/health');
+  }
+  res.sendStatus(404);
 });
 // TODO once working deployed try 
 // name: '__Host-recipeasy.sid', 
