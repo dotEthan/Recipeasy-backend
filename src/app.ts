@@ -40,6 +40,7 @@ app.use(helmet({
 
 const corsOrigin = process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN : 'https://localhost:5173';
 
+app.options('*', cors());
 app.use(cors({
   origin: corsOrigin,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
@@ -99,10 +100,10 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 
-app.use((req, res, next) => {
-  console.log('Incoming request to:', req.originalUrl);
-  next();
-});
+// app.use((req, res, next) => {
+//   console.log('Incoming request to:', req.originalUrl);
+//   next();
+// });
 
 app.use('/api/v1', appRouter);
 
