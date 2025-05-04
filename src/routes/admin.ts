@@ -21,15 +21,15 @@ import { apiLimiter, registrationLimiter } from "../middleware/rateLimiters";
 const router = express.Router();
 const adminController = new AdminController(passwordService, userService, emailVerificationService);
 
-/**
- * Health check path for render
- * @route GET /admin/health-check
- * @group Security - Health Check
- * @returns {SuccessResponse} 200 - Csurfing!
- * @returns {ErrorResponse} 500 - Token not generated
- * @produces application/json
- */
-router.get('/health', adminController.healthCheck);
+// /**
+//  * Health check path for render
+//  * @route GET /admin/health-check
+//  * @group Security - Health Check
+//  * @returns {SuccessResponse} 200 - Csurfing!
+//  * @returns {ErrorResponse} 500 - Token not generated
+//  * @produces application/json
+//  */
+// router.get('/health', adminController.healthCheck);
 
 /**
  * Gets Csurf token for user
