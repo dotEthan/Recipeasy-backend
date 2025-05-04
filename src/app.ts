@@ -73,7 +73,19 @@ if (!MongoDbUri) {
     ErrorCode.UNSET_ENV_VARIABLE
   );
 }
-
+app.get('/health', (req: Request, res: Response) => {
+  if (process.env.NODE_ENV === 'production' && 
+      !req.ip?.startsWith('10.') && 
+      !req.get('user-agent')?.includes('Render')) {
+    res.sendStatus(404);
+    return;
+  }
+  
+  res.status(200).json({ 
+    status: 'healthy' as const,
+    timestamp: new Date().toISOString() 
+  });
+});
 // TODO once working deployed try 
 // name: '__Host-recipeasy.sid', 
 // ensures cookie is from same host
@@ -102,10 +114,10 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 
-// app.use((req, res, next) => {
-//   console.log('Incoming request to:', req.originalUrl);
-//   next();
-// });
+app.use((req, res, next) => {
+  console.log('Incoming request to:', req.originalUrl);
+  next();
+});
 
 app.use('/api/v1', appRouter);
 
