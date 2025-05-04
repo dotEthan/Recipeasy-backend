@@ -1,35 +1,9 @@
 import { csrfSync } from 'csrf-sync'; 
-// import csurf from 'csurf';
 import { Request, Response, NextFunction } from 'express';
 
 import { CsurfErrorType } from '../types/error';
 import { ForbiddenError, UnauthorizedError } from '../errors';
 import { ErrorCode } from '../types/enums';
-
-// export const csrfProtection = csurf({ cookie: true });
- 
-// export const csrfErrorHandler = (error: CsurfErrorType, req: Request, res: Response, next: NextFunction) => {
-
-//   const csrfError = new ForbiddenError(
-//     'CSRF token Mismatch',
-//     { location: 'csrfErrorHandler', originalError: error },
-//     ErrorCode.CSRF_TOKEN_MISMATCH
-//   );
-//   next(csrfError);
-
-// };
-
-///////////// csrf-sync not working, session failing after first request, change to new or fix
-///////////// csrf-sync not working, session failing after first request, change to new or fix
-///////////// csrf-sync not working, session failing after first request, change to new or fix
-///////////// csrf-sync not working, session failing after first request, change to new or fix
-///////////// csrf-sync not working, session failing after first request, change to new or fix
-///////////// csrf-sync not working, session failing after first request, change to new or fix
-///////////// csrf-sync not working, session failing after first request, change to new or fix
-///////////// csrf-sync not working, session failing after first request, change to new or fix
-///////////// csrf-sync not working, session failing after first request, change to new or fix
-///////////// csrf-sync not working, session failing after first request, change to new or fix
-///////////// csrf-sync not working, session failing after first request, change to new or fix
 
 type CsrfSyncedToken = string | undefined | null;
 
