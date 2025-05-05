@@ -38,16 +38,37 @@ app.use(helmet({
   }
 }));
 
-const corsOrigin = process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN : 'https://localhost:5173';
+const corsOrigin = process.env.CORS_ORIGIN 
+  ? process.env.CORS_ORIGIN.split(',').map(origin => origin.trim())
+  : ['https://localhost:5173'];
+  
+console.log('Configured CORS origins:', corsOrigin);
 
-app.options('*', cors());
+const corsOrigins = process.env.CORS_ORIGIN 
+  ? process.env.CORS_ORIGIN.split(',').map(origin => origin.trim())
+  : ['https://localhost:5173'];
+
+console.log('Configured CORS origins:', corsOrigins);
+
+// This is the key part - we need to match the specific origin
 app.use(cors({
-  origin: corsOrigin,
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    if (corsOrigins.includes(origin)) {
+      // Important: Return the ACTUAL requesting origin, not the whole list
+      return callback(null, origin);
+    }
+    
+    console.log(`CORS blocked origin: ${origin}, allowed origins:`, corsOrigins);
+    return callback(new Error('Not allowed by CORS'), false);
+  },
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization', 'x-csrf-token'],
   credentials: true,
-  exposedHeaders: ['Set-Cookie'],
-  maxAge: 86400
+  exposedHeaders: ['Set-Cookie', 'x-csrf-token'],
+  maxAge: 3600
 }));
 app.use(compression()); 
 app.use(timeout('10s'));
@@ -74,6 +95,27 @@ if (!MongoDbUri) {
     ErrorCode.UNSET_ENV_VARIABLE
   );
 }
+app.get('/debug-cors', (req: Request, res: Response) => {
+  // Only allow in development or with specific header for security
+  if (process.env.NODE_ENV === 'production' && 
+      req.headers['x-debug-key'] !== process.env.DEBUG_KEY) {
+    res.status(403).send('Forbidden in production');
+    return;
+  }
+  
+  // Return the debug information
+  res.json({
+    environment: process.env.NODE_ENV,
+    corsOrigin: process.env.CORS_ORIGIN,
+    parsedCorsOrigin: process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',').map(o => o.trim()) : null,
+    requestOrigin: req.headers.origin || 'none',
+    requestHost: req.headers.host,
+    requestMethod: req.method,
+    requestIp: req.ip,
+    nodeVersion: process.version,
+    timestamp: new Date().toISOString()
+  });
+});
 
 app.use((req, res, next) => {
   console.log('Incoming request to:', req.originalUrl);
@@ -118,7 +160,7 @@ app.use(session({
   cookie: {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    sameSite: 'none',
+    sameSite: 'lax',
     maxAge: 1000 * 60 * 60 * 24 * 7,
     path: '/',
     partitioned: true
