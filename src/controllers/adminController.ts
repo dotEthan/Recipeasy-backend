@@ -7,7 +7,6 @@ import { ensureObjectId } from "../util/ensureObjectId";
 import { BadRequestError, UnauthorizedError } from "../errors";
 import { UserService } from "../services/userService";
 import { EmailVerificationService } from "../services/emailVerificationService";
-import { generateCsrfToken } from "../middleware/csrf";
 
 /**
  * Administration based req and res handling
@@ -18,25 +17,25 @@ export class AdminController {
     constructor(private passwordService: PasswordService, private userService: UserService, private emailVerificationService: EmailVerificationService) { }
 
   
-    /**
-     * Health Check for Render hosting
-     * @group Security - Health Check
-     * @returns {status} 200 - Healthy
-     */
-    public healthCheck = (req: Request, res: Response) => { res.sendStatus(200); }
+    // /**
+    //  * Health Check for Render hosting
+    //  * @group Security - Health Check
+    //  * @returns {status} 200 - Healthy
+    //  */
+    // public healthCheck = (req: Request, res: Response) => { res.sendStatus(200); }
 
-    /**
-     * Gets csrf-async token for user
-     * @group Security - session tracking
-     * @param {VerifyCodeRequest} request.body.required - Code and user identifier
-     * @returns {SuccessResponse} 200 - Verification successful
-     * @produces application/json
-     */
-    public getCsurf = (req: Request, res: Response) => {
-        const token = generateCsrfToken(req);
-        res.header("X-CSRF-Token", token);
-        res.json({ token });
-    }
+    // /**
+    //  * Gets csrf-async token for user
+    //  * @group Security - session tracking
+    //  * @param {VerifyCodeRequest} request.body.required - Code and user identifier
+    //  * @returns {SuccessResponse} 200 - Verification successful
+    //  * @produces application/json
+    //  */
+    // public getCsurf = (req: Request, res: Response) => {
+    //     const token = generateCsrfToken(req);
+    //     res.header("X-CSRF-Token", token);
+    //     res.json({ token });
+    // }
     
     /**
      * Request to start User password reset flow

@@ -70,23 +70,10 @@ export class AuthController {
 
         await this.passwordService.checkIfPwResetInProgress(email);
 
-        const csrfToken = req.session.csrfToken;
 
         const authenticatedUser = await this.authenticateUser(req, res);
         const autheticatedSantizedUser = sanitizeUser(authenticatedUser);
         
-        req.session.csrfToken = csrfToken;
-        
-        // csrf-sync not working with passportjs to add csrftokens after new session creation
-        await new Promise<void>((resolve, reject) => {
-            req.session.save((err) => {
-                if (err) {
-                    reject(err);
-                } else {
-                    resolve();
-                }
-            });
-        });
         const responseData = await this.authService.userLogin(autheticatedSantizedUser);
 
 
@@ -103,7 +90,6 @@ export class AuthController {
      */
     public logUserOut = async (req: Request, res: Response) => {
 
-        const csrfToken = req.session.csrfToken;
         
         await new Promise<void>((resolve, reject) => {
             req.logOut((error) => {
@@ -115,31 +101,16 @@ export class AuthController {
         res.clearCookie('recipeasy.sid', {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
-            sameSite: 'strict'
+            sameSite: 'lax'
         });
 
         // still needed?
         res.clearCookie('XSRF-TOKEN', {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
-            sameSite: 'strict'
+            sameSite: 'lax'
         });
         
-        // regenerating to maintain csrfToken
-        await new Promise<void>((resolve, reject) => {
-            req.session.regenerate((error) => {
-                if (error) return reject(error);
-                
-                req.session.csrfToken = csrfToken;
-                
-                req.session.save((saveErr) => {
-                    if (saveErr) return reject(saveErr);
-                    resolve();
-                });
-            });
-        });
-        req.session.csrfToken = csrfToken;
-
         res.status(200).json({
             success: true,
             message: "User logged out successfully"
@@ -195,21 +166,12 @@ export class AuthController {
                     ));
                 }
 
-                req.session.regenerate((err) => {
-                    if (err) {
-                        return reject(new ServerError(
-                            'Session regeneration failed',
-                            { location: 'authController.authenticateUser' },
-                            ErrorCode.SESSION_REGEN_FAILED
-                        ));
+                req.logIn(user, (loginError: Error | null) => {
+                    if (loginError) {
+                        return reject(loginError);
                     }
-                    req.logIn(user, (loginError: Error | null) => {
-                        if (loginError) {
-                            return reject(loginError);
-                        }
 
-                        resolve(user); 
-                    });
+                    resolve(user); 
                 });
             })(req, res);
         })

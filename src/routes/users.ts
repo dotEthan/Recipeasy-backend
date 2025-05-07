@@ -7,7 +7,6 @@ import { isAuthenticated } from "../middleware/auth";
 import { catchAsyncError } from "../util/catchAsyncErrors";
 import { checkIdParam } from "../middleware/checkIdParam";
 import { recipeService, userService } from "../services";
-import { csrfMiddleware } from "../middleware/csrf";
 import { apiLimiter } from "../middleware/rateLimiters";
 // import { registrationLimiter } from "../middleware/rateLimiters";
 
@@ -59,7 +58,6 @@ router.get(
 router.patch(
     "/:id/recipes", 
     apiLimiter,
-    csrfMiddleware(),
     checkIdParam(), 
     isAuthenticated(), 
     validateRequestBodyData(FeUpdateUsersRecipesSchema), 

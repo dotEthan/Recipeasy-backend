@@ -18,6 +18,8 @@ import { ErrorCode } from './types/enums';
 import hpp from 'hpp';
 import compression from 'compression';
 import timeout from 'connect-timeout';
+import { generateCsrfToken, jwtCsrfMiddleware } from './middleware/jwt-csrf';
+// import { registrationLimiter } from './middleware/rateLimiters';
 
 /**
  * configs app setup and middleware
@@ -76,9 +78,43 @@ if (!MongoDbUri) {
   );
 }
 
+// TODO once working deployed try 
+// name: '__Host-recipeasy.sid', 
+// ensures cookie is from same host
+app.use(session({
+  secret: sessionSecret,
+  name: 'recipeasy.sid',
+  resave: false,
+  saveUninitialized: false,
+  store: MongoStore.create({
+    mongoUrl: MongoDbUri,
+    collectionName: 'sessions',
+    ttl: 7 * 24 * 60 * 60,
+    autoRemove: 'interval',
+    autoRemoveInterval: 10,
+    touchAfter: 3600,
+  }),
+  cookie: {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite:  'lax',
+    maxAge: 1000 * 60 * 60 * 24 * 7,
+    path: '/',
+    domain: process.env.NODE_ENV === 'production' ? '.onrender.com' : undefined
+  }
+}));
 app.use((req, res, next) => {
-  console.log('Session ID:', req.sessionID);
-  console.log('Session data:', req.session);
+  res.locals.csrfToken = generateCsrfToken(req);
+  next();
+});
+
+app.use(passport.initialize());
+app.use(passport.session());
+
+app.use((req, res, next) => {
+  if (res.locals.csrfToken) {
+    res.header('X-CSRF-Token', res.locals.csrfToken);
+  }
   next();
 });
 
@@ -103,37 +139,13 @@ app.get('/', (req, res) => {
   res.sendStatus(404);
 });
 
-// TODO once working deployed try 
-// name: '__Host-recipeasy.sid', 
-// ensures cookie is from same host
-app.use(session({
-  secret: sessionSecret,
-  name: 'recipeasy.sid',
-  resave: false,
-  saveUninitialized: false,
-  store: MongoStore.create({
-    mongoUrl: MongoDbUri,
-    collectionName: 'sessions',
-    ttl: 7 * 24 * 60 * 60,
-    autoRemove: 'interval',
-    autoRemoveInterval: 10,
-    touchAfter: 3600,
-  }),
-  cookie: {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    maxAge: 1000 * 60 * 60 * 24 * 7,
-    path: '/',
-    domain: process.env.NODE_ENV === 'production' ? '.onrender.com' : undefined
-  }
-}));
-app.use(passport.initialize());
-app.use(passport.session());
+// TODO Move back to routes - GET not Csrf protected anyway
+app.get('/api/v1/admin/csrf-token', (req, res) => {
+  console.log('getting token')
+  res.status(200).end(); // Token already sent in headers
+});
 
-
-app.use('/api/v1', appRouter);
-
+app.use('/api/v1', jwtCsrfMiddleware(), appRouter);
 
 app.use(addRequestId)
 
