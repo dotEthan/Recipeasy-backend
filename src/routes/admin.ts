@@ -8,8 +8,7 @@ import { catchAsyncError } from "../util/catchAsyncErrors";
 
 import { ResetFlowSetPasswordSchema } from "../schemas/user.schema";
 import { IsCodeSchema, IsEmailSchema } from "../schemas/shared.schema";
-import { csrfMiddleware } from "../middleware/csrf";
-import { apiLimiter, registrationLimiter } from "../middleware/rateLimiters";
+import { apiLimiter } from "../middleware/rateLimiters";
 
 /**
  * Handles all Administration based routes
@@ -22,28 +21,18 @@ const router = express.Router();
 const adminController = new AdminController(passwordService, userService, emailVerificationService);
 
 // /**
-//  * Health check path for render
-//  * @route GET /admin/health-check
-//  * @group Security - Health Check
+//  * Gets Csurf token for user
+//  * @route GET /admin/csrf-token
+//  * @group Security - user tracking
 //  * @returns {SuccessResponse} 200 - Csurfing!
 //  * @returns {ErrorResponse} 500 - Token not generated
 //  * @produces application/json
 //  */
-// router.get('/health', adminController.healthCheck);
-
-/**
- * Gets Csurf token for user
- * @route GET /admin/csrf-token
- * @group Security - user tracking
- * @returns {SuccessResponse} 200 - Csurfing!
- * @returns {ErrorResponse} 500 - Token not generated
- * @produces application/json
- */
-router.get(
-    '/csrf-token', 
-    registrationLimiter, 
-    catchAsyncError(adminController.getCsurf)
-);
+// router.get(
+//     '/csrf-token', 
+//     registrationLimiter, 
+//     catchAsyncError(adminController.getCsurf)
+// );
 
 /**
  * Verify a user's authentication code
@@ -59,7 +48,6 @@ router.get(
 router.post(
     '/verification-codes/verify', 
     apiLimiter, 
-    csrfMiddleware(true), 
     validateRequestBodyData(IsCodeSchema), 
     catchAsyncError(adminController.verifyCode)
 );
@@ -80,7 +68,6 @@ router.post(
 router.post(
     '/password-reset-requests', 
     apiLimiter, 
-    csrfMiddleware(true), 
     validateRequestBodyData(IsEmailSchema), 
     catchAsyncError(adminController.resetPasswordRequest)
 );
@@ -100,7 +87,6 @@ router.post(
 router.post(
     '/password-reset/validate', 
     apiLimiter, 
-    csrfMiddleware(true), 
     validateRequestBodyData(IsCodeSchema), 
     catchAsyncError(adminController.validatePasswordToken)
 );
@@ -121,7 +107,6 @@ router.post(
 router.patch(
     "/user-password", 
     apiLimiter, 
-    csrfMiddleware(true), 
     validateRequestBodyData(ResetFlowSetPasswordSchema), 
     catchAsyncError(adminController.finishPasswordResetRequest)
 );

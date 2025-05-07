@@ -9,7 +9,6 @@ import { checkIdParam } from "../middleware/checkIdParam";
 import { catchAsyncError } from "../util/catchAsyncErrors";
 import { NewRecipeSchema, FeUpdateRecipeSchema } from "../schemas/recipe.schema";
 import { validateImageUpload } from "../middleware/validateImageUpload";
-import { csrfMiddleware } from "../middleware/csrf";
 import { apiLimiter } from "../middleware/rateLimiters";
 
 /**
@@ -42,7 +41,6 @@ const recipeController = new RecipeController(recipeService);
 router.post(
     "/", 
     isAuthenticated(), 
-    csrfMiddleware(), 
     validateRequestBodyData(NewRecipeSchema), 
     catchAsyncError(recipeController.saveNewRecipe)
 );
@@ -84,7 +82,6 @@ router.get("/", catchAsyncError(recipeController.getPublicRecipes));
  */
 router.put(
     "/:id", 
-    csrfMiddleware(), 
     checkIdParam(), 
     isAuthenticated(),
     validateRequestBodyData(FeUpdateRecipeSchema), 
@@ -110,7 +107,6 @@ router.put(
 router.delete(
     "/:id",
     apiLimiter, 
-    csrfMiddleware(),
     checkIdParam(), 
     isAuthenticated(), 
     catchAsyncError(recipeController.deleteRecipe)
@@ -139,7 +135,6 @@ router.delete(
 router.post(
     "/image", 
     apiLimiter,
-    csrfMiddleware(),
     isAuthenticated(), 
     upload.single('image'), 
     validateImageUpload, 
@@ -164,7 +159,6 @@ router.post(
 router.delete(
     "/image/:id", 
     apiLimiter,
-    csrfMiddleware(),
     checkIdParam(), 
     isAuthenticated(), 
     catchAsyncError(recipeController.deleteRecipeImage)

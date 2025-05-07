@@ -10,6 +10,7 @@ type ErrorContextValue =
   | object 
   | Date 
   | null 
+  | unknown
   | undefined;
 
 export interface ErrorContext {

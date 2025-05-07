@@ -5,7 +5,6 @@ import { catchAsyncError } from "../util/catchAsyncErrors";
 import { AuthController } from "../controllers/authController";
 import { isAuthenticated } from "../middleware/auth";
 import { authService, passwordService } from "../services";
-import { csrfMiddleware } from "../middleware/csrf";
 import { apiLimiter, registrationLimiter } from "../middleware/rateLimiters";
 
 
@@ -35,7 +34,6 @@ const authController = new AuthController(authService, passwordService);
  */
 router.post(
     "/register", 
-    csrfMiddleware(true), 
     validateRequestBodyData(RegisterUserSchema), 
     registrationLimiter, 
     catchAsyncError(authController.register)
@@ -56,7 +54,6 @@ router.post(
 router.post(
     "/login", 
     apiLimiter, 
-    csrfMiddleware(true), 
     validateRequestBodyData(LoginSchema), 
     catchAsyncError(authController.login)
 );
@@ -73,7 +70,6 @@ router.post(
 router.get(
     '/session', 
     apiLimiter, 
-    csrfMiddleware(), 
     isAuthenticated(), 
     catchAsyncError(authController.checkSession)
 );
@@ -90,7 +86,6 @@ router.get(
 router.delete(
     "/session", 
     apiLimiter, 
-    csrfMiddleware(true), 
     isAuthenticated(), 
     catchAsyncError(authController.logUserOut)
 );
