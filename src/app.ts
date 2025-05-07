@@ -75,34 +75,15 @@ if (!MongoDbUri) {
     ErrorCode.UNSET_ENV_VARIABLE
   );
 }
-app.get('/debug-cors', (req: Request, res: Response) => {
-  // Only allow in development or with specific header for security
-  if (process.env.NODE_ENV === 'production' && 
-      req.headers['x-debug-key'] !== process.env.DEBUG_KEY) {
-    res.status(403).send('Forbidden in production');
-    return;
-  }
-  
-  // Return the debug information
-  res.json({
-    environment: process.env.NODE_ENV,
-    corsOrigin: process.env.CORS_ORIGIN,
-    parsedCorsOrigin: process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',').map(o => o.trim()) : null,
-    requestOrigin: req.headers.origin || 'none',
-    requestHost: req.headers.host,
-    requestMethod: req.method,
-    requestIp: req.ip,
-    nodeVersion: process.version,
-    timestamp: new Date().toISOString()
-  });
-});
 
 app.use((req, res, next) => {
-  console.log('Incoming request to:', req.originalUrl);
+  console.log('Session ID:', req.sessionID);
+  console.log('Session data:', req.session);
   next();
 });
 
 app.get('/health', (req: Request, res: Response) => {
+  console.log('Health check request from:', req.ip, req.headers['user-agent']);
   if (process.env.NODE_ENV === 'production' && 
       !req.ip?.startsWith('10.') && 
       !req.get('user-agent')?.includes('Render')) {
@@ -114,7 +95,7 @@ app.get('/health', (req: Request, res: Response) => {
     timestamp: new Date().toISOString() 
   });
 });
-  // TODO check if needed. why calls to /
+
 app.get('/', (req, res) => {
   if (process.env.NODE_ENV === 'production') {
     return res.redirect('/health');
@@ -136,7 +117,7 @@ app.use(session({
     ttl: 7 * 24 * 60 * 60,
     autoRemove: 'interval',
     autoRemoveInterval: 10,
-    touchAfter: 24 * 3600,
+    touchAfter: 3600,
   }),
   cookie: {
     httpOnly: true,
@@ -144,7 +125,7 @@ app.use(session({
     sameSite: 'lax',
     maxAge: 1000 * 60 * 60 * 24 * 7,
     path: '/',
-    partitioned: true
+    domain: process.env.NODE_ENV === 'production' ? '.onrender.com' : undefined
   }
 }));
 app.use(passport.initialize());

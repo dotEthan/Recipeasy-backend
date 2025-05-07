@@ -54,10 +54,18 @@ const { generateToken, csrfSynchronisedProtection } = csrfSync({
   },
 
   getTokenFromState: (req: Request): CsrfSyncedToken => {
-    return req.session.csrfToken;
+    const token = req.session.csrfToken;
+    console.log('Retrieved CSRF token from session:', token);
+    return token;
   },
   storeTokenInState: (req: Request, token: CsrfSyncedToken): void => {
+    console.log('Storing token:', token, 'Session ID:', req.sessionID);
     req.session.csrfToken = token;
+    // Explicitly save the session
+    req.session.save(err => {
+      if (err) console.error('Session save error:', err);
+      else console.log('Session saved with CSRF token');
+    });
   }
 });
 
