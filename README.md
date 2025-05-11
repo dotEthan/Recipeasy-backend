@@ -31,7 +31,7 @@ Backend Functionality has now surpassed Front-end, and contains full login, verf
 - Server runs and connects to MongoDB 
 - User registration
 - User Register/Login/logout
-- CSRF, Helmet working
+- JWT AccessToken, Helmet working
 - Email Verification (register and login)
 - password resets
 - Schema Creation & Validation for Incoming, DB saves, and Outgoing data
@@ -76,7 +76,7 @@ Backend Functionality has now surpassed Front-end, and contains full login, verf
 - Passportjs
 - bCrypt
 - Helmet
-- csrf
+- JWT
 
 ## Author
 

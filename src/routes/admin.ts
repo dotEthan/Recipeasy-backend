@@ -2,7 +2,12 @@ import express from "express";
 
 
 import { AdminController } from "../controllers/adminController";
-import { emailVerificationService, passwordService, userService } from "../services";
+import { 
+    emailVerificationService, 
+    passwordService, 
+    userService,
+    tokenService
+} from "../services";
 import { validateRequestBodyData } from "../middleware/validateRequestData";
 import { catchAsyncError } from "../util/catchAsyncErrors";
 
@@ -18,21 +23,22 @@ import { apiLimiter } from "../middleware/rateLimiters";
 // 
 
 const router = express.Router();
-const adminController = new AdminController(passwordService, userService, emailVerificationService);
+const adminController = new AdminController(passwordService, userService, emailVerificationService, tokenService);
 
-// /**
-//  * Gets Csurf token for user
-//  * @route GET /admin/csrf-token
-//  * @group Security - user tracking
-//  * @returns {SuccessResponse} 200 - Csurfing!
-//  * @returns {ErrorResponse} 500 - Token not generated
-//  * @produces application/json
-//  */
-// router.get(
-//     '/csrf-token', 
-//     registrationLimiter, 
-//     catchAsyncError(adminController.getCsurf)
-// );
+/**
+ * Refresh the user's access token
+ * @route GET /admin/refresh-token
+ * @group Security - Token Management
+ * @returns {SuccessResponse} 200 - Freshed!
+ * @returns {ErrorResponse} 500 - Token not found
+ * @returns {ErrorResponse} 401 - Token expired
+ * @produces application/json
+ */
+router.post(
+    '/refresh-token',
+    apiLimiter,
+    catchAsyncError(adminController.refreshAccessToken)
+);
 
 /**
  * Verify a user's authentication code

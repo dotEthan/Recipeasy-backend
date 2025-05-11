@@ -1,9 +1,24 @@
-import { DeleteResult, InsertOneResult, ObjectId, WithId } from "mongodb";
+import { 
+    DeleteResult, 
+    InsertOneResult, 
+    ObjectId, 
+    WithId 
+} from "mongodb";
 import { BaseRepository } from "../base/baseRepository";
 import { IsObjectIdSchema } from "../../schemas/shared.schema";
-import { EmailAuthCode, EmailAuthCodeDocument, LoginAttempt } from "../../types/auth";
+import { 
+    EmailAuthCode, 
+    EmailAuthCodeDocument, 
+    LoginAttempt, 
+    RefreshToken, 
+    RefreshTokenDocument
+} from "../../types/auth";
 import { LoginAttemptDocument } from "../../types/auth";
-import { IAuthLoginAttemptRepository, IAuthVerficationCodeRepository } from "./authRepository.interface";
+import { 
+    IAuthLoginAttemptRepository, 
+    IAuthTokenRepository, 
+    IAuthVerficationCodeRepository
+} from "./authRepository.interface";
 
 /**
  * Auth Collection specific Mongodb Related calls
@@ -38,5 +53,18 @@ export class AuthVerificationCodesRepository extends BaseRepository<EmailAuthCod
     async deleteVerificationCode(_id: ObjectId): Promise<DeleteResult> {
         IsObjectIdSchema.parse({ _id })
         return await this.delete({'userId':_id});
+    }
+}
+
+export class AuthTokenRepository extends BaseRepository<RefreshTokenDocument> implements IAuthTokenRepository<RefreshTokenDocument> {
+    constructor() {
+        super('refresh_tokens');
+    }
+    async createRefreshToken(token: RefreshToken): Promise<InsertOneResult<RefreshTokenDocument>> {
+        return await this.create(token);
+    }
+
+    async findAndDeleteToken(tokenId: ObjectId): Promise<WithId<RefreshTokenDocument> | null> {
+        return await this.findOneAndDelete({ _id: tokenId });
     }
 }

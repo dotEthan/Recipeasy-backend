@@ -10,6 +10,7 @@ import { catchAsyncError } from "../util/catchAsyncErrors";
 import { NewRecipeSchema, FeUpdateRecipeSchema } from "../schemas/recipe.schema";
 import { validateImageUpload } from "../middleware/validateImageUpload";
 import { apiLimiter } from "../middleware/rateLimiters";
+import { checkAccessToken } from "../middleware/checkAccessToken";
 
 /**
  * Handles all Recipe based routes
@@ -40,6 +41,7 @@ const recipeController = new RecipeController(recipeService);
  */
 router.post(
     "/", 
+    checkAccessToken,
     isAuthenticated(), 
     validateRequestBodyData(NewRecipeSchema), 
     catchAsyncError(recipeController.saveNewRecipe)
@@ -83,6 +85,7 @@ router.get("/", catchAsyncError(recipeController.getPublicRecipes));
 router.put(
     "/:id", 
     checkIdParam(), 
+    checkAccessToken,
     isAuthenticated(),
     validateRequestBodyData(FeUpdateRecipeSchema), 
     catchAsyncError(recipeController.updateRecipe)
@@ -107,6 +110,7 @@ router.put(
 router.delete(
     "/:id",
     apiLimiter, 
+    checkAccessToken,
     checkIdParam(), 
     isAuthenticated(), 
     catchAsyncError(recipeController.deleteRecipe)
@@ -135,6 +139,7 @@ router.delete(
 router.post(
     "/image", 
     apiLimiter,
+    checkAccessToken,
     isAuthenticated(), 
     upload.single('image'), 
     validateImageUpload, 
@@ -159,6 +164,7 @@ router.post(
 router.delete(
     "/image/:id", 
     apiLimiter,
+    checkAccessToken,
     checkIdParam(), 
     isAuthenticated(), 
     catchAsyncError(recipeController.deleteRecipeImage)

@@ -25,3 +25,20 @@ export type EmailRegistration = {
     email: string,
     password: string
 }
+
+export type AccessToken = {
+    userId: ObjectId,
+    role: string,
+    tokenId: string,
+    iat: number,
+}
+
+export type RefreshToken = {
+    userId: ObjectId,
+    tokenId: string,
+    tokenHash: string,
+    createdAt: Date,
+    expiresAt: Date,
+}
+
+export interface RefreshTokenDocument extends RefreshToken, Document{};

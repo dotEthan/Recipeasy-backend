@@ -53,7 +53,7 @@ export class UserRepository extends BaseRepository<UserDocument> implements IUse
         );
     };
 
-    async findByEmailWithInternals(email: string): Promise<UserDocument | null> {
+    async findByEmailWithInternalData(email: string): Promise<UserDocument | null> {
         IsEmailSchema.parse({email});
         return await this.findOne(
             {email} as Partial<UserDocument>

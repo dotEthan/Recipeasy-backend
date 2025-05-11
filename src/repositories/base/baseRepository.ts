@@ -98,6 +98,10 @@ export abstract class BaseRepository<T extends Document> implements IBaseReposit
         return await this.collection.deleteOne(filter);
     }
 
+    async findOneAndDelete(filter: Filter<T>): Promise<WithId<T> | null> {
+        return await this.collection.findOneAndDelete(filter);
+    }
+
     async getTotalDocuments(findByData: Filter<T>): Promise<number> {
         return await this.collection.countDocuments(findByData);
     }

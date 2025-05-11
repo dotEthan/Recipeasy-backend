@@ -5,6 +5,6 @@ import { ObjectId } from "mongodb";
  * @param id - The ID (either string or ObjectId)
  * @returns ObjectId
  */
-export function ensureObjectId(id: string | ObjectId): ObjectId {
+export const ensureObjectId = (id: string | ObjectId): ObjectId => {
   return typeof id === 'string' ? new ObjectId(id) : id;
 }

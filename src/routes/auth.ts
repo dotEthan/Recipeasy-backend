@@ -4,8 +4,9 @@ import { LoginSchema, RegisterUserSchema } from "../schemas/user.schema";
 import { catchAsyncError } from "../util/catchAsyncErrors";
 import { AuthController } from "../controllers/authController";
 import { isAuthenticated } from "../middleware/auth";
-import { authService, passwordService } from "../services";
+import { authService, passwordService, tokenService } from "../services";
 import { apiLimiter, registrationLimiter } from "../middleware/rateLimiters";
+import { checkAccessToken } from "../middleware/checkAccessToken";
 
 
 /**
@@ -17,7 +18,7 @@ import { apiLimiter, registrationLimiter } from "../middleware/rateLimiters";
 
 const router = express.Router();
 
-const authController = new AuthController(authService, passwordService);
+const authController = new AuthController(authService, passwordService, tokenService);
 
 /**
  * Register new user
@@ -53,7 +54,8 @@ router.post(
  */
 router.post(
     "/login", 
-    apiLimiter, 
+    apiLimiter,
+    checkAccessToken,
     validateRequestBodyData(LoginSchema), 
     catchAsyncError(authController.login)
 );
@@ -70,6 +72,7 @@ router.post(
 router.get(
     '/session', 
     apiLimiter, 
+    checkAccessToken,
     isAuthenticated(), 
     catchAsyncError(authController.checkSession)
 );
@@ -86,6 +89,7 @@ router.get(
 router.delete(
     "/session", 
     apiLimiter, 
+    checkAccessToken,
     isAuthenticated(), 
     catchAsyncError(authController.logUserOut)
 );
