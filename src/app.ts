@@ -100,7 +100,7 @@ app.use(session({
     sameSite:  'lax',
     maxAge: 1000 * 60 * 60 * 24 * 7,
     path: '/',
-    domain: process.env.NODE_ENV === 'production' ? '.onrender.com' : undefined
+    // domain: process.env.NODE_ENV === 'production' ? '.onrender.com' : undefined
   }
 }));
 
