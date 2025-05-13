@@ -38,6 +38,7 @@ export class PasswordService {
     /**
      * Start the "Forgot Password" reset flow
      * @todo - post - log if deleteUserPwResetData fails (non-breaking)
+     * @todo - update process.env.JWT_SECRET_PROD : process.env.JWT_SECRET_DEV to just one. 
      * @group Password Management - Email Token & Add Reset Data
      * @param {string} email - User email
      * @throws {NotFoundError} 404 - User Not found
@@ -61,10 +62,10 @@ export class PasswordService {
             type: 'reset-password'
         };
 
-        const secret = (process.env.NODE_ENV !== 'production') ? process.env.JWT_SECRET_PROD : process.env.JWT_SECRET_DEV;
+        const secret = process.env.PASSWORD_RESET_SECRET;
 
         if (!secret) throw new ServerError(
-            'startPasswordResetFlow: Env JWT_SECRET_PROD/DEV not set',
+            'startPasswordResetFlow: Env PASSWORD_RESET_SECRET not set',
             { location: 'passwordService.startPasswordResetFlow' },
             ErrorCode.UNSET_ENV_VARIABLE
         );
@@ -108,7 +109,7 @@ export class PasswordService {
      * await authService.validatePasswordToken('xyz987');
      */
     public async validatePasswordToken(token: string, type: string): Promise<StandardResponse> {
-        const secret = (process.env.NODE_ENV !== 'production') ? process.env.JWT_SECRET_PROD : process.env.JWT_SECRET_DEV;
+        const secret = process.env.PASSWORD_RESET_SECRET;
         if (!secret) throw new ServerError(
             'validatePasswordToken - Env JWT_SECRET_PROD/DEV not set',
             { location: 'passwordService.validatePasswordToken' },
