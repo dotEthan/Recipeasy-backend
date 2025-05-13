@@ -7,7 +7,7 @@ import { EmailVerificationService } from "./emailVerificationService";
 import { RecipeService } from "./recipeService";
 import { UserService } from "./userService";
 import { SaveLoginAttemptDataSchema } from "../schemas/admin.schema";
-import { User, UserDocument } from "../types/user";
+import { FeUser, UserDocument } from "../types/user";
 import { LoginResponse, PaginateResponse } from "../types/responses";
 import {LoginAttempt } from "../types/auth";
 import { RecipeDocument } from "../types/recipe";
@@ -63,7 +63,7 @@ export class AuthService {
      * const authService = useAuthService();
      * await authService.registerNewUser('Frank', 'frank@frank.com', 'password');
      */  
-    public async userLogin(user: User): Promise<LoginResponse> {
+    public async userLogin(user: FeUser): Promise<LoginResponse> {
         let newEmailVerifyCodeCreated = false;
         if (!user.verified) {
             const codeExists = await this.emailVerificationService.getVerificationCode(user._id);

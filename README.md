@@ -15,14 +15,14 @@ Backend Functionality has now surpassed Front-end, and contains full login, verf
 
 ### What isn't working
 
-- I built it slightly backward. After years of working on enterprise scale software I fell into the habit of getting a working prototype going, then an MVP, version 1.0, etc. This required a lot more going back and rebuilding pieces, and focusing on one aspect at a time. Instead as it was a medium sized project and just me, building out an entire error handling, security, and testing first would have made writing the code and finding/fixing bugs faster, and I could have handled most of hte errors as I had them along the way. 
-- But functionally what should be working, is.
+- It's all working, but I would have saved a lot of time if I built the error handling and tests first. I wanted something to show faster so I build it a bit backwards. 
 
 ### Code Choices
 
 - Functional VS OOP - a bit mixed, trying to implement more with classes as I haven't used it as much as functional in past projects
 - JSDoc galore - I both wanted to practice JSDoc and as this is soemthign i will likely be coming back to (I use it for myself), I know having well laid out docs of everything is a joy two years later. 
 - No Mongoose - I have worked with Mongoose, but I wanted to get a better feel for MongoDB directly. If I did it again, I'd use Mongoose.
+- JWT tokens VS Csrf - I had csrf but they were not working well with passportjs/express-sessions as the sessions were continually being recreated and the token lost. JWT tokens works better here as they're not dependent on sessions
 
 ## Where are we?
 
@@ -31,7 +31,7 @@ Backend Functionality has now surpassed Front-end, and contains full login, verf
 - Server runs and connects to MongoDB 
 - User registration
 - User Register/Login/logout
-- CSRF, Helmet working
+- JWT AccessToken, Helmet working
 - Email Verification (register and login)
 - password resets
 - Schema Creation & Validation for Incoming, DB saves, and Outgoing data
@@ -39,7 +39,7 @@ Backend Functionality has now surpassed Front-end, and contains full login, verf
 - Cloudinary based image upload and deleting
 - User Persistence (User Alterations of Public Recipes)
 - data persistence
-- Global Error Handler
+- Global Error Handler (structure, not fully fleshed out)
 
 ### Working on Now:
 
@@ -51,20 +51,19 @@ Backend Functionality has now surpassed Front-end, and contains full login, verf
 
 ### To Come:
 
-- Logging (Sonar? others)
 - Redis (caching)
+- Logging (Sonar? others)
 - Expand Validation (trim strings to be compared (names, email, inputs)), (toLowercase emails, usernames, capitalize on frontend if needed)
-- /types/enums.ts VS /enums/index.ts    
-- organize schemas
+- /types/enums.ts VS /enums/index.ts (refactor)
+- organize schemas (duplicates? generify existing)
 - setup retry-ables
 - Final erorr sweep, missing and duplicates
 - Look into OpenAPIdocs just to show jsDoc in structured format
 - Testing
 - Recipe Search/ingredient auto complete
 - Cron based softdeleted/unref'd recipe deletion (only if no user.recipes has ref'd), also if last user ref'ing, delete image in cloudinary
-- Full Documentation (more than Jsdo)
 - User Admin (update/delete)
-- Functional testing
+- integraton and E2E testing
 - Google/Facebook login (maybe)
 
 ## Built With
@@ -76,7 +75,7 @@ Backend Functionality has now surpassed Front-end, and contains full login, verf
 - Passportjs
 - bCrypt
 - Helmet
-- csrf
+- JWT
 
 ## Author
 

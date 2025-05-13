@@ -18,7 +18,7 @@ import { ErrorCode } from './types/enums';
 import hpp from 'hpp';
 import compression from 'compression';
 import timeout from 'connect-timeout';
-import { generateCsrfToken, jwtCsrfMiddleware } from './middleware/jwt-csrf';
+import { checkSecurityHeaders } from './middleware/checkSecurityHeaders';
 // import { registrationLimiter } from './middleware/rateLimiters';
 
 /**
@@ -47,9 +47,9 @@ console.log('Configured CORS origins:', corsOrigin);
 app.use(cors({
   origin: corsOrigin,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization', 'x-csrf-token'],
+  allowedHeaders: ['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'],
   credentials: true,
-  exposedHeaders: ['Set-Cookie', 'x-csrf-token'],
+  exposedHeaders: ['Set-Cookie'],
   maxAge: 3600
 }));
 app.use(compression()); 
@@ -103,20 +103,9 @@ app.use(session({
     domain: process.env.NODE_ENV === 'production' ? '.onrender.com' : undefined
   }
 }));
-app.use((req, res, next) => {
-  res.locals.csrfToken = generateCsrfToken(req);
-  next();
-});
 
 app.use(passport.initialize());
 app.use(passport.session());
-
-app.use((req, res, next) => {
-  if (res.locals.csrfToken) {
-    res.header('X-CSRF-Token', res.locals.csrfToken);
-  }
-  next();
-});
 
 app.get('/health', (req: Request, res: Response) => {
   console.log('Health check request from:', req.ip, req.headers['user-agent']);
@@ -139,13 +128,8 @@ app.get('/', (req, res) => {
   res.sendStatus(404);
 });
 
-// TODO Move back to routes - GET not Csrf protected anyway
-app.get('/api/v1/admin/csrf-token', (req, res) => {
-  console.log('getting token')
-  res.status(200).end(); // Token already sent in headers
-});
-
-app.use('/api/v1', jwtCsrfMiddleware(), appRouter);
+app.use(checkSecurityHeaders);
+app.use('/api/v1', appRouter);
 
 app.use(addRequestId)
 

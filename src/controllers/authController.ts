@@ -3,12 +3,13 @@ import passport, { AuthenticateOptions } from "passport";
 
 import { AuthService } from "../services/authService";
 import { PasswordService } from "../services/passwordService";
+import { sanitizeUser } from "../util/sanitizeUser";
+import { TokenService } from "../services/tokenService";
 
-import { User } from "../types/user";
+import { FeUser, User } from "../types/user";
 import { FeUserSchema, LoginResSchema } from "../schemas/user.schema";
 import { BadRequestError, ServerError, UnauthorizedError } from "../errors";
 import { ErrorCode } from "../types/enums";
-import { sanitizeUser } from "../util/sanitizeUser";
 
 /**
  * Authorization based req and res handling
@@ -19,7 +20,8 @@ export class AuthController {
 
     constructor(
         private authService: AuthService,
-        private passwordService: PasswordService
+        private passwordService: PasswordService,
+        private tokenService: TokenService
     ) { }
     
     /**
@@ -72,13 +74,22 @@ export class AuthController {
 
 
         const authenticatedUser = await this.authenticateUser(req, res);
-        const autheticatedSantizedUser = sanitizeUser(authenticatedUser);
+        const autheticatedSantizedUser = sanitizeUser(authenticatedUser) as FeUser;
         
         const responseData = await this.authService.userLogin(autheticatedSantizedUser);
 
+        const [ accessToken, refreshToken ] = await this.tokenService.createUserTokens(autheticatedSantizedUser);
+
+        res.cookie('__Host-refreshToken', refreshToken, {
+            httpOnly: true,
+            secure: true,
+            sameSite: 'strict',
+            path: '/',
+            maxAge: 604800 * 1000
+        });
 
         LoginResSchema.parse(responseData);
-        res.status(200).json(responseData);
+        res.status(200).json({...responseData, accessToken });
 
         await this.authService.logLoginAttempt(req, true);
     }
@@ -104,11 +115,11 @@ export class AuthController {
             sameSite: 'lax'
         });
 
-        // still needed?
-        res.clearCookie('XSRF-TOKEN', {
+        res.clearCookie('__Host-refreshToken', {
             httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'lax'
+            secure: true,
+            sameSite: 'strict',
+            path: '/'
         });
         
         res.status(200).json({

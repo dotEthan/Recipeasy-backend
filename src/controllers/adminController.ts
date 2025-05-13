@@ -1,12 +1,15 @@
 import { Request, Response } from "express";
+import jwt from 'jsonwebtoken';
 
 import { PasswordService } from "../services/passwordService";
 import { ErrorCode, TokenTypes } from "../types/enums";
 import { StandardResponseSchema } from "../schemas/shared.schema";
 import { ensureObjectId } from "../util/ensureObjectId";
-import { BadRequestError, UnauthorizedError } from "../errors";
+import { BadRequestError, ServerError, UnauthorizedError } from "../errors";
 import { UserService } from "../services/userService";
 import { EmailVerificationService } from "../services/emailVerificationService";
+import { TokenService } from "../services/tokenService";
+import { DecodedRefreshToken } from "../types/utiil";
 
 /**
  * Administration based req and res handling
@@ -14,7 +17,12 @@ import { EmailVerificationService } from "../services/emailVerificationService";
 
 export class AdminController {
 
-    constructor(private passwordService: PasswordService, private userService: UserService, private emailVerificationService: EmailVerificationService) { }
+    constructor(
+        private passwordService: PasswordService, 
+        private userService: UserService, 
+        private emailVerificationService: EmailVerificationService,
+        private tokenService: TokenService
+    ) { }
 
   
     // /**
@@ -24,18 +32,43 @@ export class AdminController {
     //  */
     // public healthCheck = (req: Request, res: Response) => { res.sendStatus(200); }
 
-    // /**
-    //  * Gets csrf-async token for user
-    //  * @group Security - session tracking
-    //  * @param {VerifyCodeRequest} request.body.required - Code and user identifier
-    //  * @returns {SuccessResponse} 200 - Verification successful
-    //  * @produces application/json
-    //  */
-    // public getCsurf = (req: Request, res: Response) => {
-    //     const token = generateCsrfToken(req);
-    //     res.header("X-CSRF-Token", token);
-    //     res.json({ token });
-    // }
+    /**
+     * Check and refresh security token
+     * @group Security - token mananagement
+     * @param {Request} req - request
+     * @param {Response} res - response
+     * @returns {SuccessResponse} 200 - Verification successful
+     * @throws {UnauthorizedError} 401 - Token missing or malformed, mismatched, or user not found
+     * @produces application/json
+     */
+    public refreshAccessToken = async (req: Request, res: Response) => {
+        const headerToken = req.cookies['__Host-refreshToken'];
+        if (!headerToken) throw new UnauthorizedError('Token missing from header, relogin', { location: 'adminController.refreshAccessToken' }, ErrorCode.TOKEN_MISSING);
+        
+        const refreshSecret = process.env.JWT_REFRESH_SECRET;
+        if (!refreshSecret) throw new ServerError('Missing JWT_SECRET in Env', { location: 'createToken.ts' }, ErrorCode.UNSET_ENV_VARIABLE);
+
+        const decodedToken = jwt.verify(headerToken, refreshSecret) as DecodedRefreshToken;
+        if (!decodedToken) throw new UnauthorizedError('Decoded token malformed, relogin', { location: 'adminController.refreshAccessToken' }, ErrorCode.TOKEN_MALFORMED);
+
+        const userId = decodedToken.userId;
+        if (!userId) throw new UnauthorizedError('Token missing userId, relogin', { location: 'adminController.refreshAccessToken' }, ErrorCode.TOKEN_MALFORMED);
+
+        const user = await this.userService.findUserById(ensureObjectId(userId));
+        if (!user) throw new UnauthorizedError('Token userId invalid, relogin', { location: 'adminController.refreshAccessToken' }, ErrorCode.TOKEN_MALFORMED);
+
+        await this.tokenService.deleteOldTokenIfExists(decodedToken.tokenId);
+        const [ accessToken, refreshToken ] = await this.tokenService.createUserTokens(user);
+        
+        res.cookie('__Host-refreshToken', refreshToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'strict',
+            path: '/',
+            maxAge: 604800 * 1000
+        });
+        res.status(201).json({ accessToken });
+    }
     
     /**
      * Request to start User password reset flow

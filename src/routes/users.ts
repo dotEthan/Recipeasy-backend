@@ -8,6 +8,7 @@ import { catchAsyncError } from "../util/catchAsyncErrors";
 import { checkIdParam } from "../middleware/checkIdParam";
 import { recipeService, userService } from "../services";
 import { apiLimiter } from "../middleware/rateLimiters";
+import { checkAccessToken } from "../middleware/checkAccessToken";
 // import { registrationLimiter } from "../middleware/rateLimiters";
 
 /**
@@ -36,6 +37,7 @@ const userController = new UserController(userService, recipeService);
 router.get(
     "/:id", 
     apiLimiter,
+    checkAccessToken,
     checkIdParam(), 
     isAuthenticated(), 
     catchAsyncError(userController.getUsersData)
@@ -58,6 +60,7 @@ router.get(
 router.patch(
     "/:id/recipes", 
     apiLimiter,
+    checkAccessToken,
     checkIdParam(), 
     isAuthenticated(), 
     validateRequestBodyData(FeUpdateUsersRecipesSchema), 

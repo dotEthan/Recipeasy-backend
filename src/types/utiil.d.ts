@@ -5,3 +5,9 @@ export interface RetryOptions {
     exponential?: boolean;
     shouldRetry?: (error: unknown) => boolean;
 }
+
+export interface DecodedRefreshToken {
+    userId: string;
+    tokenId: string;
+    iat: number;
+}
