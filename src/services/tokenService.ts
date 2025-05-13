@@ -29,20 +29,18 @@ export class TokenService {
      * @example
      * await this.tokenService.createUserTokens(user);
      */  
-    public async createUserTokens(user: FeUser, fingerprint: string): Promise<string[]> {
+    public async createUserTokens(user: FeUser): Promise<string[]> {
         const refreshTokenId = crypto.randomBytes(16).toString('hex');
         const accessPayload = {
             userId: user._id,
             role: user.role,
             tokenId: refreshTokenId,
-            iat: Math.floor(Date.now() / 1000),
-            fingerprint
+            iat: Math.floor(Date.now() / 1000)
         };
         const refreshPayload = {
             userId: user._id,
             tokenId: refreshTokenId,
-            iat: Math.floor(Date.now() / 1000),
-            fingerprint
+            iat: Math.floor(Date.now() / 1000)
         };
 
         const [ accessToken, refreshToken] = this.createTokens(accessPayload, refreshPayload);

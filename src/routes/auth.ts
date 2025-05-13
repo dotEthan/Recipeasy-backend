@@ -55,7 +55,6 @@ router.post(
 router.post(
     "/login", 
     apiLimiter,
-    checkAccessToken,
     validateRequestBodyData(LoginSchema), 
     catchAsyncError(authController.login)
 );

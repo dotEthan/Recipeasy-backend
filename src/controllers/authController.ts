@@ -5,7 +5,6 @@ import { AuthService } from "../services/authService";
 import { PasswordService } from "../services/passwordService";
 import { sanitizeUser } from "../util/sanitizeUser";
 import { TokenService } from "../services/tokenService";
-import { getUserFingerprint } from "../util/getUserFingerprint";
 
 import { FeUser, User } from "../types/user";
 import { FeUserSchema, LoginResSchema } from "../schemas/user.schema";
@@ -79,13 +78,11 @@ export class AuthController {
         
         const responseData = await this.authService.userLogin(autheticatedSantizedUser);
 
-        const fingerprint = getUserFingerprint(req);
-
-        const [ accessToken, refreshToken ] = await this.tokenService.createUserTokens(autheticatedSantizedUser, fingerprint);
+        const [ accessToken, refreshToken ] = await this.tokenService.createUserTokens(autheticatedSantizedUser);
 
         res.cookie('__Host-refreshToken', refreshToken, {
             httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
+            secure: true,
             sameSite: 'strict',
             path: '/',
             maxAge: 604800 * 1000
@@ -118,11 +115,11 @@ export class AuthController {
             sameSite: 'lax'
         });
 
-        // still needed?
-        res.clearCookie('XSRF-TOKEN', {
+        res.clearCookie('__Host-refreshToken', {
             httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'lax'
+            secure: true,
+            sameSite: 'strict',
+            path: '/'
         });
         
         res.status(200).json({

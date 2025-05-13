@@ -5,13 +5,12 @@ import { AppError, ServerError, UnauthorizedError, UnknownError } from '../error
 import { ErrorCode } from '../types/enums';
 import { tokenService } from '../services';
 import { AccessToken } from '../types/auth';
-import { getUserFingerprint } from '../util/getUserFingerprint';
 
 export const checkAccessToken = async (req: Request, _res: Response, next: NextFunction) => {
     try {
         const authHeader = req.headers.authorization;
         const accessToken = authHeader?.split(' ')[1];
-        if (!accessToken) throw new UnauthorizedError('Access token missing in header, relogin', { location: 'checkAccesstoken middleware' }, ErrorCode.TOKEN_MISSING)
+        if (!accessToken) throw new UnauthorizedError('Access token missing in header, relogin', { location: 'checkAccesstoken middleware' }, ErrorCode.HEADER_TOKEN_MISSING)
 
         const accessSecret = process.env.JWT_ACCESS_SECRET;
         if (!accessSecret) throw new ServerError('Missing JWT_SECRET in Env', { location: 'createToken.ts' }, ErrorCode.UNSET_ENV_VARIABLE);
@@ -43,8 +42,6 @@ export const checkAccessToken = async (req: Request, _res: Response, next: NextF
         if (!storedToken) throw new UnauthorizedError('Token already revoked or deleted, relogin', { location: 'checkAccessToken middleware' }, ErrorCode.REFRESH_TOKEN_MISSING);
 
         if (storedToken.expiresAt < new Date())  throw new UnauthorizedError('Refresh Token expired, relogin', { location: 'checkAccessToken middleware' }, ErrorCode.REFRESH_TOKEN_EXPIRED);
-
-        if (storedToken.fingerprint !== getUserFingerprint(req)) throw new UnauthorizedError('User Fingerprint mismatch, relogin', { location: 'checkAccessToken' }, ErrorCode.USER_FINGERPRINT_MISMATCH)
         
         next();
     } catch (error) {

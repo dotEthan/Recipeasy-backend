@@ -10,5 +10,4 @@ export interface DecodedRefreshToken {
     userId: string;
     tokenId: string;
     iat: number;
-    fingerprint: string;
 }

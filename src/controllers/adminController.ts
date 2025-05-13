@@ -10,7 +10,6 @@ import { UserService } from "../services/userService";
 import { EmailVerificationService } from "../services/emailVerificationService";
 import { TokenService } from "../services/tokenService";
 import { DecodedRefreshToken } from "../types/utiil";
-import { getUserFingerprint } from "../util/getUserFingerprint";
 
 /**
  * Administration based req and res handling
@@ -52,10 +51,6 @@ export class AdminController {
         const decodedToken = jwt.verify(headerToken, refreshSecret) as DecodedRefreshToken;
         if (!decodedToken) throw new UnauthorizedError('Decoded token malformed, relogin', { location: 'adminController.refreshAccessToken' }, ErrorCode.TOKEN_MALFORMED);
 
-        const currentFingerprint = getUserFingerprint(req);
-
-        if (currentFingerprint !== decodedToken.fingerprint) throw new UnauthorizedError('token finger print mismatch, relogin', { location: 'adminController.refreshAccessToken' }, ErrorCode.TOKEN_REFRESH_FAILED);
-
         const userId = decodedToken.userId;
         if (!userId) throw new UnauthorizedError('Token missing userId, relogin', { location: 'adminController.refreshAccessToken' }, ErrorCode.TOKEN_MALFORMED);
 
@@ -63,7 +58,7 @@ export class AdminController {
         if (!user) throw new UnauthorizedError('Token userId invalid, relogin', { location: 'adminController.refreshAccessToken' }, ErrorCode.TOKEN_MALFORMED);
 
         await this.tokenService.deleteOldTokenIfExists(decodedToken.tokenId);
-        const [ accessToken, refreshToken ] = await this.tokenService.createUserTokens(user, currentFingerprint);
+        const [ accessToken, refreshToken ] = await this.tokenService.createUserTokens(user);
         
         res.cookie('__Host-refreshToken', refreshToken, {
             httpOnly: true,
