@@ -80,10 +80,10 @@ export class AuthController {
 
         const [ accessToken, refreshToken ] = await this.tokenService.createUserTokens(autheticatedSantizedUser);
 
-        res.cookie('refreshToken', refreshToken, {
+        res.cookie('__Host-refreshToken', refreshToken, {
             httpOnly: true,
             secure: true,
-            sameSite: 'none',
+            sameSite: 'lax',
             path: '/',
             maxAge: 604800 * 1000
         });
