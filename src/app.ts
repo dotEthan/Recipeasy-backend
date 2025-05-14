@@ -97,7 +97,7 @@ app.use(session({
   cookie: {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    sameSite:  'none',
+    sameSite:  'lax',
     maxAge: 1000 * 60 * 60 * 24 * 7,
     path: '/',
     // domain: process.env.NODE_ENV === 'production' ? '.onrender.com' : undefined
