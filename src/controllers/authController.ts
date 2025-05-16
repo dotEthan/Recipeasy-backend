@@ -69,7 +69,7 @@ export class AuthController {
             'register - req.body missing required data', 
             { body: req.body },
             ErrorCode.MISSING_REQUIRED_BODY_DATA
-        )
+        );
 
         await this.passwordService.checkIfPwResetInProgress(email);
 
