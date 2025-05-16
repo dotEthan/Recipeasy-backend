@@ -11,6 +11,7 @@ import { EmailVerificationService } from "./emailVerificationService";
 import { IsEmailSchema, IsObjectIdSchema } from "../schemas/shared.schema";
 import { ensureObjectId } from "../util/ensureObjectId";
 import { ErrorCode } from "../types/enums";
+import { zodValidationWrapper } from "../util/zodParseWrapper";
 
 /**
  * Handles all user related services
@@ -29,7 +30,8 @@ export class UserService {
     public async createNewUser(displayName: string, email: string, hashedPassword: string): Promise<CreatedDataResponse<UserDocument>> {
         const newUserData = createNewUserUtility(displayName, email, hashedPassword);
         
-        BeCreateUserSchema.parse(newUserData);
+        zodValidationWrapper(BeCreateUserSchema, newUserData, 'userService.createNewUser');
+        console.log('creating')
         const creationResult = await this.userRepository.createUser(newUserData);
         if (!creationResult.acknowledged || !creationResult.insertedId) throw new ServerError(
             'Create new user failed', 
@@ -73,7 +75,7 @@ export class UserService {
             ErrorCode.NO_USER_WITH_ID
         );
         const updatedData = { verified: true, updatedAt: new Date() } as Partial<User>;
-        UpdateByIdSchema.parse({updatedData});
+        zodValidationWrapper(UpdateByIdSchema, updatedData, 'userService.setUserVerified');
         const updateResult = await this.userRepository.updateById(_id, { $set: updatedData});
         if(!updateResult?.acknowledged || updateResult?.modifiedCount === 0) throw new ServerError(
             'update not successful', 
@@ -105,8 +107,8 @@ export class UserService {
                 modified: false
             }
         } as UsersRecipeData
-        BeUpdateUsersRecipesSchema.parse(dataToAdd);
-        IsObjectIdSchema.parse(userId);
+        zodValidationWrapper(BeUpdateUsersRecipesSchema, dataToAdd, 'userService.updateUserRecipes');
+        zodValidationWrapper(IsObjectIdSchema, { _id: userId }, 'userService.updateUserRecipes');
         const user = await this.userRepository.findOneAndUpdate({ _id: userId }, { $addToSet: { recipes: dataToAdd }, $set: { updatedAt: new Date() }});
 
         if(!user) throw new ServerError(
@@ -128,7 +130,7 @@ export class UserService {
      * await userService.findUserById('test@test.com');
      */
     public async findUserByEmail(email: string): Promise<WithId<UserDocument> | null> {
-        IsEmailSchema.parse({ email });
+        zodValidationWrapper(IsEmailSchema, { email }, 'userService.findUserByEmail');
         return await this.userRepository.findOne({'email': email})
     }
 
@@ -142,7 +144,7 @@ export class UserService {
      * await userService.findUserById('12332132');
      */
     public async findUserById(_id: ObjectId): Promise<WithId<UserDocument> | null> {
-        IsObjectIdSchema.parse({ _id })
+        zodValidationWrapper(IsObjectIdSchema, { _id }, 'userService.findUserById');
         return await this.userRepository.findOne({ _id });
     }
 }

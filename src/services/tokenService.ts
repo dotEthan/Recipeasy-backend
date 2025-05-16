@@ -5,7 +5,6 @@ import { AuthTokenRepository } from "../repositories/auth/authRepository";
 import { FeUser } from "../types/user";
 import { ServerError, UnauthorizedError } from '../errors';
 import { ErrorCode } from '../types/enums';
-import { ensureObjectId } from '../util/ensureObjectId';
 import { WithId } from 'mongodb';
 import { RefreshTokenDocument } from '../types/auth';
 
@@ -70,8 +69,11 @@ export class TokenService {
      * await this.tokenService.deleteOldTokenIfExists("12324");
      */  
     public async deleteOldTokenIfExists(tokenId: string): Promise<void> {
-        const deletedToken = await this.authTokenRepository.findAndDeleteToken(ensureObjectId(tokenId));
+        console.log('tokenId: ', tokenId)
+        if (!tokenId) throw new ServerError('Decoded refreshToken malformed', { location: 'tokenService.deleteOldTokenIfExists' }, ErrorCode.DECODED_TOKEN_MALFORMED)
+        const deletedToken = await this.authTokenRepository.findAndDeleteToken(tokenId);
 
+        console.log('tokenId: ', tokenId)
         if (!deletedToken) throw new UnauthorizedError('Token already revoked or deleted', { location: 'tokenService.deleteOldToken' }, ErrorCode.NON_REQUIRED_DELETE_FAILED);
     }
 

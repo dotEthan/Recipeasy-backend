@@ -5,6 +5,7 @@ import { AppError, ServerError, UnauthorizedError, UnknownError } from '../error
 import { ErrorCode } from '../types/enums';
 import { tokenService } from '../services';
 import { AccessToken } from '../types/auth';
+import { UserRoles } from '../enums';
 
 export const checkAccessToken = async (req: Request, _res: Response, next: NextFunction) => {
     try {
@@ -41,8 +42,11 @@ export const checkAccessToken = async (req: Request, _res: Response, next: NextF
         
         if (!storedToken) throw new UnauthorizedError('Token already revoked or deleted, relogin', { location: 'checkAccessToken middleware' }, ErrorCode.REFRESH_TOKEN_MISSING);
 
-        if (storedToken.expiresAt < new Date())  throw new UnauthorizedError('Refresh Token expired, relogin', { location: 'checkAccessToken middleware' }, ErrorCode.REFRESH_TOKEN_EXPIRED);
-        
+        if (storedToken.expiresAt < new Date()) {
+            tokenService.deleteOldTokenIfExists(decoded.tokenId);
+            throw new UnauthorizedError('Refresh Token expired, relogin', { location: 'checkAccessToken middleware' }, ErrorCode.REFRESH_TOKEN_EXPIRED);
+        }
+        req.user = { _id: decoded.userId, role: decoded.role as UserRoles};
         next();
     } catch (error) {
         if (error instanceof AppError) {

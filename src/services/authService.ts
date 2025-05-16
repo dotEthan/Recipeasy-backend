@@ -1,5 +1,5 @@
 import { Request } from "express";
-import { WithId } from "mongodb";
+import { ObjectId, WithId } from "mongodb";
 import bcrypt from 'bcryptjs';
 
 import { AuthLoginAttemptRepository } from "../repositories/auth/authRepository";
@@ -13,6 +13,7 @@ import {LoginAttempt } from "../types/auth";
 import { RecipeDocument } from "../types/recipe";
 import { ConflictError, LogOnlyError } from "../errors";
 import { ErrorCode } from "../types/enums";
+import { zodValidationWrapper } from "../util/zodParseWrapper";
 
 /**
  * Handles all Authorization related services
@@ -66,7 +67,7 @@ export class AuthService {
     public async userLogin(user: FeUser): Promise<LoginResponse> {
         let newEmailVerifyCodeCreated = false;
         if (!user.verified) {
-            const codeExists = await this.emailVerificationService.getVerificationCode(user._id);
+            const codeExists = await this.emailVerificationService.getVerificationCode(user.email);
             if (codeExists === null) {
                 await this.emailVerificationService.setAndSendVerificationCode(
                     user.email, 
@@ -106,16 +107,16 @@ export class AuthService {
      * const authService = useAuthService();
      * await authService.logLoginAttempt(req, false, errorMessage);
      */  
-    public async logLoginAttempt(req: Request, success: boolean, errorMessage?: string)  {
+    public async logLoginAttempt(req: Request, userId: ObjectId, success: boolean, errorMessage?: string)  {
         const loginData: LoginAttempt = {
-            userId: req.user?._id,
+            userId: userId,
             ipAddress: req.ip,
             userAgent: req.headers['user-agent'],
             timestamp: new Date(),
             success,
             errorMessage: success ? '' : errorMessage,
         };
-        SaveLoginAttemptDataSchema.parse(loginData);
+        zodValidationWrapper(SaveLoginAttemptDataSchema, loginData, 'authService.logLoginAttempt');
         const loginAttemptDoc = await this.authLoginAttemptRepository.create(loginData);
         if (!loginAttemptDoc) throw new LogOnlyError(
             'Logging login attempts failed, log and move on',

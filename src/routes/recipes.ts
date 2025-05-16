@@ -4,7 +4,6 @@ import { upload } from "../config/cloudinary";
 import { RecipeController } from "../controllers/recipesController";
 import { recipeService } from "../services";
 import { validateRequestBodyData } from "../middleware/validateRequestData";
-import { isAuthenticated } from "../middleware/auth";
 import { checkIdParam } from "../middleware/checkIdParam";
 import { catchAsyncError } from "../util/catchAsyncErrors";
 import { NewRecipeSchema, FeUpdateRecipeSchema } from "../schemas/recipe.schema";
@@ -42,7 +41,6 @@ const recipeController = new RecipeController(recipeService);
 router.post(
     "/", 
     checkAccessToken,
-    isAuthenticated(), 
     validateRequestBodyData(NewRecipeSchema), 
     catchAsyncError(recipeController.saveNewRecipe)
 );
@@ -86,7 +84,6 @@ router.put(
     "/:id", 
     checkIdParam(), 
     checkAccessToken,
-    isAuthenticated(),
     validateRequestBodyData(FeUpdateRecipeSchema), 
     catchAsyncError(recipeController.updateRecipe)
 );
@@ -112,7 +109,6 @@ router.delete(
     apiLimiter, 
     checkAccessToken,
     checkIdParam(), 
-    isAuthenticated(), 
     catchAsyncError(recipeController.deleteRecipe)
 );
 
@@ -140,7 +136,6 @@ router.post(
     "/image", 
     apiLimiter,
     checkAccessToken,
-    isAuthenticated(), 
     upload.single('image'), 
     validateImageUpload, 
     catchAsyncError(recipeController.uploadRecipeImage)
@@ -166,7 +161,6 @@ router.delete(
     apiLimiter,
     checkAccessToken,
     checkIdParam(), 
-    isAuthenticated(), 
     catchAsyncError(recipeController.deleteRecipeImage)
 );
 

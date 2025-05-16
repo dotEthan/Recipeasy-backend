@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import { UserRoles } from "../enums";
-import { BadRequestError, ForbiddenError, UnauthorizedError } from "../errors";
+import { BadRequestError, ForbiddenError } from "../errors";
 import { ErrorCode } from "../types/enums";
 import { RECIPE_FILE_MAX_SIZE } from "../constants";
 
@@ -14,11 +14,6 @@ import { RECIPE_FILE_MAX_SIZE } from "../constants";
  */  
 export const validateImageUpload = (req: Request, res: Response, next: NextFunction): void => {
 
-    if (!req.isAuthenticated()) throw new UnauthorizedError(
-        'User not autheticated, relogin',
-        { location: 'validateImageUpload.validateImageUpload', autheticated: req.isAuthenticated },
-        ErrorCode.USER_NOT_AUTHETICATED
-    )
 
     if (req.user?.role === UserRoles.testMode) throw new ForbiddenError(
         'User role not allowed to upload',

@@ -15,12 +15,12 @@ Backend Functionality has now surpassed Front-end, and contains full login, verf
 
 ### What isn't working
 
-- It's all working, but I would have saved a lot of time if I built the error handling and tests first. I wanted something to show faster so I build it a bit backwards. 
+- It's all working, but I would have saved a lot of time if I built the error handling and tests first. I wanted something to show faster so I build it a bit backwards. But it's coming together.
 
 ### Code Choices
 
 - Functional VS OOP - a bit mixed, trying to implement more with classes as I haven't used it as much as functional in past projects
-- JSDoc galore - I both wanted to practice JSDoc and as this is soemthign i will likely be coming back to (I use it for myself), I know having well laid out docs of everything is a joy two years later. 
+- JSDoc galore - I both wanted to practice JSDoc and as this is soemthign I will likely be coming back to (I use it for myself), having well laid out docs of everything will be a joy years later. 
 - No Mongoose - I have worked with Mongoose, but I wanted to get a better feel for MongoDB directly. If I did it again, I'd use Mongoose.
 - JWT tokens VS Csrf - I had csrf but they were not working well with passportjs/express-sessions as the sessions were continually being recreated and the token lost. JWT tokens works better here as they're not dependent on sessions
 

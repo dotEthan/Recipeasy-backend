@@ -5,8 +5,9 @@ import { EmailService } from "./emailService";
 import { EmailAuthCodeDocument } from "../types/auth";
 import { ForbiddenError, ServerError } from "../errors";
 import { createVerificationCodeSchema } from "../schemas/admin.schema";
-import { StandardResponse } from "../types/responses";
+import { CheckEmailVerificationResponse, StandardResponse } from "../types/responses";
 import { ErrorCode } from "../types/enums";
+import { zodValidationWrapper } from "../util/zodParseWrapper";
 
 /**
  * Handles all new user Email Verification related services
@@ -35,19 +36,19 @@ export class EmailVerificationService {
      * const authService = useAuthService();
      * await authService.setAndSendVerificationCode('test@test.com', 'James', '1234abcd');
      */
-    public async setAndSendVerificationCode(email: string, displayName: string, userId: ObjectId): Promise<StandardResponse> {
+    public async setAndSendVerificationCode(userEmail: string, displayName: string, userId: ObjectId): Promise<StandardResponse> {
         const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
         const createVerifyCodeData = { 
             userId,
+            userEmail,
             code: verificationCode,
             createdAt: new Date(),
             updatedAt: new Date()
         };
-
-        createVerificationCodeSchema.parse(createVerifyCodeData)
+        zodValidationWrapper(createVerificationCodeSchema, createVerifyCodeData, 'emailVerificationService.setAndSendVerificationCode');
         await this.authVerificationCodesRepository.createVerificationCode(createVerifyCodeData);
 
-        const info = await this.emailService.sendEmailToUser('emailVerificationCode', displayName, email, verificationCode);
+        const info = await this.emailService.sendEmailToUser('emailVerificationCode', displayName, userEmail, verificationCode);
         if (!info) throw new ServerError(
             'email sending failed',
             { location: 'emailVerificationService.setAndSendVerificationCode' },
@@ -77,8 +78,8 @@ export class EmailVerificationService {
      * const authService = useAuthService();
      * await authService.getVerificationCode('1234abcd');
      */
-    public async getVerificationCode(userId: ObjectId): Promise<WithId<EmailAuthCodeDocument> | null> {
-        return this.authVerificationCodesRepository.getVerificationCode(userId);
+    public async getVerificationCode(email: string): Promise<WithId<EmailAuthCodeDocument> | null> {
+        return this.authVerificationCodesRepository.getVerificationCode(email);
     }
 
     /**
@@ -92,20 +93,33 @@ export class EmailVerificationService {
      * const authService = useAuthService();
      * await authService.getVerificationCode('1234abcd', 'xyz987);
      */
-    public async checkVerificationCode(userId: ObjectId, code: string): Promise<boolean> {
+    public async checkVerificationCode(userEmail: string, code: string): Promise<CheckEmailVerificationResponse> {
         let isVerified = false;
         
-        const vCode = await this.authVerificationCodesRepository.getVerificationCode(userId);
+        const vCode = await this.authVerificationCodesRepository.getVerificationCode(userEmail);
+
+        if (vCode === null) throw new ServerError(
+            'Verification Code missing, resend new code', 
+            { code, userEmail, location: 'emailVerificationService.setAndSendVerificationCode' },
+            ErrorCode.VERIFICATION_TOKEN_MISSING
+        )
+        if (!vCode.userId) throw new ServerError(
+            'Verification Code UserId missing, resend new code', 
+            { code, userEmail, location: 'emailVerificationService.setAndSendVerificationCode' },
+            ErrorCode.VERIFICATION_TOKEN_MISSING_DATA
+        )
+
         if (vCode?.code && code === vCode.code) isVerified = true;
 
         if (!isVerified) {
             throw new ForbiddenError(
                 'Code Verification Failed', 
-                { code, userId, location: 'emailVerificationService.setAndSendVerificationCode' },
+                { code, userEmail, location: 'emailVerificationService.setAndSendVerificationCode' },
                 ErrorCode.TOKEN_VERIFICATION_FAILED
             );
         }
-        return isVerified;
+
+        return { isVerified, userId: vCode.userId };
     }
     
     /**

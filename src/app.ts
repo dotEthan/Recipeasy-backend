@@ -7,7 +7,6 @@ import express, { NextFunction, Request, Response } from "express";
 import session from 'express-session';
 import passport from 'passport';
 import helmet from 'helmet';
-import MongoStore from 'connect-mongo';
 import cookieParser from 'cookie-parser';
 
 import { errorHandler } from './middleware/errorHandler';
@@ -19,7 +18,6 @@ import hpp from 'hpp';
 import compression from 'compression';
 import timeout from 'connect-timeout';
 import { checkSecurityHeaders } from './middleware/checkSecurityHeaders';
-// import { registrationLimiter } from './middleware/rateLimiters';
 
 /**
  * configs app setup and middleware
@@ -78,34 +76,32 @@ if (!MongoDbUri) {
   );
 }
 
-// TODO once working deployed try 
-// name: '__Host-recipeasy.sid', 
-// ensures cookie is from same host
+// Commenting out for future use if implemnting socialmedia logins
 app.use(session({
   secret: sessionSecret,
-  name: 'recipeasy.sid',
+  // name: 'recipeasy.sid',
   resave: false,
   saveUninitialized: false,
-  store: MongoStore.create({
-    mongoUrl: MongoDbUri,
-    collectionName: 'sessions',
-    ttl: 7 * 24 * 60 * 60,
-    autoRemove: 'interval',
-    autoRemoveInterval: 10,
-    touchAfter: 3600,
-  }),
+  // store: MongoStore.create({
+  //   mongoUrl: MongoDbUri,
+  //   collectionName: 'sessions',
+  //   ttl: 7 * 24 * 60 * 60,
+  //   autoRemove: 'interval',
+  //   autoRemoveInterval: 10,
+  //   touchAfter: 3600,
+  // }),
   cookie: {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite:  'lax',
     maxAge: 1000 * 60 * 60 * 24 * 7,
     path: '/',
-    // domain: process.env.NODE_ENV === 'production' ? '.onrender.com' : undefined
   }
 }));
 
 app.use(passport.initialize());
-app.use(passport.session());
+// Commenting out for future use if implemnting socialmedia logins
+// app.use(passport.session());
 
 app.get('/health', (req: Request, res: Response) => {
   console.log('Health check request from:', req.ip, req.headers['user-agent']);

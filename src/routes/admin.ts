@@ -27,7 +27,7 @@ const adminController = new AdminController(passwordService, userService, emailV
 
 /**
  * Refresh the user's access token
- * @route GET /admin/refresh-token
+ * @route POST /admin/refresh-token
  * @group Security - Token Management
  * @returns {SuccessResponse} 200 - Freshed!
  * @returns {ErrorResponse} 500 - Token not found

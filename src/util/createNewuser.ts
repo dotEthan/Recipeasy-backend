@@ -1,6 +1,7 @@
 import { UserRoles } from "../enums";
 import { BeCreateUserSchema } from "../schemas/user.schema"
 import { NewUserNoId } from "../types/user";
+import { zodValidationWrapper } from "./zodParseWrapper";
 
 export const createNewUserUtility = (displayName:string, email:string, hashedPassword:string): NewUserNoId => {
     const newUser = {
@@ -20,6 +21,6 @@ export const createNewUserUtility = (displayName:string, email:string, hashedPas
         },
         role: UserRoles.user
     };
-    BeCreateUserSchema.parse(newUser);
-    return newUser
+    zodValidationWrapper(BeCreateUserSchema, newUser, 'createNewUser.createNewUserUtility');
+    return newUser;
 }

@@ -7,11 +7,11 @@ export interface IAuthLoginAttemptRepository<LoginAttemptDocument> {
 
 export interface IAuthVerficationCodeRepository<EmailAuthCodeDocument> {
     createVerificationCode(verificationCodeData: EmailAuthCode): Promise<InsertOneResult<EmailAuthCodeDocument>>;
-    getVerificationCode(_id: ObjectId): Promise<WithId<EmailAuthCodeDocument> | null>;
+    getVerificationCode(email: string): Promise<WithId<EmailAuthCodeDocument> | null>;
     deleteVerificationCode(_id: ObjectId): Promise<DeleteResult>;
 }
 
 export interface IAuthTokenRepository<RefreshTokenDocument> {
     createRefreshToken(token: RefreshToken): Promise<InsertOneResult<RefreshTokenDocument>>;
-    findAndDeleteToken(tokenId: ObjectId): Promise<WithId<RefreshTokenDocument> | null>;
+    findAndDeleteToken(tokenId: string): Promise<WithId<RefreshTokenDocument> | null>;
 }

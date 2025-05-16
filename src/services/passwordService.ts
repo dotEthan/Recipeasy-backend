@@ -21,6 +21,7 @@ import {
     ServerError, 
     UnauthorizedError 
 } from "../errors";
+import { zodValidationWrapper } from '../util/zodParseWrapper';
 
 /**
  * Handles all Password related logic
@@ -81,7 +82,7 @@ export class PasswordService {
             expiresAt: new Date(Date.now() + PW_RESET_TOKEN_TTL) 
         }
         const updatedData = { passwordResetData: passwordResetData, updatedAt: new Date() };
-        UpdateByIdSchema.parse({updatedData});
+        zodValidationWrapper(UpdateByIdSchema, { updatedData }, 'passwordService.startPasswordResetFlow');
         const updateUserRes = await this.userRepository.updateById(userId, { $set: updatedData });
 
         if (updateUserRes?.matchedCount === 0) throw new NotFoundError(
@@ -259,7 +260,7 @@ export class PasswordService {
         await this.cachePreviousPassword(user._id, password, hashedPassword);
         
         const updatedData = { password: hashedPassword, updatedAt: new Date() } as Partial<User>;
-        UpdateByIdSchema.parse({updatedData});
+        zodValidationWrapper(UpdateByIdSchema, { updatedData }, 'passwordService.updateUserPassword');
         const updateResponse = await this.userRepository.updateById(ensureObjectId(user._id), { $set: updatedData});
         if (updateResponse && updateResponse.matchedCount === 0) {
             throw new NotFoundError(
@@ -327,7 +328,7 @@ export class PasswordService {
             deprecatedAt: new Date()
         })
 
-        z.array(PreviousPasswordSchema).parse(updatedPwArray);
+        zodValidationWrapper(z.array(PreviousPasswordSchema), updatedPwArray, 'passwordService.cachePreviousPassword');
         const updateResult = await this.userRepository.updateCachedPasswords(findUserResponse._id, updatedPwArray)
         if (updateResult.modifiedCount === 0) throw new ServerError(
             'Failed to update password history',

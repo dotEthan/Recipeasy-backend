@@ -3,13 +3,11 @@ import express from "express";
 import { UserController } from "../controllers/usersController";
 import { validateRequestBodyData } from "../middleware/validateRequestData";
 import { FeUpdateUsersRecipesSchema } from "../schemas/user.schema";
-import { isAuthenticated } from "../middleware/auth";
 import { catchAsyncError } from "../util/catchAsyncErrors";
 import { checkIdParam } from "../middleware/checkIdParam";
 import { recipeService, userService } from "../services";
 import { apiLimiter } from "../middleware/rateLimiters";
 import { checkAccessToken } from "../middleware/checkAccessToken";
-// import { registrationLimiter } from "../middleware/rateLimiters";
 
 /**
  * Handles all User based routes
@@ -24,6 +22,27 @@ const userController = new UserController(userService, recipeService);
 
 /**
  * Get user data
+ * @todo reimplement when public profiles are created
+ * @route GET /users/:id
+ * @group User Management - User Retrieval
+ * @param {number} request.params.required - user _id
+ * @returns {GetUserResponse} 200 - User and User Reipes
+ * @returns {ErrorResponse} 400 - Validation Error
+ * @returns {ErrorResponse} 401 - Missing User Id param
+ * @returns {ErrorResponse} 404 - User not found
+ * @returns {ErrorResponse} 500 - Server/database issues
+ * @produces application/json
+*/
+// router.get(
+//     "/:id", 
+//     apiLimiter,
+//     checkAccessToken,
+//     checkIdParam(), 
+//     catchAsyncError(userController.getUsersData)
+// );
+
+/**
+ * Get current user data 
  * @route GET /users/:id
  * @group User Management - User Retrieval
  * @param {number} request.params.required - user _id
@@ -35,12 +54,10 @@ const userController = new UserController(userService, recipeService);
  * @produces application/json
 */
 router.get(
-    "/:id", 
+    "/me", 
     apiLimiter,
     checkAccessToken,
-    checkIdParam(), 
-    isAuthenticated(), 
-    catchAsyncError(userController.getUsersData)
+    catchAsyncError(userController.getCurrentUsersData)
 );
 
 /**
@@ -62,7 +79,6 @@ router.patch(
     apiLimiter,
     checkAccessToken,
     checkIdParam(), 
-    isAuthenticated(), 
     validateRequestBodyData(FeUpdateUsersRecipesSchema), 
     catchAsyncError(userController.updateUserRecipes));
 

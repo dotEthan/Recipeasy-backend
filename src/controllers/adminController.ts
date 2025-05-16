@@ -10,6 +10,7 @@ import { UserService } from "../services/userService";
 import { EmailVerificationService } from "../services/emailVerificationService";
 import { TokenService } from "../services/tokenService";
 import { DecodedRefreshToken } from "../types/utiil";
+import { zodValidationWrapper } from "../util/zodParseWrapper";
 
 /**
  * Administration based req and res handling
@@ -23,14 +24,6 @@ export class AdminController {
         private emailVerificationService: EmailVerificationService,
         private tokenService: TokenService
     ) { }
-
-  
-    // /**
-    //  * Health Check for Render hosting
-    //  * @group Security - Health Check
-    //  * @returns {status} 200 - Healthy
-    //  */
-    // public healthCheck = (req: Request, res: Response) => { res.sendStatus(200); }
 
     /**
      * Check and refresh security token
@@ -62,7 +55,7 @@ export class AdminController {
         
         res.cookie('__Host-refreshToken', refreshToken, {
             httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
+            secure: true,
             sameSite: 'strict',
             path: '/',
             maxAge: 604800 * 1000
@@ -87,7 +80,7 @@ export class AdminController {
         );
         const passwordReset = await this.passwordService.startPasswordResetFlow(email);
 
-        StandardResponseSchema.parse(passwordReset);
+        zodValidationWrapper(StandardResponseSchema, passwordReset, 'adminController.resetPasswordRequest');
         res.status(201).json(passwordReset); 
     }
 
@@ -107,7 +100,7 @@ export class AdminController {
         );
         const response = await this.passwordService.validatePasswordToken(token, TokenTypes.PASSWORD_RESET);
 
-        StandardResponseSchema.parse(response);
+        zodValidationWrapper(StandardResponseSchema, response, 'adminController.validatePasswordToken');
         res.status(200).json(response);
     }
 
@@ -128,7 +121,7 @@ export class AdminController {
         );
         const success = await this.passwordService.passwordResetFinalStep(token, password);
 
-        StandardResponseSchema.parse(success);
+        zodValidationWrapper(StandardResponseSchema, success, 'adminController.finishPasswordResetRequest');
         res.status(201).json({ success });
     }
 
@@ -144,28 +137,28 @@ export class AdminController {
      */
     public verifyCode = async (req: Request, res: Response): Promise<void> => {
         const code = req.body.code as string;
-        const currentUserId = req.session.unverifiedUserId || req.user?._id;
-        if (!currentUserId) throw new UnauthorizedError(
-            'User Session Ended, please log in again',
+        const userEmail = req.body.email;
+        if (!userEmail) throw new BadRequestError(
+            'User email missing, relogin',
             { location: 'adminController.verifyCode'},
-            ErrorCode.USER_SESSION_NOT_FOUND
+            ErrorCode.MISSING_REQUIRED_BODY_DATA
         );
         if (!code) throw new BadRequestError(
-            'verifyCode - Code not present', 
-            { code, currentUserId,  location: 'adminController.verifyCode' },
+            'Code not present', 
+            { code, userEmail,  location: 'adminController.verifyCode' },
             ErrorCode.MISSING_REQUIRED_BODY_DATA
         )
 
-        const userId = ensureObjectId(currentUserId);
-        const verified = await this.emailVerificationService.checkVerificationCode(userId, code);
+        const { isVerified, userId } = await this.emailVerificationService.checkVerificationCode(userEmail, code);
 
-        if (verified) {
+        // Get Userid from code data or db call
+        if (isVerified) {
             this.userService.setUserVerified(userId);
             this.emailVerificationService.deleteVerificationCode(userId);
         }
 
-        const verifyRes = {success: verified};
-        StandardResponseSchema.parse(verifyRes);
+        const verifyRes = {success: isVerified};
+        zodValidationWrapper(StandardResponseSchema, verifyRes, 'adminController.verifyCode');
         res.status(200).json(verifyRes); 
     }
 

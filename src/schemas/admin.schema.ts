@@ -18,6 +18,7 @@ export const SaveLoginAttemptDataSchema = z.object({
 export const createVerificationCodeSchema = z.object({
     userId: ObjectIdSchema,
     code: z.string(),
+    userEmail: z.string().email(),
     createdAt:z.date(),
     updatedAt: z.date()
 }).strict();
