@@ -119,13 +119,12 @@ export const UpdateUserByIdSchema = z.object({
 }).strict();
 
 // Generic, needed or all will be specific due to specific #addToSet mongoDb syntax?
-export const UpdateByIdSchema = z.object({
-    updatedData: BeUserSchema
-        .omit({ _id: true, createdAt: true })
-        .partial()
-        .refine(data => Object.keys(data).length > 0, { message: 'Update must contain at least one field'
-    })
-}).strict();
+export const UpdateByIdSchema = BeUserSchema
+  .omit({ _id: true, createdAt: true })
+  .partial()
+  .refine(data => Object.keys(data).length > 0, { 
+    message: 'Update must contain at least one field' 
+  });
 
 export const DeleteUserByIdSchema = z.object({
     _id: z.custom<ObjectId>((val) => {
@@ -166,3 +165,7 @@ export const StandardUserResponseSchema = z.object({
     user: FeUserSchema.optional(),
     error: z.string().optional()
 })
+export const EmailVerificationSchema = z.object({
+    code: z.string(),
+    userEmail: z.string().email()
+}).strict();

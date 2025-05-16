@@ -137,7 +137,7 @@ export class AdminController {
      */
     public verifyCode = async (req: Request, res: Response): Promise<void> => {
         const code = req.body.code as string;
-        const userEmail = req.body.email;
+        const userEmail = req.body.userEmail;
         if (!userEmail) throw new BadRequestError(
             'User email missing, relogin',
             { location: 'adminController.verifyCode'},

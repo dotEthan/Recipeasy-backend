@@ -11,7 +11,7 @@ import {
 import { validateRequestBodyData } from "../middleware/validateRequestData";
 import { catchAsyncError } from "../util/catchAsyncErrors";
 
-import { ResetFlowSetPasswordSchema } from "../schemas/user.schema";
+import { EmailVerificationSchema, ResetFlowSetPasswordSchema } from "../schemas/user.schema";
 import { IsCodeSchema, IsEmailSchema } from "../schemas/shared.schema";
 import { apiLimiter } from "../middleware/rateLimiters";
 
@@ -54,7 +54,7 @@ router.post(
 router.post(
     '/verification-codes/verify', 
     apiLimiter, 
-    validateRequestBodyData(IsCodeSchema), 
+    validateRequestBodyData(EmailVerificationSchema), 
     catchAsyncError(adminController.verifyCode)
 );
 
