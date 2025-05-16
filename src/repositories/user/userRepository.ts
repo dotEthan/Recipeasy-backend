@@ -6,6 +6,7 @@ import { IsEmailSchema, IsObjectIdSchema } from "../../schemas/shared.schema";
 import { MongoDbUserProjection, PreviousPasssword, UserDocument, UsersRecipeData } from "../../types/user";
 import { Recipe } from "../../types/recipe";
 import { IUserRepository } from "./userRepository.interface";
+import { zodValidationWrapper } from "../../util/zodParseWrapper";
 
 /**
  * 'users' Collection specific Mongodb Related calls
@@ -23,7 +24,7 @@ export class UserRepository extends BaseRepository<UserDocument> implements IUse
     }
 
     async findById<T extends Partial<UserDocument> = UserDocument>(_id: ObjectId, addedProjection?: MongoDbUserProjection): Promise<T | null> {
-        IsObjectIdSchema.parse({_id});
+        zodValidationWrapper(IsObjectIdSchema, { _id }, 'userRepository.findById')
         const defaultProjection = { createdAt: 0, previousPasswords: 0, password: 0 };
         const projection = addedProjection ?? defaultProjection;
         const findResult = await this.findOne(
@@ -34,7 +35,7 @@ export class UserRepository extends BaseRepository<UserDocument> implements IUse
     };
 
     async findPartialById(_id: ObjectId, addedProjection?: MongoDbUserProjection): Promise<Partial<UserDocument> | null> {
-        IsObjectIdSchema.parse({_id});
+        zodValidationWrapper(IsObjectIdSchema, { _id }, 'userRepository.findPartialById');
         const defaultProjection = { createdAt: 0, previousPasswords: 0, password: 0 };
         const projection = addedProjection ?? defaultProjection;
         return await this.findOne(
@@ -44,7 +45,7 @@ export class UserRepository extends BaseRepository<UserDocument> implements IUse
     };
 
     async findByEmail(email: string, addedProjection?: MongoDbUserProjection): Promise<UserDocument | null> {
-        IsEmailSchema.parse({email});
+        zodValidationWrapper(IsEmailSchema, { email }, 'userRepository.findByEmail');
         const defaultProjection = { createdAt: 0, previousPasswords: 0, password: 0 };
         const projection = addedProjection ?? defaultProjection;
         return await this.findOne(
@@ -54,14 +55,14 @@ export class UserRepository extends BaseRepository<UserDocument> implements IUse
     };
 
     async findByEmailWithInternalData(email: string): Promise<UserDocument | null> {
-        IsEmailSchema.parse({email});
+        zodValidationWrapper(IsEmailSchema, { email }, 'userRepository.findByEmailWithInternalData');
         return await this.findOne(
             {email} as Partial<UserDocument>
         );
     };
 
     async findIdByEmail(email: string, addedProjection?: MongoDbUserProjection): Promise<ObjectId | undefined> {
-        IsEmailSchema.parse({email});
+        zodValidationWrapper(IsEmailSchema, { email }, 'userRepository.findIdByEmail');
         const defaultProjection = { createdAt: 0, previousPasswords: 0, password: 0 };
         const projection = addedProjection ?? defaultProjection;
         const user = await this.findOne(
@@ -72,12 +73,12 @@ export class UserRepository extends BaseRepository<UserDocument> implements IUse
     };
     
     async updateById(_id: ObjectId, update: Partial<UserDocument>): Promise<UpdateResult | null> {
-        IsObjectIdSchema.parse({ _id });
+        zodValidationWrapper(IsObjectIdSchema, { _id }, 'userRepository.updateById');
         return await this.updateOne({ _id }, update);
     };
     
     async updateCachedPasswords(_id: ObjectId, cachedPasswordArray: PreviousPasssword[]) {
-        IsObjectIdSchema.parse({_id});
+        zodValidationWrapper(IsObjectIdSchema, { _id }, 'userRepository.deleteUser');
         return await this.updateOne(
             { _id },
             { $set: {
@@ -90,7 +91,7 @@ export class UserRepository extends BaseRepository<UserDocument> implements IUse
     // No Dupes
     // TODO - post - combine these three? updateUserObject
     async addToUsersRecipesArray(_id: ObjectId, usersRecipesObject: UsersRecipeData): Promise<UpdateResult | null> {
-        IsObjectIdSchema.parse({ _id });
+        zodValidationWrapper(IsObjectIdSchema, { _id }, 'userRepository.addToUsersRecipesArray');
         return await this.updateByMergeOneNoDupe(
             {_id}, 
             {
@@ -102,8 +103,8 @@ export class UserRepository extends BaseRepository<UserDocument> implements IUse
     
     // No Dupes
     async updateAlterationsOnUserRecipes(_id: ObjectId, recipeId: ObjectId, alterations: Partial<Recipe>): Promise<UpdateResult | null> {
-        IsObjectIdSchema.parse({ _id });
-        IsObjectIdSchema.parse({ _id: recipeId });
+        zodValidationWrapper(IsObjectIdSchema, { _id }, 'userRepository.updateAlterationsOnUserRecipes');
+        zodValidationWrapper(IsObjectIdSchema, { _id: recipeId }, 'userRepository.updateAlterationsOnUserRecipes');
         return await this.updateOne({
             _id,
             "recipes.id": recipeId
@@ -118,7 +119,7 @@ export class UserRepository extends BaseRepository<UserDocument> implements IUse
 
     
     async removeFromUserRecipeArray(_id: ObjectId, dataToRemove: UsersRecipeData) {
-        IsObjectIdSchema.parse({ _id });
+        zodValidationWrapper(IsObjectIdSchema, { _id }, 'userRepository.removeFromUserRecipeArray');
         return await this.updateOne({ _id }, {
             $pull: { recipes: dataToRemove },
             $set: { updatedAt: new Date() }
@@ -127,7 +128,7 @@ export class UserRepository extends BaseRepository<UserDocument> implements IUse
 
     // For Admin Dashboard
     async deleteUser(_id: ObjectId): Promise<DeleteResult> {
-        IsObjectIdSchema.parse({_id});
+        zodValidationWrapper(IsObjectIdSchema, { _id }, 'userRepository.deleteUser');
         return await this.delete({_id})
     }
 }

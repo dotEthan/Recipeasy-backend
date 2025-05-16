@@ -1,5 +1,6 @@
 import { NextFunction, Response, Request } from "express";
 import { AnyZodObject } from "zod";
+import { zodValidationWrapper } from "../util/zodParseWrapper";
 /**
  * Validate Middleware to ensure Data matches expected Schema
  * @constructor
@@ -8,7 +9,7 @@ import { AnyZodObject } from "zod";
 export const validateRequestBodyData = (schema: AnyZodObject) => 
   (req: Request, res: Response, next: NextFunction) => {
     try {
-      schema.parse(req.body);
+      zodValidationWrapper(schema, req.body, 'validateRequestData.validateRequestBodyData');
       next();
     } catch (error) {
       next(error);

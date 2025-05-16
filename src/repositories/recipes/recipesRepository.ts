@@ -5,6 +5,7 @@ import { CreatedDataResponse } from "../../types/responses";
 import { BaseRepository } from "../base/baseRepository";
 import { Filter, InsertOneResult, ObjectId, WithId } from "mongodb";
 import { IRecipeRepository } from "./recipeRepository.interface";
+import { zodValidationWrapper } from "../../util/zodParseWrapper";
 
 /**
  * Recipes Collection specific Mongodb Related calls
@@ -33,7 +34,7 @@ export class RecipesRepository extends BaseRepository<RecipeDocument> implements
     }
     
     async findById(_id: ObjectId): Promise<RecipeDocument | null> {
-        IsObjectIdSchema.parse({ _id });
+        zodValidationWrapper(IsObjectIdSchema, { _id }, 'recipeRepository.findById');
         return await this.findOne(
             {_id} as Partial<Recipe>,
             { createdAt: 0, internalData: 0 }

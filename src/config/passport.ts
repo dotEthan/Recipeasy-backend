@@ -5,8 +5,6 @@ import bcrypt from 'bcryptjs';
 
 import { VerifiedUserOrErrorFunc } from '../types/passport';
 import { UserRepository } from '../repositories/user/userRepository';
-import { ObjectId } from 'mongodb';
-import { User } from '../types/user';
 import { ServerError, UnauthorizedError } from '../errors';
 
 /**
@@ -58,17 +56,17 @@ export async function initialize(passport: PassportStatic) {
     };
 
     passport.use(new Strategy({ usernameField: 'email' }, authenticateUser));
+    // Commented out for now as still debating socialmedia login which might need. 
+    // passport.serializeUser((user: Express.User, done: (err: Error | null, id?: string | undefined) => void) => {
+    //     done(null, user._id.toString());
+    // });
 
-    passport.serializeUser((user: Express.User, done: (err: Error | null, id?: string | undefined) => void) => {
-        done(null, user._id.toString());
-    });
-
-    passport.deserializeUser(async (id: string, done) => {
-        try {
-            const user = await userRepository.findById(new ObjectId(id)) as User;
-            done(null, user);
-        } catch (error: unknown) {
-            done(error);
-        }
-    });
+    // passport.deserializeUser(async (id: string, done) => {
+    //     try {
+    //         const user = await userRepository.findById(new ObjectId(id)) as User;
+    //         done(null, user);
+    //     } catch (error: unknown) {
+    //         done(error);
+    //     }
+    // });
 }

@@ -3,10 +3,8 @@ import { validateRequestBodyData } from "../middleware/validateRequestData";
 import { LoginSchema, RegisterUserSchema } from "../schemas/user.schema";
 import { catchAsyncError } from "../util/catchAsyncErrors";
 import { AuthController } from "../controllers/authController";
-import { isAuthenticated } from "../middleware/auth";
 import { authService, passwordService, tokenService } from "../services";
 import { apiLimiter, registrationLimiter } from "../middleware/rateLimiters";
-import { checkAccessToken } from "../middleware/checkAccessToken";
 
 
 /**
@@ -60,23 +58,6 @@ router.post(
 );
 
 /**
- * Check to ensure user session is still active
- * @route GET /auth/session
- * @group Authorization - Session Management
- * @returns {LoginResponse} 200 - Session active
- * @returns {ErrorResponse} 401 - No active session found
- * @returns {ErrorResponse} 500 - Server/database issues
- * @produces application/json
- */
-router.get(
-    '/session', 
-    apiLimiter, 
-    checkAccessToken,
-    isAuthenticated(), 
-    catchAsyncError(authController.checkSession)
-);
-
-/**
  * Delete User session
  * @route DELETE /auth/session
  * @group Authorization - Session deletion
@@ -86,10 +67,8 @@ router.get(
  * @consumes application/json
  */
 router.delete(
-    "/session", 
-    apiLimiter, 
-    checkAccessToken,
-    isAuthenticated(), 
+    "/refresh-token", 
+    apiLimiter,  
     catchAsyncError(authController.logUserOut)
 );
 

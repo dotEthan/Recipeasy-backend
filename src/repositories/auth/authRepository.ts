@@ -5,7 +5,7 @@ import {
     WithId 
 } from "mongodb";
 import { BaseRepository } from "../base/baseRepository";
-import { IsObjectIdSchema } from "../../schemas/shared.schema";
+import { IsEmailSchema, IsObjectIdSchema } from "../../schemas/shared.schema";
 import { 
     EmailAuthCode, 
     EmailAuthCodeDocument, 
@@ -19,6 +19,7 @@ import {
     IAuthTokenRepository, 
     IAuthVerficationCodeRepository
 } from "./authRepository.interface";
+import { zodValidationWrapper } from "../../util/zodParseWrapper";
 
 /**
  * Auth Collection specific Mongodb Related calls
@@ -46,12 +47,12 @@ export class AuthVerificationCodesRepository extends BaseRepository<EmailAuthCod
     async createVerificationCode(verificationCodeData: EmailAuthCode): Promise<InsertOneResult<EmailAuthCodeDocument>> {
         return await this.create(verificationCodeData);
     }
-    async getVerificationCode(_id: ObjectId): Promise<WithId<EmailAuthCodeDocument> | null> {
-        IsObjectIdSchema.parse({ _id })
-        return await this.findOne({userId: _id});
+    async getVerificationCode(email: string): Promise<WithId<EmailAuthCodeDocument> | null> {
+        zodValidationWrapper(IsEmailSchema, { email }, 'authRepository.getVerificationCode');
+        return await this.findOne({userEmail: email});
     }
     async deleteVerificationCode(_id: ObjectId): Promise<DeleteResult> {
-        IsObjectIdSchema.parse({ _id })
+        zodValidationWrapper(IsObjectIdSchema, { _id }, 'authRepository.deleteVerificationCode');
         return await this.delete({'userId':_id});
     }
 }
@@ -64,7 +65,7 @@ export class AuthTokenRepository extends BaseRepository<RefreshTokenDocument> im
         return await this.create(token);
     }
 
-    async findAndDeleteToken(tokenId: ObjectId): Promise<WithId<RefreshTokenDocument> | null> {
-        return await this.findOneAndDelete({ _id: tokenId });
+    async findAndDeleteToken(tokenId: string): Promise<WithId<RefreshTokenDocument> | null> {
+        return await this.findOneAndDelete({ tokenId });
     }
 }

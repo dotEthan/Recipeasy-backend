@@ -8,6 +8,7 @@ import { ErrorCode, Visibility } from "../types/enums";
 import { ensureObjectId } from "../util/ensureObjectId";
 import { FeRecipeSchema, StandardRecipeResponseSchema } from "../schemas/recipe.schema";
 import { z } from "zod";
+import { zodValidationWrapper } from "../util/zodParseWrapper";
 
 
 /**
@@ -34,8 +35,7 @@ export class RecipeController {
     );
     
     const response = await this.recipeService.saveNewRecipe(recipe, userId);
-
-    StandardRecipeResponseSchema.parse(response)
+    zodValidationWrapper(StandardRecipeResponseSchema, response, 'recipesController.saveNewRecipe');
     res.status(201).json(response);
   }
 
@@ -52,7 +52,7 @@ export class RecipeController {
       ErrorCode.NO_PUBLIC_RECIPES_FOUND
     );
 
-    z.array(FeRecipeSchema).parse(response.data);
+    zodValidationWrapper(z.array(FeRecipeSchema), response.data, 'recipesController.getPublicRecipes');
     res.status(200).json(response?.data);
   }
 
@@ -73,7 +73,7 @@ export class RecipeController {
 
     const response = await this.recipeService.updateRecipe(recipe, userId);
 
-    StandardRecipeResponseSchema.parse(response);
+    zodValidationWrapper(StandardRecipeResponseSchema, response, 'recipesController.updateRecipe');
     res.status(201).json(response);
   }
 

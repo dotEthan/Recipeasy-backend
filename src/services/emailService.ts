@@ -27,7 +27,8 @@ export class EmailService {
 
     /**
      * send email verification email to client supplied email
-     * @group Security - Bot trap
+     * @todo create real email host
+     * @group User - Password reset
      * @param {string} type - type of email (emailVerificationCode, passwordReset)
      * @return {SMTPTransport.SentMessageInfo} - stats on all attempted emails
      * @example

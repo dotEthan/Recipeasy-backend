@@ -11,6 +11,7 @@ import { mergeAlterations } from "../util/mergeAlterations";
 import { NewRecipeSchema, FeUpdateRecipeSchema, InternalStateSchema, PartialRecipeSchema } from "../schemas/recipe.schema";
 import { IsObjectIdSchema } from "../schemas/shared.schema";
 import { UserRecipesIdSchema } from "../schemas/user.schema";
+import { zodValidationWrapper } from "../util/zodParseWrapper";
 
 /**
  * Handles all recipe related services
@@ -40,7 +41,7 @@ export class RecipeService {
     public async saveNewRecipe(recipe: Recipe, userId: ObjectId): Promise<StandardRecipeResponse> {
         let success = false;
 
-        NewRecipeSchema.parse({recipe});
+        zodValidationWrapper(NewRecipeSchema, { recipe }, 'recipeService.saveNewRecipe');
         const recipeSaveResponse = await this.recipesRepository.createRecipe(recipe);
         if (!recipeSaveResponse.acknowledged || !recipeSaveResponse.insertedId) throw new ServerError(
             'Create recipe failed',             
@@ -131,8 +132,8 @@ export class RecipeService {
 
         let recipeResponse: RecipeDocument;
         if (userIsCreator) {
-            FeUpdateRecipeSchema.parse({ recipe });
-            IsObjectIdSchema.parse({ _id: recipeId });
+            zodValidationWrapper(IsObjectIdSchema, { _id: recipeId }, 'recipeService.updateRecipe');
+            zodValidationWrapper(FeUpdateRecipeSchema, { recipe }, 'recipeService.updateRecipe');
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
             const {_id, ...recipeNoId} = recipe;
             const recipeSaveResponse = await this.recipesRepository.updateRecipe({ _id: recipeId }, recipeNoId);
@@ -144,9 +145,9 @@ export class RecipeService {
             recipeResponse = recipeSaveResponse;
         } else {
             const alterations = this.findRecipeAlterations(originalRecipe, recipe);
-            PartialRecipeSchema.parse(alterations);
-            const updateResponse = await this.userRepository.updateAlterationsOnUserRecipes(userId, recipeId, alterations);
-
+            zodValidationWrapper(PartialRecipeSchema, alterations, 'recipeService.updateRecipe');
+            const updateResponse = await this.userRepository.updateAlterationsOnUserRecipes(ensureObjectId(userId), recipeId, alterations);
+            console.log('updateResponse:', updateResponse)
             if (updateResponse == null) throw new ServerError(
                 'updateRecipe - Updating User.recipes.alterations failed', 
                 { userId, recipeId, alterations },
@@ -179,6 +180,7 @@ export class RecipeService {
      * await recipeService.getUsersRecipes(currentUser);
      */  
     async getUsersRecipes(user: User): Promise<PaginateResponse> {
+        if (!user.recipes || user.recipes.length === 0) return { data: [], totalDocs: 0 }
         const recipeIdArray = user.recipes?.map((item) => ensureObjectId(item.id));
 
         const query: Filter<Recipe> = { _id: { $in: recipeIdArray } };
@@ -237,7 +239,7 @@ export class RecipeService {
                 wasDeletedAt: new Date(),
                 deletedBy: userId
             };
-            InternalStateSchema.parse(internalState);
+            zodValidationWrapper(InternalStateSchema, internalState, 'recipeService.deleteRecipe');
             updateRecipeResponse = await this.recipesRepository.updateRecipeObject({ _id: recipeId }, { internalState });   
         }
         if (
@@ -252,7 +254,7 @@ export class RecipeService {
             );
 
         const usersRecipesId = { id: recipeId };
-        UserRecipesIdSchema.parse(usersRecipesId);
+        zodValidationWrapper(UserRecipesIdSchema, usersRecipesId, 'recipeService.deleteRecipe');
         const updateUserResponse = await this.userRepository.removeFromUserRecipeArray(userId, usersRecipesId);
         if (
             !updateUserResponse.acknowledged || 

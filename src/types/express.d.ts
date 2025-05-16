@@ -1,11 +1,12 @@
 import { ObjectId } from 'mongodb';
-import { User as CustomUser } from './user';
 import 'express-session';
+import { UserRoles } from '../enums';
 
 declare global {
   namespace Express {
-    interface User extends CustomUser {
+    interface User {
       _id: ObjectId;
+      role: UserRoles
     }
     interface Request {
       requestId: string;

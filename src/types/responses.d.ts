@@ -40,3 +40,8 @@ export type GetUserResponse = {
     user: User,
     userRecipes: Recipe[]
 }
+
+export type CheckEmailVerificationResponse = {
+    isVerified: boolean,
+    userId: ObjectId
+}

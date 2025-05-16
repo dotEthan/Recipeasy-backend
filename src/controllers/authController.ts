@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import passport, { AuthenticateOptions } from "passport";
+import jwt from 'jsonwebtoken';
 
 import { AuthService } from "../services/authService";
 import { PasswordService } from "../services/passwordService";
@@ -10,6 +11,9 @@ import { FeUser, User } from "../types/user";
 import { FeUserSchema, LoginResSchema } from "../schemas/user.schema";
 import { BadRequestError, ServerError, UnauthorizedError } from "../errors";
 import { ErrorCode } from "../types/enums";
+import { ensureObjectId } from "../util/ensureObjectId";
+import { DecodedRefreshToken } from "../types/utiil";
+import { zodValidationWrapper } from "../util/zodParseWrapper";
 
 /**
  * Authorization based req and res handling
@@ -43,12 +47,9 @@ export class AuthController {
             ErrorCode.RESOURCE_ID_PARAM_MISSING
         )
 
-        const registeredUser = await this.authService.registerNewUser(displayName, email, password);
+        const registeredUser = await this.authService.registerNewUser(displayName, email.toLowerCase(), password);
 
-        // for email validation
-        req.session.unverifiedUserId = registeredUser._id;
-
-        FeUserSchema.parse(registeredUser)
+        zodValidationWrapper(FeUserSchema, registeredUser, 'authController.register');
         res.status(201).json({success: true, data: registeredUser});
     }
     
@@ -88,32 +89,47 @@ export class AuthController {
             maxAge: 604800 * 1000
         });
 
-        LoginResSchema.parse(responseData);
+        zodValidationWrapper(LoginResSchema, responseData, 'authController.login');
         res.status(200).json({...responseData, accessToken });
 
-        await this.authService.logLoginAttempt(req, true);
+        await this.authService.logLoginAttempt(req, ensureObjectId(responseData.user._id), true);
     }
 
     /**
      * User Log out
      * @group User Session - Ends Session
      * @return  {StandardResponse} success, message, data, error - Stardard response for generic calls
+     * @throws {BadRequestError} 400 - User Already logged out
      */
     public logUserOut = async (req: Request, res: Response) => {
 
-        
+        // delete refresh-token from DB
         await new Promise<void>((resolve, reject) => {
             req.logOut((error) => {
                 if (error) return reject(error);
                 resolve();
             });
         });
+        
+        const refreshToken = req.cookies['__Host-refreshToken'];
+        
+        if (!refreshToken) throw new UnauthorizedError('Token missing from header, relogin', { location: 'adminController.refreshAccessToken' }, ErrorCode.TOKEN_MISSING);
+        
+        const refreshSecret = process.env.JWT_REFRESH_SECRET;
+        if (!refreshSecret) throw new ServerError('Missing JWT_SECRET in Env', { location: 'createToken.ts' }, ErrorCode.UNSET_ENV_VARIABLE);
 
-        res.clearCookie('recipeasy.sid', {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'lax'
-        });
+        const decodedToken = jwt.verify(refreshToken, refreshSecret) as DecodedRefreshToken;
+        console.log('token: ', decodedToken);
+        if (!refreshToken) throw new BadRequestError('User Already Logged Out', { location: 'authController.logUserOut' }, ErrorCode.USER_ALREADY_LOGGED_OUT);
+
+        this.tokenService.deleteOldTokenIfExists(decodedToken.tokenId);
+
+        // Leaving in case sessions come back with social media logins
+        // res.clearCookie('recipeasy.sid', {
+        //     httpOnly: true,
+        //     secure: process.env.NODE_ENV === 'production',
+        //     sameSite: 'lax'
+        // });
 
         res.clearCookie('__Host-refreshToken', {
             httpOnly: true,
@@ -129,26 +145,6 @@ export class AuthController {
     }
 
     /**
-     * Checks if user session active on page reload
-     * @group User Session - Checks Session
-     * @return  {StandardUserResponse} success, message, data, error - Stardard response for generic calls
-     * @throws {ZodError} 401 - Validation failed
-     */
-    public checkSession = (req: Request, res: Response) => {
-        const user = req.user ? sanitizeUser(req.user) : undefined;
-        if (req.isAuthenticated() && user) {
-            FeUserSchema.parse(user)
-            res.status(200).json({ success: true, user });
-        } else {
-            throw new UnauthorizedError(
-                'User session not found', 
-                { location: 'authController.checkSession' }, 
-                ErrorCode.REQ_USER_MISSING
-            );
-        }
-    }
-
-    /**
      * Passport's authenticate User
      * @group Authorization - Autheticates User
      * @return  {StandardUserResponse} success, message, data, error - Stardard response for generic calls
@@ -157,6 +153,7 @@ export class AuthController {
      */
     private authenticateUser = (req: Request, res: Response): Promise<User> => {
         const passportOptions = {
+            session: false,
             failureWithError: true
         } as AuthenticateOptions;
 
@@ -177,13 +174,7 @@ export class AuthController {
                     ));
                 }
 
-                req.logIn(user, (loginError: Error | null) => {
-                    if (loginError) {
-                        return reject(loginError);
-                    }
-
-                    resolve(user); 
-                });
+                resolve(user); 
             })(req, res);
         })
     }
