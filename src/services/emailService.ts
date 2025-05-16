@@ -38,17 +38,19 @@ export class EmailService {
 
     public async sendEmailToUser(type: EmailTypes, displayName: string, email: string, code: string) {
         const template = this.emailTemplates[type];
+
         const transporter = nodemailer.createTransport({
-            host: process.env.SMTP_HOST || 'smtp.ethereal.email',
-            port: 587,
+            host: process.env.SMTP_HOST,
+            port: parseInt(process.env.SMTP_PORT || '587'),
             secure: false, // true for port 465, false for other ports
+            requireTLS: true,
             auth: {
-                user: 'meggie95@ethereal.email', // ethermail accounts
-                pass: 'nXCbfzUBxW1ynTUkuk', // ethermail accounts
+                user: process.env.SMTP_USER,
+                pass: process.env.SMTP_PASSWORD,
             },
         });
         return await transporter.sendMail({
-            from: '"Recipeasy Admin" <dotethan@ethanstrauss.com>',
+            from: '"Tastyista Admin" <noreply@tastyista.com>',
             to: email,
             subject: template.subject,
             text: template.text(displayName, code),
