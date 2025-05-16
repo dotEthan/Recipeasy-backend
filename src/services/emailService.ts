@@ -1,6 +1,5 @@
 import nodemailer from 'nodemailer';
 import { EmailFormat, EmailTypes } from '../types/email';
-import { RECIPEASY_PW_RESET_URL } from '../constants';
 
 /**
  * Handles all email related services
@@ -13,8 +12,8 @@ export class EmailService {
     private emailTemplates = {
         passwordReset: {
             subject: 'Reset your Recipeasy Password',
-            text: (displayName:string, code:string) => `Your Password Reset link for Recipeasy is ${RECIPEASY_PW_RESET_URL}?token=${code}`,
-            html: (displayName:string, code:string) => `Your Password Reset link for Recipeasy is ${RECIPEASY_PW_RESET_URL}?token=${code}`,
+            text: (displayName:string, code:string) => `Your Password Reset link for Recipeasy is ${process.env.RECIPEASY_PW_RESET_URL}?token=${code}`,
+            html: (displayName:string, code:string) => `Your Password Reset link for Recipeasy is ${process.env.RECIPEASY_PW_RESET_URL}?token=${code}`,
         },
         emailVerificationCode: {
             subject: 'Reset your Recipeasy Password',
