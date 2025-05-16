@@ -82,7 +82,7 @@ export class PasswordService {
             expiresAt: new Date(Date.now() + PW_RESET_TOKEN_TTL) 
         }
         const updatedData = { passwordResetData: passwordResetData, updatedAt: new Date() };
-        zodValidationWrapper(UpdateByIdSchema, { updatedData }, 'passwordService.startPasswordResetFlow');
+        zodValidationWrapper(UpdateByIdSchema, updatedData, 'passwordService.startPasswordResetFlow');
         const updateUserRes = await this.userRepository.updateById(userId, { $set: updatedData });
 
         if (updateUserRes?.matchedCount === 0) throw new NotFoundError(
@@ -260,7 +260,7 @@ export class PasswordService {
         await this.cachePreviousPassword(user._id, password, hashedPassword);
         
         const updatedData = { password: hashedPassword, updatedAt: new Date() } as Partial<User>;
-        zodValidationWrapper(UpdateByIdSchema, { updatedData }, 'passwordService.updateUserPassword');
+        zodValidationWrapper(UpdateByIdSchema, updatedData, 'passwordService.updateUserPassword');
         const updateResponse = await this.userRepository.updateById(ensureObjectId(user._id), { $set: updatedData});
         if (updateResponse && updateResponse.matchedCount === 0) {
             throw new NotFoundError(

@@ -21,8 +21,7 @@ export const IsEmailSchema = z.object({
 }).strict();
 
 export const IsCodeSchema = z.object({
-    code: z.string(),
-    userEmail: z.string().email()
+    code: z.string()
 }).strict();
 
 export const StandardResponseSchema = z.object({
