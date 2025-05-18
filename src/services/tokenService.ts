@@ -3,7 +3,11 @@ import jwt from 'jsonwebtoken';
 
 import { AuthTokenRepository } from "../repositories/auth/authRepository";
 import { FeUser } from "../types/user";
-import { ServerError, UnauthorizedError } from '../errors';
+import { 
+    BadRequestError, 
+    LogOnlyError, 
+    ServerError
+} from '../errors';
 import { ErrorCode } from '../types/enums';
 import { WithId } from 'mongodb';
 import { RefreshTokenDocument } from '../types/auth';
@@ -54,7 +58,14 @@ export class TokenService {
             expiresAt: new Date(Date.now() + 604800 * 1000)
         });
 
-        if (!insertTokenResponse) throw new ServerError('Saving refresh token to DB failed', { location: 'authController.login' }, ErrorCode.MONGODB_RESOURCE_CREATE_FAILED)
+        if (!insertTokenResponse) throw new ServerError(
+            'Saving refresh token to DB failed', 
+            { 
+                location: 'authController.login',
+                details: 'Refresh Token Create failed'
+            },
+            ErrorCode.CREATE_RESOURCE_FAILED
+        )
 
 
         return [accessToken, refreshToken];
@@ -70,11 +81,14 @@ export class TokenService {
      */  
     public async deleteOldTokenIfExists(tokenId: string): Promise<void> {
         console.log('tokenId: ', tokenId)
-        if (!tokenId) throw new ServerError('Decoded refreshToken malformed', { location: 'tokenService.deleteOldTokenIfExists' }, ErrorCode.DECODED_TOKEN_MALFORMED)
+        if (!tokenId) throw new BadRequestError('Decoded refreshToken malformed', { location: 'tokenService.deleteOldTokenIfExists' }, ErrorCode.TOKEN_TO_DELETE_MALFORMED);
         const deletedToken = await this.authTokenRepository.findAndDeleteToken(tokenId);
 
         console.log('tokenId: ', tokenId)
-        if (!deletedToken) throw new UnauthorizedError('Token already revoked or deleted', { location: 'tokenService.deleteOldToken' }, ErrorCode.NON_REQUIRED_DELETE_FAILED);
+        if (!deletedToken) throw new LogOnlyError(
+            'Token already revoked or deleted', 
+            { location: 'tokenService.deleteOldToken' },
+            ErrorCode.NON_BREAKING_DELETE_FAILED);
     }
 
     /**
@@ -102,7 +116,13 @@ export class TokenService {
         const accessSecret = process.env.JWT_ACCESS_SECRET;
         const refreshSecret = process.env.JWT_REFRESH_SECRET;
     
-        if (!accessSecret || !refreshSecret) throw new ServerError('Missing JWT_SECRET in Env', { location: 'createToken.ts' }, ErrorCode.UNSET_ENV_VARIABLE);
+        if (!accessSecret || !refreshSecret) throw new ServerError(
+            'Missing JWT_SECRET in Env', 
+            { 
+                location: 'createToken.ts',
+                details: 'JWT_SECRET missing'
+            }, 
+            ErrorCode.ENV_VAR_MISSING);
         
         const accessToken = jwt.sign(accessPayload, accessSecret, { expiresIn: 1800 });
         const refreshToken = jwt.sign(refreshPayload, refreshSecret, { expiresIn: 604800 });

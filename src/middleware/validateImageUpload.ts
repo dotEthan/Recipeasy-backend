@@ -24,7 +24,7 @@ export const validateImageUpload = (req: Request, res: Response, next: NextFunct
     if (req.file && req.file?.size > RECIPE_FILE_MAX_SIZE) throw new BadRequestError(
         'File size too large. 5mb limit',
         { location: 'validateImageUpload.validateImageUpload', fileSize: req.file?.size },
-        ErrorCode.FILE_SIZE_TOO_LARGE
+        ErrorCode.FILE_TOO_LARGE
     )
 
     next();

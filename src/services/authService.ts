@@ -47,7 +47,7 @@ export class AuthService {
         if(emailInUse != null) throw new ConflictError(
             'Email already in use', 
             { email, location: 'authService.registerNewUser' },
-            ErrorCode.EMAIL_ALREADY_IN_USE
+            ErrorCode.EMAIL_IN_USE
         );
 
         const userResponse = await this.userService.createNewUser(displayName, email, hashedPassword);

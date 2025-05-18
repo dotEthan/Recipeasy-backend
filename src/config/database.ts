@@ -30,7 +30,10 @@ export class Database {
 
     public getDb(): Db {
         if (!this.db) {
-            const dbError = new ServerError('Database Not Initialized, Must Connect() first.', { location: 'database.getDb' }, ErrorCode.MONGODB_GET_DB_FAILED, false);
+            const dbError = new ServerError(
+                'Database Not Initialized, Must Connect() first.', 
+                { location: 'database.getDb' }, 
+                ErrorCode.GET_DB_FAILED, false);
             throw dbError;
         }
         return this.db;
@@ -41,7 +44,7 @@ export class Database {
         throw new ServerError(
             'Database Not Initialized, Must Connect() first',
             { location: 'database.getDb' },
-            ErrorCode.MONGODB_INIT_INDICES,
+            ErrorCode.INIT_INDEXES_FAILED,
             false
         );
       }

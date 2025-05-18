@@ -16,7 +16,7 @@ export function zodValidationWrapper<T>(
       throw new BadRequestError(
         'Zod Validation Failed',
         { location, data, originalError: error },
-        ErrorCode.ZOD_VALIDATION_ERR
+        ErrorCode.ZOD_VALIDATION_FAILED
       );
     }
     throw error;

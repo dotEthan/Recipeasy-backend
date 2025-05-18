@@ -19,7 +19,7 @@ export const checkIdParam = () =>  (req: Request, res: Response, next: NextFunct
         throw new BadRequestError(
             'Client must supply resource ID for this route',
             { location: 'checkIdParam req middleware' },
-            ErrorCode.RESOURCE_ID_PARAM_MISSING
+            ErrorCode.ID_PARAM_MISSING
         )
     }
     next();

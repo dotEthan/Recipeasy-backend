@@ -106,7 +106,7 @@ export class EmailVerificationService {
         if (!vCode.userId) throw new ServerError(
             'Verification Code UserId missing, resend new code', 
             { code, userEmail, location: 'emailVerificationService.setAndSendVerificationCode' },
-            ErrorCode.VERIFICATION_TOKEN_MISSING_DATA
+            ErrorCode.VERIFICATION_TOKEN_MALFORMED
         )
 
         if (vCode?.code && code === vCode.code) isVerified = true;
@@ -115,7 +115,7 @@ export class EmailVerificationService {
             throw new ForbiddenError(
                 'Code Verification Failed', 
                 { code, userEmail, location: 'emailVerificationService.setAndSendVerificationCode' },
-                ErrorCode.TOKEN_VERIFICATION_FAILED
+                ErrorCode.EMAIL_VERIFICATION_FAILED
             );
         }
 

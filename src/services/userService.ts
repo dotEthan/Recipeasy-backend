@@ -35,8 +35,12 @@ export class UserService {
         const creationResult = await this.userRepository.createUser(newUserData);
         if (!creationResult.acknowledged || !creationResult.insertedId) throw new ServerError(
             'Create new user failed', 
-            { newUserData, location: 'userService.createNewUser' },
-            ErrorCode.MONGODB_RESOURCE_CREATE_FAILED
+            { 
+                newUserData, 
+                location: 'userService.createNewUser',
+                details: 'Create new user failed'
+            },
+            ErrorCode.CREATE_RESOURCE_FAILED
         )
 
         const userId = ensureObjectId(creationResult.insertedId);
@@ -44,14 +48,14 @@ export class UserService {
         if (!user) throw new NotFoundError(
             `Newly created user not found`, 
             { createdUserId: userId, location: 'userService.createNewUser' },
-            ErrorCode.NO_USER_WITH_ID
+            ErrorCode.USER_NOT_FOUND
         );
 
         const verificationSetAndSent = await this.emailVerificationService.setAndSendVerificationCode(email, displayName, user._id );
         if (!verificationSetAndSent.success) throw new ServerError(
             `Verificatin Code not set or sent`, 
             { location: 'userService.createNewUser' },
-            ErrorCode.OPERATION_FAILED
+            ErrorCode.EMAIL_OPERATION_FAILED
         );
 
         return user;
@@ -62,7 +66,7 @@ export class UserService {
         if(!userResponse) throw new NotFoundError(
             `User Not Found relogin`, 
             { userId: _id, location: 'userService.getUserData' },
-            ErrorCode.NO_USER_WITH_ID
+            ErrorCode.USER_NOT_FOUND
         );
         return userResponse as UserDocument;
     }
@@ -72,15 +76,20 @@ export class UserService {
         if (!hasUser) throw new NotFoundError(
             `User Not Found, relogin`, 
             { _id, location: 'userService.setUserVerified' },
-            ErrorCode.NO_USER_WITH_ID
+            ErrorCode.USER_NOT_FOUND
         );
         const updatedData = { verified: true, updatedAt: new Date() } as Partial<User>;
         zodValidationWrapper(UpdateByIdSchema, updatedData, 'userService.setUserVerified');
         const updateResult = await this.userRepository.updateById(_id, { $set: updatedData});
         if(!updateResult?.acknowledged || updateResult?.modifiedCount === 0) throw new ServerError(
             'update not successful', 
-            { _id, updatedData, location: 'userService.setUserVerified' },
-            ErrorCode.MONGODB_RESOURCE_UPDATE_FAILED
+            { 
+                _id, 
+                updatedData, 
+                location: 'userService.setUserVerified',
+                details: 'User.verified update failed'
+            },
+            ErrorCode.UPDATE_RESOURCE_FAILED
         );
         return {success: (updateResult.modifiedCount > 0)};
     }
@@ -113,8 +122,13 @@ export class UserService {
 
         if(!user) throw new ServerError(
             'Update User Failed', 
-            { userId, dataToAdd, location: 'userService.updateUserRecipes' },
-            ErrorCode.MONGODB_RESOURCE_UPDATE_FAILED
+            { 
+                userId, 
+                dataToAdd, 
+                location: 'userService.updateUserRecipes',
+                details: 'Update user.recipes failed'
+            },
+            ErrorCode.UPDATE_RESOURCE_FAILED
         );
 
         return user;

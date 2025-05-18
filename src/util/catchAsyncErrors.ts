@@ -20,7 +20,7 @@ export const catchAsyncError = (fn: Function) => {
                         location: 'catchAsyncError', 
                         originalError: error,
                     }, 
-                    ErrorCode.ZOD_VALIDATION_ERR
+                    ErrorCode.ZOD_VALIDATION_FAILED
                 );
 
                 return next(validationError);
@@ -32,7 +32,7 @@ export const catchAsyncError = (fn: Function) => {
                     newError = new ServerError(
                         'Database req malformed or missing values', 
                         { location: 'catchAsyncError', originalError: error },
-                        ErrorCode.MONGODB_CALL_FAILED,
+                        ErrorCode.REQUEST_MALFORMED,
                     );
                 } else {
                     newError = new ServerError(
@@ -56,7 +56,7 @@ export const catchAsyncError = (fn: Function) => {
             next(new UnknownError(
                 `non-error based rejection: ${String(error)}`,
                 { location: 'catchAsyncError', originalError: { error } },
-                ErrorCode.UNHANDLED_NON_ERROR_REJECTION
+                ErrorCode.UNHANDLED_REJECTION
             ));
         });
         

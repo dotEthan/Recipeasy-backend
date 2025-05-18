@@ -63,16 +63,22 @@ const sessionSecret = process.env.SESSION_SECRET;
 if (!sessionSecret) {
   throw new ServerError(
     'FATAL: SESSION_SECRET missing in environment variables',
-    { location: 'app.ts' },
-    ErrorCode.UNSET_ENV_VARIABLE
+    { 
+      location: 'app.ts',
+      details: 'SESSION_SECRET missing'
+    },
+    ErrorCode.ENV_VAR_MISSING
   );
 }
 const MongoDbUri = process.env.MONGODB_URI;
 if (!MongoDbUri) {
   throw new ServerError(
     'FATAL: MONGODB_URI missing in environment variables',
-    { location: 'app.ts' },
-    ErrorCode.UNSET_ENV_VARIABLE
+    { 
+      location: 'app.ts',
+      details: 'MONGODB_URI Missing'
+    },
+    ErrorCode.ENV_VAR_MISSING
   );
 }
 
