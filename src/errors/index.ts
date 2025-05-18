@@ -125,3 +125,14 @@ export class UnknownError extends AppError {
     super(message, context, 500, errorCode, isOperational);
   }
 }
+
+export class RateLimitError extends AppError {
+  constructor(
+    message: string = "Too many requests",
+    context: ErrorContext = {},
+    errorCode: ErrorCode = ErrorCode.RATE_LIMITED,
+    isOperational: boolean = true
+  ) {
+    super(message, context, 429, errorCode, isOperational);
+  }
+}

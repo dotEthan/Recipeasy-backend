@@ -102,7 +102,7 @@ export class UserRepository extends BaseRepository<UserDocument> implements IUse
     };
     
     // No Dupes
-    async updateAlterationsOnUserRecipes(_id: ObjectId, recipeId: ObjectId, alterations: Partial<Recipe>): Promise<UpdateResult | null> {
+    async updateAlterationsOnUserRecipes(_id: ObjectId, recipeId: ObjectId, alterations: Partial<Recipe>): Promise<UpdateResult> {
         zodValidationWrapper(IsObjectIdSchema, { _id }, 'userRepository.updateAlterationsOnUserRecipes');
         zodValidationWrapper(IsObjectIdSchema, { _id: recipeId }, 'userRepository.updateAlterationsOnUserRecipes');
         return await this.updateOne({

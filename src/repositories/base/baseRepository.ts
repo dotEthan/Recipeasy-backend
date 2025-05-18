@@ -37,7 +37,7 @@ export abstract class BaseRepository<T extends Document> implements IBaseReposit
             this._collection = db.collection<T>(this.collectionName);
         }
         if (!this._collection) {
-            const dbError = new ServerError('MongDB Collection not found', { location: 'baseRepository.get.collection'}, ErrorCode.MONGODB_COLLECTION_NOT_FOUND, false);
+            const dbError = new ServerError('MongDB Collection not found', { location: 'baseRepository.get.collection'}, ErrorCode.COLLECTION_NOT_FOUND, false);
             throw dbError;
         }
         return this._collection;

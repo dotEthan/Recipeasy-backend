@@ -16,7 +16,6 @@ import {
     BadRequestError, 
     ConflictError, 
     ForbiddenError, 
-    LogOnlyError, 
     NotFoundError, 
     ServerError, 
     UnauthorizedError 
@@ -55,7 +54,7 @@ export class PasswordService {
         if (!userId) throw new NotFoundError(
             `User Not Found with email: ${email}, relogin`, 
             { location: 'passwordService.startPasswordResetFlow', email },
-            ErrorCode.NO_USER_WITH_EMAIL
+            ErrorCode.USER_NOT_FOUND
         );
 
         const userToken = {
@@ -67,8 +66,11 @@ export class PasswordService {
 
         if (!secret) throw new ServerError(
             'startPasswordResetFlow: Env PASSWORD_RESET_SECRET not set',
-            { location: 'passwordService.startPasswordResetFlow' },
-            ErrorCode.UNSET_ENV_VARIABLE
+            { 
+                location: 'passwordService.startPasswordResetFlow',
+                details: 'PASSWORD_RESET_SECRET missing'
+            },
+            ErrorCode.ENV_VAR_MISSING
         );
         const expiresIn = '1h';
 
@@ -88,12 +90,15 @@ export class PasswordService {
         if (updateUserRes?.matchedCount === 0) throw new NotFoundError(
             'startPasswordResetFlow: User to update not found',
             { location: 'passwordService.startPasswordResetFlow' },
-            ErrorCode.RESOURCE_TO_UPDATE_NOT_FOUND
+            ErrorCode.RESOURCE_NOT_FOUND
         );
         if (updateUserRes?.modifiedCount === 0) throw new ServerError(
             'startPasswordResetFlow: User update failed',
-            { location: 'passwordService.startPasswordResetFlow' },
-            ErrorCode.MONGODB_RESOURCE_UPDATE_FAILED
+            { 
+                location: 'passwordService.startPasswordResetFlow',
+                details: 'Updating passwordResetData'
+             },
+            ErrorCode.UPDATE_USER_FAILED
         );
         
         const emailSent = emailSentInfo.rejected.length === 0 ? true : false;
@@ -112,9 +117,12 @@ export class PasswordService {
     public async validatePasswordToken(token: string, type: string): Promise<StandardResponse> {
         const secret = process.env.PASSWORD_RESET_SECRET;
         if (!secret) throw new ServerError(
-            'validatePasswordToken - Env JWT_SECRET_PROD/DEV not set',
-            { location: 'passwordService.validatePasswordToken' },
-            ErrorCode.UNSET_ENV_VARIABLE
+            'validatePasswordToken - Env PASSWORD_RESET_SECRET not set',
+            { 
+                location: 'passwordService.validatePasswordToken',
+                details: 'PASSWORD_RESET_SECRET missing'
+             },
+            ErrorCode.ENV_VAR_MISSING
         );
 
         const decoded = jwt.verify(token, secret) as JwtPayload;
@@ -122,17 +130,21 @@ export class PasswordService {
             throw new BadRequestError(
                 'validatePasswordToken - Invalid token type',
                 { location: 'passwordService.validatePasswordToken' },
-                ErrorCode.VALIDATION_TOKEN_TYPE_INVALID
+                ErrorCode.VALIDATION_TOKEN_MALFORMED
             );
+            // TODO recreate and resend
         }
 
         const userId = decoded.userId;
         
-        if (!userId) throw new UnauthorizedError(
+        if (!userId) {
+            throw new UnauthorizedError(
             'validatePasswordToken - Token UserId not found',
             { location: 'passwordService.validatePasswordToken' },
-            ErrorCode.VALIDATION_TOKEN_USERID_INVALID
-        );
+            ErrorCode.VALIDATION_TOKEN_MALFORMED
+            );
+            // TODO recreate and resend
+        }
         return {success: true, data: userId};
     }
 
@@ -157,29 +169,42 @@ export class PasswordService {
         if(!user) throw new NotFoundError(
             'passwordResetFinalStep - No user found validating password token',
             { location: 'passwordService.passwordResetFinalStep', id: userId},
-            ErrorCode.NO_USER_WITH_ID
+            ErrorCode.USER_NOT_FOUND
         );
         
         const updatePasswordRes = await this.updateUserPassword(newPassword, user);
         if (updatePasswordRes?.matchedCount === 0) throw new NotFoundError(
             'Update User Password: User not found',
             { location: 'passwordService.passwordResetFinalStep', user },
-            ErrorCode.NO_USER_FOUND
+            ErrorCode.USER_NOT_FOUND
         );
         if (updatePasswordRes?.modifiedCount === 0) throw new ServerError(
             'passwordResetFinalStep - Updating User password failed',
-            { location: 'passwordService.passwordResetFinalStep', user },
-            ErrorCode.MONGODB_RESOURCE_UPDATE_FAILED
+            { 
+                location: 'passwordService.passwordResetFinalStep', 
+                user,
+                details: "updating user password"
+             },
+            ErrorCode.UPDATE_USER_FAILED
         );
         
         const deleteResponse = await this.deleteUserPwResetData(user);
 
-        if(deleteResponse?.matchedCount === 0 || deleteResponse?.modifiedCount === 0) {
+        if (deleteResponse?.matchedCount === 0) {
+            throw new NotFoundError(
+                'User password reset data not not found, relogin?',
+                { location: 'passwordService.passwordResetFinalStep' },
+                ErrorCode.RESOURCE_NOT_FOUND
+            );
+        } 
+        
+        if (deleteResponse?.modifiedCount === 0) {
             throw new ConflictError(
                 'User password reset data not deleted, retry?',
                 { location: 'passwordService.passwordResetFinalStep' },
-                ErrorCode.UPDATE_RESOURCE_FAILED
+                ErrorCode.PWRESETDATA_DELETE_FAILED
             );
+            // TODO check still exists, and pwResetData still there, if so, retry, if not, user relogin
         }
         return { success: true };
     }
@@ -201,17 +226,20 @@ export class PasswordService {
         if (!userResponse) throw new NotFoundError(
             `checkIfPwResetInProgress - User with email: ${userEmail} not found`,
             { location: 'passwordService.checkIfPwResetInProgress', email: userEmail },
-            ErrorCode.NO_USER_WITH_EMAIL
+            ErrorCode.USER_NOT_FOUND
         );
         
         const isExpired = userResponse.passwordResetData?.expiresAt != null
         && new Date(userResponse.passwordResetData.expiresAt) < new Date();        
         if (isExpired) {
             const deletionResponse = await this.deleteUserPwResetData(userResponse);
-            if (deletionResponse?.modifiedCount === 0) throw new LogOnlyError(
+            if (deletionResponse?.modifiedCount === 0) throw new ServerError(
                 'Users password reset data not deleted',
-                { location: 'passwordService.checkIfPwResetInProgress' },
-                ErrorCode.NON_REQUIRED_DELETE_FAILED
+                { 
+                    location: 'passwordService.checkIfPwResetInProgress',
+                    details: 'Users passwordResetData delete failed'
+                },
+                ErrorCode.UPDATE_RESOURCE_FAILED
             )
 
         }
@@ -266,14 +294,15 @@ export class PasswordService {
             throw new NotFoundError(
                 'updateUserPassword - Document Not Found',
                 { location: 'passwordService.updateUserPassword' },
-                ErrorCode.RESOURCE_TO_UPDATE_NOT_FOUND
+                ErrorCode.RESOURCE_NOT_FOUND
             );
         } else if (updateResponse && updateResponse.modifiedCount === 0) {
             throw new ConflictError(
                 'updateUserPassword - Document Not Modified',
                 { location: 'passwordService.updateUserPassword' },
-                ErrorCode.UPDATE_RESOURCE_FAILED
+                ErrorCode.PASSWORD_CHANGE_FAILED
             );
+            // TODO 
         }
         return updateResponse;
     }
@@ -304,7 +333,7 @@ export class PasswordService {
         if (!findUserResponse) throw new NotFoundError(
             'User not found',
             { location: 'passwordService.cachePreviousPassword', userId },
-            ErrorCode.RESOURCE_TO_UPDATE_NOT_FOUND
+            ErrorCode.RESOURCE_NOT_FOUND
         );
 
         const previousPwArray = findUserResponse.previousPasswords || [];
@@ -332,8 +361,12 @@ export class PasswordService {
         const updateResult = await this.userRepository.updateCachedPasswords(findUserResponse._id, updatedPwArray)
         if (updateResult.modifiedCount === 0) throw new ServerError(
             'Failed to update password history',
-            { location: 'passwordService.cachePreviousPassword', updatedPwArray},
-            ErrorCode.MONGODB_RESOURCE_UPDATE_FAILED
+            { 
+                location: 'passwordService.cachePreviousPassword', 
+                updatedPwArray,
+                details: 'Update Users Previous Password Array failed'
+            },
+            ErrorCode.UPDATE_USER_FAILED
         );
     }
 }

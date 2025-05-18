@@ -45,8 +45,12 @@ export class RecipeService {
         const recipeSaveResponse = await this.recipesRepository.createRecipe(recipe);
         if (!recipeSaveResponse.acknowledged || !recipeSaveResponse.insertedId) throw new ServerError(
             'Create recipe failed',             
-            { recipe, recipeSaveResponse, location: 'recipeService.saveRecipe' },
-            ErrorCode.MONGODB_RESOURCE_CREATE_FAILED
+            { 
+                recipe, recipeSaveResponse, 
+                location: 'recipeService.saveRecipe',
+                details: 'Recipe create failed'
+            },
+            ErrorCode.CREATE_RESOURCE_FAILED
         )
         
         const savedRecipe = await this.recipesRepository.findById(recipeSaveResponse.insertedId);
@@ -57,7 +61,7 @@ export class RecipeService {
                 insertedId: recipeSaveResponse.insertedId, 
                 location: 'recipeService.saveRecipe' 
             },
-            ErrorCode.MONGODB_RESOURCE_FINDBYID_FAILED
+            ErrorCode.FIND_RESOURCE_FAILED
         );
 
         const userUpdateRes = await this.userRepository.addToUsersRecipesArray(userId,  { id: ensureObjectId(recipeSaveResponse.insertedId) });
@@ -127,7 +131,7 @@ export class RecipeService {
         if (!originalRecipe) throw new ServerError(
             'updateRecipe- Cannot find original recipe', 
             { originalRecipe, recipeId },
-            ErrorCode.MONGODB_RESOURCE_FINDBYID_FAILED
+            ErrorCode.FIND_RESOURCE_FAILED
         );
 
         let recipeResponse: RecipeDocument;
@@ -137,31 +141,34 @@ export class RecipeService {
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
             const {_id, ...recipeNoId} = recipe;
             const recipeSaveResponse = await this.recipesRepository.updateRecipe({ _id: recipeId }, recipeNoId);
-            if (recipeSaveResponse === null) throw new ServerError(
-                'Updating recipe failed: recipe does not exist', 
-                { recipeId, recipe},
-                ErrorCode.MONGODB_RESOURCE_UPDATE_FAILED
-            );
+            if (recipeSaveResponse === null) {
+                throw new NotFoundError(
+                    'Updating recipe failed: recipe does not exist', 
+                    { recipeId, recipe},
+                    ErrorCode.RESOURCE_NOT_FOUND
+                );
+            }
             recipeResponse = recipeSaveResponse;
         } else {
             const alterations = this.findRecipeAlterations(originalRecipe, recipe);
             zodValidationWrapper(PartialRecipeSchema, alterations, 'recipeService.updateRecipe');
             const updateResponse = await this.userRepository.updateAlterationsOnUserRecipes(ensureObjectId(userId), recipeId, alterations);
             console.log('updateResponse:', updateResponse)
-            if (updateResponse == null) throw new ServerError(
-                'updateRecipe - Updating User.recipes.alterations failed', 
-                { userId, recipeId, alterations },
-                ErrorCode.MONGODB_RESOURCE_UPDATE_FAILED
-            );
             if (updateResponse.matchedCount === 0 ) throw new BadRequestError(
                 'updateRecipe - No user matched userId', 
                 { userId },
-                ErrorCode.NO_USER_WITH_ID
+                ErrorCode.USER_NOT_FOUND
             );
             if (updateResponse.modifiedCount === 0) throw new ServerError(
                 'updateRecipe - Did not update alterations object', 
-                { userId, recipeId, alterations },
-                ErrorCode.MONGODB_RESOURCE_UPDATE_FAILED
+                { 
+                    userId, 
+                    recipeId, 
+                    alterations,
+                    details: 'User alterations update failed',
+                    location: 'recipeService.updateRecipe'
+                },
+                ErrorCode.UPDATE_RESOURCE_FAILED
             );
 
             recipeResponse = mergeAlterations(originalRecipe, alterations);
@@ -228,7 +235,7 @@ export class RecipeService {
         if (!thisRecipe) throw new NotFoundError(
             'Deletion Failed: Recipe Not Found',
             { location: "recipeService.deleteRecipe" },
-            ErrorCode.RESOURCE_TO_DELETE_NOT_FOUND
+            ErrorCode.RESOURCE_NOT_FOUND
         );
         const recipesOwnersId = ensureObjectId(thisRecipe.userId);
         
@@ -249,8 +256,12 @@ export class RecipeService {
         )
             throw new ServerError(
                 'Deletion Failed: Recipe deletion failed', 
-                { recipeId, location: 'recipeService.deleteRecipe',  },
-                ErrorCode.MONGODB_RESOURCE_UPDATE_FAILED
+                { 
+                    recipeId, 
+                    location: 'recipeService.deleteRecipe',  
+                    details: 'Recipe Deletion Failed'
+                },
+                ErrorCode.DELETE_RESOURCE_FAILED
             );
 
         const usersRecipesId = { id: recipeId };
@@ -259,9 +270,13 @@ export class RecipeService {
         if (
             !updateUserResponse.acknowledged || 
             updateUserResponse.modifiedCount === 0) throw new ServerError(
-                'Deletion Failed: Updating User Recipe array failed', 
-                { userId, location: 'recipeService.deleteRecipe',  },
-                ErrorCode.MONGODB_RESOURCE_UPDATE_FAILED
+                'Update Failed: Updating User Recipe array failed', 
+                { 
+                    userId, 
+                    location: 'recipeService.deleteRecipe',
+                    details: 'User recipe array update failed'
+                },
+                ErrorCode.REQUEST_MALFORMED
             );
 
         return {success: true}

@@ -24,7 +24,7 @@ export class UserController {
     //     if (!userId) throw new BadRequestError(
     //         'UserId missing from request', 
     //         { location: 'usersController.getUsersData', reqParams: req.params}, 
-    //         ErrorCode.RESOURCE_ID_PARAM_MISSING
+    //         ErrorCode.ID_PARAM_MISSING
     //     );
 
     //     const freshUser = await this.userService.getUserData(ensureObjectId(userId));
@@ -61,7 +61,7 @@ export class UserController {
         if(!currentUserId) throw new BadRequestError(
             'User Id Param not valid', 
             { currentUserId, location: 'usersController.updateUserRecipes' }, 
-            ErrorCode.RESOURCE_ID_PARAM_MISSING
+            ErrorCode.ID_PARAM_MISSING
         );
 
         const toBeAddedRecipeId = ensureObjectId(req.body.recipeId);

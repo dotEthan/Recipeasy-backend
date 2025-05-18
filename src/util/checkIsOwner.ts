@@ -13,7 +13,7 @@ export function assertUserOwnership(
           targetUserId,
           location: 'checkIsOwner.asserUserOwnership'
         },
-        ErrorCode.RESOURCE_NOT_USER_OWNED
+        ErrorCode.RESOURCE_NOT_OWNED
       );
     }
   }

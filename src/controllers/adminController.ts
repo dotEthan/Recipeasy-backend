@@ -39,7 +39,13 @@ export class AdminController {
         if (!headerToken) throw new UnauthorizedError('Token missing from header, relogin', { location: 'adminController.refreshAccessToken' }, ErrorCode.TOKEN_MISSING);
         
         const refreshSecret = process.env.JWT_REFRESH_SECRET;
-        if (!refreshSecret) throw new ServerError('Missing JWT_SECRET in Env', { location: 'createToken.ts' }, ErrorCode.UNSET_ENV_VARIABLE);
+        if (!refreshSecret) throw new ServerError(
+            'Missing JWT_SECRET in Env', 
+            { 
+                location: 'createToken.ts',
+                details: 'JWT_SECRET missing'
+            }, 
+            ErrorCode.ENV_VAR_MISSING);
 
         const decodedToken = jwt.verify(headerToken, refreshSecret) as DecodedRefreshToken;
         if (!decodedToken) throw new UnauthorizedError('Decoded token malformed, relogin', { location: 'adminController.refreshAccessToken' }, ErrorCode.TOKEN_MALFORMED);
@@ -75,8 +81,12 @@ export class AdminController {
         const email: string = req.body.email;
         if (!email) throw new BadRequestError(
             'resetPasswordRequest - email missing from req.body', 
-            { body: req.body },
-            ErrorCode.MISSING_REQUIRED_BODY_DATA
+            { 
+                body: req.body,
+                location: 'adminController.resetPasswordRequest',
+                details: 'user email missing'
+            },
+            ErrorCode.REQ_BODY_DATA_MISSING
         );
         const passwordReset = await this.passwordService.startPasswordResetFlow(email);
 
@@ -95,8 +105,12 @@ export class AdminController {
         const token = req.body.code;
         if (!token) throw new BadRequestError(
             'resetPasswordRequest - code missing from req.body', 
-            { body: req.body, location: "adminController.validatePasswordToken" },
-            ErrorCode.MISSING_REQUIRED_BODY_DATA
+            { 
+                body: req.body, 
+                location: "adminController.validatePasswordToken",
+                details: 'Code missing'
+            },
+            ErrorCode.REQ_BODY_DATA_MISSING
         );
         const response = await this.passwordService.validatePasswordToken(token, TokenTypes.PASSWORD_RESET);
 
@@ -116,8 +130,12 @@ export class AdminController {
         const { code: token, password } = req.body;
         if (!token || !password) throw new BadRequestError(
             'resetPasswordRequest - code or password missing from req.body', 
-            { body: req.body, location: "adminController.finishPasswordResetRequest" },
-            ErrorCode.MISSING_REQUIRED_BODY_DATA
+            { 
+                body: req.body, 
+                location: "adminController.finishPasswordResetRequest",
+                details: 'Code or Password missing'
+            },
+            ErrorCode.REQ_BODY_DATA_MISSING
         );
         const success = await this.passwordService.passwordResetFinalStep(token, password);
 
@@ -140,13 +158,21 @@ export class AdminController {
         const userEmail = req.body.userEmail;
         if (!userEmail) throw new BadRequestError(
             'User email missing, relogin',
-            { location: 'adminController.verifyCode'},
-            ErrorCode.MISSING_REQUIRED_BODY_DATA
+            { 
+                location: 'adminController.verifyCode',
+                details: 'User email missing'
+            },
+            ErrorCode.REQ_BODY_DATA_MISSING
         );
         if (!code) throw new BadRequestError(
             'Code not present', 
-            { code, userEmail,  location: 'adminController.verifyCode' },
-            ErrorCode.MISSING_REQUIRED_BODY_DATA
+            { 
+                code, 
+                userEmail,  
+                location: 'adminController.verifyCode',
+                details: 'Code Not Present'
+            },
+            ErrorCode.REQ_BODY_DATA_MISSING
         )
 
         const { isVerified, userId } = await this.emailVerificationService.checkVerificationCode(userEmail, code);

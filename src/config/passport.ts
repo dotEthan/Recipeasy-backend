@@ -5,7 +5,8 @@ import bcrypt from 'bcryptjs';
 
 import { VerifiedUserOrErrorFunc } from '../types/passport';
 import { UserRepository } from '../repositories/user/userRepository';
-import { ServerError, UnauthorizedError } from '../errors';
+import { ServerError } from '../errors';
+import { ErrorCode } from '../types/enums';
 
 /**
  * Initializes Passport for authentication, working with express-sessions
@@ -36,22 +37,16 @@ export async function initialize(passport: PassportStatic) {
                 return done(null, false, { message: 'Password incorrect'});
             };
         } catch(error: unknown) {
-            if (error instanceof UnauthorizedError || error instanceof ServerError) {
-                return done(error);
-            } else if (error instanceof Error) {
-                return done(
-                    new ServerError('Passport failed to create session',
-                        { 
-                            location:'authController.authenticateUser', 
-                            originalError: {
-                                name: error.name, 
-                                message: error.message, 
-                                stack: error.stack
-                            } 
-                        },
-                    )
-                );
-            };
+            return done(
+                new ServerError(
+                    'Passport failed to log User in',
+                    { 
+                        location:'authController.authenticateUser', 
+                        originalError: error
+                    },
+                    ErrorCode.PASSPORT_FAILED
+                )
+            );
         }
     };
 

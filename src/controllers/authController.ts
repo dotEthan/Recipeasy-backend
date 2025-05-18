@@ -44,7 +44,7 @@ export class AuthController {
         if (!displayName || !email || !password) throw new BadRequestError(
             'register - req.body missing required data', 
             { body: req.body },
-            ErrorCode.RESOURCE_ID_PARAM_MISSING
+            ErrorCode.ID_PARAM_MISSING
         )
 
         const registeredUser = await this.authService.registerNewUser(displayName, email.toLowerCase(), password);
@@ -67,8 +67,11 @@ export class AuthController {
         const { email, password } = req.body;
         if (!email || ! password) throw new BadRequestError(
             'register - req.body missing required data', 
-            { body: req.body },
-            ErrorCode.MISSING_REQUIRED_BODY_DATA
+            { 
+                body: req.body,
+                details: 'Email or password missing'
+            },
+            ErrorCode.REQ_BODY_DATA_MISSING
         );
 
         await this.passwordService.checkIfPwResetInProgress(email);
@@ -116,7 +119,13 @@ export class AuthController {
         if (!refreshToken) throw new UnauthorizedError('Token missing from header, relogin', { location: 'adminController.refreshAccessToken' }, ErrorCode.TOKEN_MISSING);
         
         const refreshSecret = process.env.JWT_REFRESH_SECRET;
-        if (!refreshSecret) throw new ServerError('Missing JWT_SECRET in Env', { location: 'createToken.ts' }, ErrorCode.UNSET_ENV_VARIABLE);
+        if (!refreshSecret) throw new ServerError(
+            'Missing JWT_SECRET in Env', 
+            { 
+                location: 'createToken.ts',
+                details: 'JWT_SECRET missing'
+            }, 
+            ErrorCode.ENV_VAR_MISSING);
 
         const decodedToken = jwt.verify(refreshToken, refreshSecret) as DecodedRefreshToken;
         console.log('token: ', decodedToken);

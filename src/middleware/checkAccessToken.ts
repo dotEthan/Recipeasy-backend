@@ -11,10 +11,16 @@ export const checkAccessToken = async (req: Request, _res: Response, next: NextF
     try {
         const authHeader = req.headers.authorization;
         const accessToken = authHeader?.split(' ')[1];
-        if (!accessToken) throw new UnauthorizedError('Access token missing in header, relogin', { location: 'checkAccesstoken middleware' }, ErrorCode.HEADER_TOKEN_MISSING)
+        if (!accessToken) throw new UnauthorizedError('Access token missing in header, relogin', { location: 'checkAccesstoken middleware' }, ErrorCode.AUTHORIZATION_HEADER_MISSING)
 
         const accessSecret = process.env.JWT_ACCESS_SECRET;
-        if (!accessSecret) throw new ServerError('Missing JWT_SECRET in Env', { location: 'createToken.ts' }, ErrorCode.UNSET_ENV_VARIABLE);
+        if (!accessSecret) throw new ServerError(
+            'Missing JWT_SECRET in Env', 
+            { 
+                location: 'createToken.ts',
+                details: 'JWT_SECRET missing'
+            },
+            ErrorCode.ENV_VAR_MISSING);
 
         let decoded: AccessToken;
         try {

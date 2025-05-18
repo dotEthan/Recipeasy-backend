@@ -24,14 +24,18 @@ export class RecipeController {
     const recipe = req.body.recipe;
     const userId = req.user?._id
     if(!userId) throw new UnauthorizedError(
-      'No user Logged in, please log in and try again', 
+      'Request User _id not found, relogin', 
       { reqUser: req.user, location: 'recipesController.saveNewRecipe' },
       ErrorCode.REQ_USER_MISSING
     );
     if(!recipe) throw new BadRequestError(
       'Recipe data not found', 
-      { recipe, location: 'recipesController.saveNewRecipe' },
-      ErrorCode.MISSING_REQUIRED_BODY_DATA
+      { 
+        recipe, 
+        location: 'recipesController.saveNewRecipe',
+        details: 'New recipe data not found'
+      },
+      ErrorCode.REQ_BODY_DATA_MISSING
     );
     
     const response = await this.recipeService.saveNewRecipe(recipe, userId);
@@ -49,7 +53,7 @@ export class RecipeController {
     if (response === null) throw new NotFoundError(
       'No public recipes found ', 
       { response, location: 'recipesController.getPublicRecipes' }, 
-      ErrorCode.NO_PUBLIC_RECIPES_FOUND
+      ErrorCode.PUBLIC_RECIPES_MISSING
     );
 
     zodValidationWrapper(z.array(FeRecipeSchema), response.data, 'recipesController.getPublicRecipes');
@@ -62,7 +66,7 @@ export class RecipeController {
     if (!recipeId || recipeId !== recipe._id.toString())  throw new BadRequestError(
       'URL Recipe Id does not match Recipe Object ID', 
       { recipeId, recipe, location: 'recipesController.updateRecipe' }, 
-      ErrorCode.PARAM_ID_NOT_EQUAL_TO_RESOURCE_ID);
+      ErrorCode.ID_PARAM_MISMATCH);
 
     if (!req.user?._id)  throw new UnauthorizedError(
       'request userId not found, relogin', 
@@ -83,7 +87,7 @@ export class RecipeController {
     if (!recipeId) throw new BadRequestError(
       'Recipe id to delete not provided: relogin', 
       { recipeId, location: 'recipesController.deleteRecipe' }, 
-      ErrorCode.RESOURCE_ID_PARAM_MISSING
+      ErrorCode.ID_PARAM_MISSING
     );
     if (!userId) throw new UnauthorizedError(
       'User Not Found: relogin', 
@@ -101,7 +105,7 @@ export class RecipeController {
       throw new BadRequestError(
         "No file uploaded",
         { location: 'recipesController.uploadRecipeImage' },
-        ErrorCode.MISSING_REQ_FILE
+        ErrorCode.FILE_MISSING
       );
     }
     const options = {
@@ -125,7 +129,7 @@ export class RecipeController {
     if (!uploadResult.secure_url) throw new ServerError(
       'Image upload URL missing, try again?', 
       { uploadResult, location: 'recipesController.uploadRecipeImage' }, 
-      ErrorCode.EXPECTED_DATA_MISSING
+      ErrorCode.RESPONSE_DATA_MISSING
     );
 
     res.status(201).json({success: true, url: uploadResult.secure_url});
@@ -137,7 +141,7 @@ export class RecipeController {
     if (!imagePublicId) throw new BadRequestError(
       'imagePublicId malformed', 
       { publicId, location: 'recipesController.deleteRecipeImage' },
-      ErrorCode.RESOURCE_ID_PARAM_MISSING
+      ErrorCode.ID_PARAM_MISSING
     );
     await cloudinary.uploader.destroy(imagePublicId);
 
