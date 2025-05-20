@@ -37,7 +37,7 @@ export class RecipesRepository extends BaseRepository<RecipeDocument> implements
         zodValidationWrapper(IsObjectIdSchema, { _id }, 'recipeRepository.findById');
         return await this.findOne(
             {_id} as Partial<Recipe>,
-            { createdAt: 0, internalData: 0 }
+            { createdAt: 0, internalState: 0 }
         );
     };
 }

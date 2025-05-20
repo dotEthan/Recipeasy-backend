@@ -47,7 +47,7 @@ Backend Functionality has now surpassed Front-end, and contains full login, verf
     - Sanitize Middleware
     - run OWASP ZAP (or other security scanner)
     - Backups
-    
+   
 
 ### To Come:
 
