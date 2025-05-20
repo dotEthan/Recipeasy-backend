@@ -54,8 +54,8 @@ export class UserRepository extends BaseRepository<UserDocument> implements IUse
         );
     };
 
-    async findByEmailWithInternalData(email: string): Promise<UserDocument | null> {
-        zodValidationWrapper(IsEmailSchema, { email }, 'userRepository.findByEmailWithInternalData');
+    async findByEmailWithInternalState(email: string): Promise<UserDocument | null> {
+        zodValidationWrapper(IsEmailSchema, { email }, 'userRepository.findByEmailWithInternalState');
         return await this.findOne(
             {email} as Partial<UserDocument>
         );
@@ -92,6 +92,7 @@ export class UserRepository extends BaseRepository<UserDocument> implements IUse
     // TODO - post - combine these three? updateUserObject
     async addToUsersRecipesArray(_id: ObjectId, usersRecipesObject: UsersRecipeData): Promise<UpdateResult | null> {
         zodValidationWrapper(IsObjectIdSchema, { _id }, 'userRepository.addToUsersRecipesArray');
+        console.log('updating array: ', _id)
         return await this.updateByMergeOneNoDupe(
             {_id}, 
             {

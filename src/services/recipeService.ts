@@ -33,13 +33,12 @@ export class RecipeService {
      * @param {Recipe} recipe - Recipe to be saved
      * @param {ObjectId} userId - userId
      * @return {StandardRecipeResponse} - succes, message, recipe, error
-     * @throws {ServerError} 500 - if the create recipe fails
+     * @throws {ServerError} 500 - if the create recipe fails or user not found/updated
      * @example
      * const recipeService = useRecipeService();
      * await recipeService.saveRecipe(req, false, errorMessage);
      */  
     public async saveNewRecipe(recipe: Recipe, userId: ObjectId): Promise<StandardRecipeResponse> {
-        let success = false;
 
         zodValidationWrapper(NewRecipeSchema, { recipe }, 'recipeService.saveNewRecipe');
         const recipeSaveResponse = await this.recipesRepository.createRecipe(recipe);
@@ -64,10 +63,28 @@ export class RecipeService {
             ErrorCode.FIND_RESOURCE_FAILED
         );
 
-        const userUpdateRes = await this.userRepository.addToUsersRecipesArray(userId,  { id: ensureObjectId(recipeSaveResponse.insertedId) });
-        if (userUpdateRes?.modifiedCount && userUpdateRes?.modifiedCount > 0) success = true;
+        const userUpdateRes = await this.userRepository.addToUsersRecipesArray(ensureObjectId(userId),  { id: ensureObjectId(recipeSaveResponse.insertedId) });
 
-        return {success, recipe: savedRecipe}
+        if (userUpdateRes?.matchedCount === 0) throw new ServerError(
+            'User to update not found',
+            { 
+                location: 'recipeService.saveNewRecipe', 
+                userId,
+                details: "updating user recipes array"
+             },
+            ErrorCode.UPDATE_USER_FAILED
+        );
+        if (userUpdateRes?.modifiedCount === 0) throw new ServerError(
+            'User found but array not updated',
+            { 
+                location: 'recipeService.saveNewRecipe',  
+                userId,
+                details: "updating user recipes array"
+             },
+            ErrorCode.UPDATE_USER_FAILED
+        );
+        
+        return {success: true, recipe: savedRecipe}
     }
 
     /**   
@@ -87,7 +104,7 @@ export class RecipeService {
      */  
     public async getRecipes(visibility: Visibility | undefined, limit: number, skip: number): Promise<PaginateResponse> {
         const query: Filter<Recipe> = {
-            "internalData.isDeleted": { $ne: true } 
+            "internalState.isDeleted": { $ne: true } 
         };
 
         if (visibility) { 
@@ -102,7 +119,7 @@ export class RecipeService {
                     limit,
                     projection: {
                         createdAt: 0,
-                        internalData: 0
+                        internalState: 0
                     }
                 }
             ),
@@ -200,7 +217,7 @@ export class RecipeService {
                     limit: 50,
                     projection: {
                         createdAt: 0,
-                        internalData: 0
+                        internalState: 0
                     }
                 }
             ),
@@ -266,7 +283,7 @@ export class RecipeService {
 
         const usersRecipesId = { id: recipeId };
         zodValidationWrapper(UserRecipesIdSchema, usersRecipesId, 'recipeService.deleteRecipe');
-        const updateUserResponse = await this.userRepository.removeFromUserRecipeArray(userId, usersRecipesId);
+        const updateUserResponse = await this.userRepository.removeFromUserRecipeArray(ensureObjectId(userId), usersRecipesId);
         if (
             !updateUserResponse.acknowledged || 
             updateUserResponse.modifiedCount === 0) throw new ServerError(

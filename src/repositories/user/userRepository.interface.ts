@@ -12,7 +12,7 @@ export interface IUserRepository<T> {
     findById(_id: ObjectId, addedProjection?: MongoDbUserProjection): Promise<T | null>;
     findPartialById(_id: ObjectId, addedProjection?: MongoDbUserProjection): Promise<Partial<UserDocument> | null>;
     findByEmail(email: string, addedProjection?: MongoDbUserProjection): Promise<UserDocument | null>;
-    findByEmailWithInternalData(email: string): Promise<UserDocument | null>;
+    findByEmailWithInternalState(email: string): Promise<UserDocument | null>;
     findIdByEmail(email: string, addedProjection?: MongoDbUserProjection): Promise<ObjectId | undefined>;
     updateById(_id: ObjectId, update: Partial<UserDocument>): Promise<UpdateResult | null>;
     addToUsersRecipesArray(_id: ObjectId, usersRecipesObject: UsersRecipeData): Promise<UpdateResult | null>;
