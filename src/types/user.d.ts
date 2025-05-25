@@ -17,7 +17,7 @@ export type User = {
   recipes?: UsersRecipeData[];
   shoppingLists?: ShoppingList[];
   preferences? : UserPreferences;
-  ratings?: UserRatings;
+  ratings?: UserRatings[];
   passwordResetData?: PasswordResetData;
   previousPasswords?: PreviousPasssword[];
   role: UserRoles;

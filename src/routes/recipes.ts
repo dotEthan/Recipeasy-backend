@@ -46,13 +46,14 @@ router.post(
 );
 
 /**
- * Get Public Recipe data
+ * Get Public Recipe data when searching/filtering
  * @todo - post - refactor to accomodate pagination 
  * @route GET /recipes/
  * @group Recipe Management - Recipe Retrieval
  * @param {Visibility} request.query.visibility - 'public'/'private'
  * @param {number} request.query.page - User's page (pagination)
  * @param {number} request.query.limit - Recipes per page
+ * @param {string} request.query.tags - tags to use to search
  * @returns {PaginateResponse} 200 - Recipe Data
  * @returns {ErrorResponse} 404 - Recipes not found
  * @returns {ErrorResponse} 401 - Queries malformed
@@ -63,6 +64,24 @@ router.post(
  * fetch('/recipes/`, { method: 'GET' });
  */
 router.get("/", catchAsyncError(recipeController.getPublicRecipes));
+
+/**
+ * Get Public Recipe data for Collections
+ * @route GET /recipes/collections
+ * @group Recipe Management - Recipe Retrieval
+ * @param {Visibility} request.query.visibility - 'public'/'private'
+ * @param {number} request.query.limit - Recipes Needed (5/6)
+ * @param {string} request.query.tags - tags to use to search
+ * @returns {RecipeDocument[]} 200 - Recipe Data
+ * @returns {ErrorResponse} 404 - Recipes not found
+ * @returns {ErrorResponse} 401 - Queries malformed
+ * @returns {ErrorResponse} 500 - Server/database issues
+ * @produces application/json
+ * @example
+ * // Client-side usage:
+ * fetch('/recipes/`, { method: 'GET' });
+ */
+router.get("/collections", catchAsyncError(recipeController.getRecipeCollections));
 
 /**
  * Update Recipe data

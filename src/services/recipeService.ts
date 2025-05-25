@@ -94,21 +94,37 @@ export class RecipeService {
      * @todo - post - remove Users own recipes? or leave as little 'Oh that's mine' moments
      * @todo - post - Generic query args?
      * @todo - post - make 'sort' options in getRecipes
-     * @param {Visibility} public Status - 'public'/'private'
+     * @param {Visibility} visibility - 'public'/'private'
      * @param {number} limit - recipes per page
      * @param {number} skip - Start new results after N recipes
+     * @param {string[]} tags - Tags for searching and filtering
+     * @param {string} tagMode - 'any/all' match all or match any
      * @return {PaginateResponse} - succes, message, recipe, error
      * @example
      * const recipeService = useRecipeService();
-     * await recipeService.getRecipes(Visibility.PUBLIC, 25, 75);
+     * await recipeService.getRecipes(Visibility.PUBLIC, 25, 75, ['healthy'], 'any');
      */  
-    public async getRecipes(visibility: Visibility | undefined, limit: number, skip: number): Promise<PaginateResponse> {
+    public async getRecipes(
+        visibility: Visibility | undefined, 
+        limit: number, 
+        skip: number, 
+        tags: string[], 
+        tagMode: string = 'all'
+    ): Promise<PaginateResponse> {
         const query: Filter<Recipe> = {
             "internalState.isDeleted": { $ne: true } 
         };
 
         if (visibility) { 
             query.visibility = visibility
+        }
+        
+        if (tags && tags.length > 0) {
+            if (tagMode === 'all') {
+                query.tags = { $all: tags };
+            } else {
+                query.tags = { $in: tags };
+            }
         }
 
         const [recipes, total] = await Promise.all([
@@ -127,6 +143,62 @@ export class RecipeService {
         ]);
 
         return {totalDocs: total, data: recipes};
+    }
+
+    
+
+    /**   
+     * Get Recipes for each collection based on tags
+     * @group Recipe Management - retrieval
+     * @param {Visibility} visibility - 'public'/'private'
+     * @param {number} limit - recipes per page
+     * @param {string[]} tags - Tags for searching and filtering
+     * @param {string} tagMode - 'any/all' match all or match any
+     * @return {} - succes, message, recipe, error
+     * @example
+     * const recipeService = useRecipeService();
+     * await recipeService.getRecipes(Visibility.PUBLIC, 25, 75);
+     */  
+    public async getCollectionRecipes(
+        visibility: Visibility | undefined,
+        limit: number,
+        tags: string[],
+        tagMode: string = 'all'
+    ): Promise<Recipe[]> {
+        const query: Filter<Recipe> = {
+            "internalState.isDeleted": { $ne: true } 
+        };
+
+        if (visibility) { 
+            query.visibility = visibility
+        }
+
+        
+        // const pipeline: Document[] = [{ $match: query }];
+
+        // if (tags.includes('popular')) {
+        //     // Popular recipes pipeline
+        //     pipeline.push(
+        //         { $sort: { 'ratings.averageRating': -1 } },
+        //         { $limit: limit }
+        //     );
+        // } else {
+        //     // Normal tagged recipes pipeline
+        //     if (tags && tags.length > 0) {
+        //         if (tagMode === 'all') {
+        //             query.tags = { $all: tags };
+        //         } else {
+        //             query.tags = { $in: tags };
+        //         }
+        //     }
+        //     pipeline.push(
+        //         { $sample: { size: limit } }
+        //     );
+        // }
+        
+        // const recipes = await this.recipesRepository.aggregate(pipeline);
+        const recipes = [] as Recipe[];
+        return  recipes;
     }
 
     /**   
@@ -324,5 +396,28 @@ export class RecipeService {
             }
         }
         return changes;
+    }
+
+    
+    /**   
+     * Get highest rated recipes for "Popular" collection
+     * @group Recipe Management - retrieval
+     * @param {Visibility} visibility - 'public'/'private'
+     * @param {number} limit - recipes needed (5/6)
+     * @return {Recipe[]} - succes, message, recipe, error
+     * @example
+     * const recipeService = useRecipeService();
+     * await recipeService.getPopularRecipeCollection(Visibility.PUBLIC, 5);
+     */  
+    private async getPopularRecipeCollection(baseQuery: Filter<Recipe>, limit: number): Promise<Recipe[]> {
+        return this.recipesRepository.paginatedFindByIndex(
+            baseQuery, 
+            { 
+            skip: 0,
+            limit, 
+            sort: { 'ratings.averageRating': -1 },
+            projection: { createdAt: 0, internalState: 0 } 
+            }
+        );
     }
 }

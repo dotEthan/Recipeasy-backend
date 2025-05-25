@@ -1,28 +1,43 @@
-# Recipeasy-backend
+# Tastyista-backend
 
-[App here:](https://stupefied-morse-5e1233.netlify.com/)
-Currently still using Firebase.
+Tastyista Rebranding underway here: https://tastyista.com/
+Please be patient on first load, hosted on Render and it needs to spin up the server, will be upgrading the server tomorrow to ensure fast response times even on the first load
+
+## Built With
+
+- Expressjs
+- MongoDb
+- TypeScript
+- Express-sessions
+- Passportjs
+- Zod
+- bCrypt
+- Helmet
+- JWT tokens
 
 ### Status
 
-Structure set up and organized, now functionality is being built. 
+API built and running using RESTful principles. 
 
 ## Overview and Thoughts
 
 ### What's Working
 
-Backend Functionality has now surpassed Front-end, and contains full login, verficiation, and PW reset flows, and a fully working Recipe CRUD structure that allows for public VS private recipes, soft deletes to ensure shared recipes retain functionality beyond creator deletion and the structure for global error handling, schema parsing, and a variety of middleware to ensure security and deter bots and 'attacks'. 
+- Full login and security using JWTs for authorization, helmet, encrypted tokens for verification and password reset.
+- Strict validation in and out using ZOD schemas with a global Error handler
+- Multiple endpoints with authorization and rate-limiting middleware. 
 
-### What isn't working
+### What's to come
 
-- It's all working, but I would have saved a lot of time if I built the error handling and tests first. I wanted something to show faster so I build it a bit backwards. But it's coming together.
+- Proper searching and filtering based on frontend logic
+- Full test suites for all code with CI/CD pipleline requiring tests to pass for deploy.
 
 ### Code Choices
 
-- Functional VS OOP - a bit mixed, trying to implement more with classes as I haven't used it as much as functional in past projects
-- JSDoc galore - I both wanted to practice JSDoc and as this is soemthign I will likely be coming back to (I use it for myself), having well laid out docs of everything will be a joy years later. 
+- Functional VS OOP - I used more OOP principles as most of my experience has been in functional coding. 
+- Documentation - I went a bit overboard with documentation both for practice and as I know from experience if you come back to somethign a year or two later, over documentation is far better than under. 
 - No Mongoose - I have worked with Mongoose, but I wanted to get a better feel for MongoDB directly. If I did it again, I'd use Mongoose.
-- JWT tokens VS Csrf - I had csrf but they were not working well with passportjs/express-sessions as the sessions were continually being recreated and the token lost. JWT tokens works better here as they're not dependent on sessions
+- JWT tokens VS Csrf - I had csrf but they were not working well with passportjs/express-sessions as the sessions were continually being recreated and the token lost. Switched to access/refresh tokens as they provide the same functionality without all the hassle.
 
 ## Where are we?
 
@@ -30,16 +45,15 @@ Backend Functionality has now surpassed Front-end, and contains full login, verf
 
 - Server runs and connects to MongoDB 
 - User registration
-- User Register/Login/logout
+- User Register/Login/logout flows
 - JWT AccessToken, Helmet working
-- Email Verification (register and login)
-- password resets
+- Email Verification and password reset flows
 - Schema Creation & Validation for Incoming, DB saves, and Outgoing data
 - Recipe CRUD
 - Cloudinary based image upload and deleting
-- User Persistence (User Alterations of Public Recipes)
-- data persistence
-- Global Error Handler (structure, not fully fleshed out)
+- User and data Persistence
+- Flows updated to add soft deletes for data to ensure public recipes are sharable and not lost
+- Global Error Handler
 
 ### Working on Now:
 
@@ -51,31 +65,19 @@ Backend Functionality has now surpassed Front-end, and contains full login, verf
 
 ### To Come:
 
-- Redis (caching)
-- Logging (Sonar? others)
-- Expand Validation (trim strings to be compared (names, email, inputs)), (toLowercase emails, usernames, capitalize on frontend if needed)
-- /types/enums.ts VS /enums/index.ts (refactor)
-- organize schemas (duplicates? generify existing)
+- expand error handling together with FrontEnd responses
 - setup retry-ables
-- Final erorr sweep, missing and duplicates
-- Look into OpenAPIdocs just to show jsDoc in structured format
+- Redis (caching) & test DB Indexes are working
+- Logging 
+- Expand Validation (trim strings to be compared (names, email, inputs)), (toLowercase emails, usernames, capitalize on frontend if needed)
+- organize schemas (duplicates? generify existing)
 - Testing
+- Look into OpenAPIdocs just to show jsDoc in structured format
 - Recipe Search/ingredient auto complete
 - Cron based softdeleted/unref'd recipe deletion (only if no user.recipes has ref'd), also if last user ref'ing, delete image in cloudinary
 - User Admin (update/delete)
 - integraton and E2E testing
 - Google/Facebook login (maybe)
-
-## Built With
-
-- Expressjs
-- MongoDb
-- TypeScript
-- Express-sessions
-- Passportjs
-- bCrypt
-- Helmet
-- JWT
 
 ## Author
 

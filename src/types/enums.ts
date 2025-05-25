@@ -5,16 +5,17 @@ export enum Visibility {
 
 /**
  * Token Types in case more tokens required in the future
- * - Example: `401:CREDENTIALS` → Show a login form.  
+ * Currently only using one, but single point of truth for future updates
  */
 export enum TokenTypes {
     PASSWORD_RESET = 'reset-password'
 }
 
 /**
- * Error codes follow the format: `TYPE:SHORT_KEY`  
+ * Error codes follow the format: `DOMAIN:SHORT_KEY`  
  * - Used by frontend to handle errors consistently.  
- * - Example: `401:CREDENTIALS` → Show a login form.  
+ * @example 
+ * `AUTH:CREDENTIALS_INVALID`
  */
 export enum ErrorCode {
     // Default codes shouldnt happen, if do, need to handle on BE (log and notify admin)
