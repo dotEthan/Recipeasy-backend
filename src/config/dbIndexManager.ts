@@ -16,9 +16,38 @@ export class DbIndexManager {
     }
 
     private static async createRecipeIndexes(db: Db): Promise<void> {
-        await retryFunction(() => db.collection('recipes').createIndexes([{ 
-            key: {visibilty: 1, 'ratings.averageRating': -1},
-            background: true 
-        }]),{});
+        await retryFunction(() => db.collection('recipes').createIndexes([
+            {
+                key: { 
+                    visibility: 1,
+                    'ratings.averageRating': -1
+                },
+                name: 'visibility_rating_desc_index',
+                background: true
+            },
+            {
+                key: {
+                    'ratings.averageRating': -1,
+                    visibility: 1
+                },
+                name: 'rating_desc_visibility_index',
+                background: true
+            },
+            {
+                key: {
+                    tags: 1,
+                },
+                name: 'tags_index',
+                background: true
+            },
+            {
+                key: {
+                    tags: 1,
+                    visibility: 1
+                },
+                name: 'tags_visibility_index',
+                background: true
+            }
+        ]),{});
     }
 }

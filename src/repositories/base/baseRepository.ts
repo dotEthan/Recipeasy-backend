@@ -105,4 +105,8 @@ export abstract class BaseRepository<T extends Document> implements IBaseReposit
     async getTotalDocuments(findByData: Filter<T>): Promise<number> {
         return await this.collection.countDocuments(findByData);
     }
+
+    async aggregate(pipeline: Document[]): Promise<T[]> {
+        return this.collection.aggregate(pipeline).toArray() as Promise<T[]>;
+    }
 }

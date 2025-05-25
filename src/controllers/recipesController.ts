@@ -48,8 +48,17 @@ export class RecipeController {
     const page = parseInt(req.query.page as string || '1', 10);
     const limit = parseInt(req.query.limit as string || '25', 10);
     const skip = (page - 1) * limit;
+    let tags: string[] = [];
+    if (req.query.tags) {
+      tags = Array.isArray(req.query.tags) 
+        ? req.query.tags as string[]
+        : [req.query.tags as string];
+    }
+    // 'any'/'all' tag matching for filtering coming later
+    const tagMode = (req.query.include as string) || 'any';
 
-    const response = await this.recipeService.getRecipes(visibility, limit, skip);
+    const response = await this.recipeService.getRecipes(visibility, limit, skip, tags, tagMode);
+
     if (response === null) throw new NotFoundError(
       'No public recipes found ', 
       { response, location: 'recipesController.getPublicRecipes' }, 
@@ -58,6 +67,34 @@ export class RecipeController {
 
     zodValidationWrapper(z.array(FeRecipeSchema), response.data, 'recipesController.getPublicRecipes');
     res.status(200).json(response?.data);
+  }
+
+  public getRecipeCollections = async (req: Request, res: Response): Promise<void> => {
+    // res.status(503).end();
+    const visibility = req.query.visibility as Visibility | undefined;
+    const limit = parseInt(req.query.limit as string || '25', 10);
+
+    let tags: string[] = [];
+    if (req.query.tags) {
+      tags = Array.isArray(req.query.tags) 
+        ? req.query.tags as string[]
+        : [req.query.tags as string];
+    }
+    
+    const response = await this.recipeService.getCollectionRecipes(visibility, limit, tags);
+
+    if (response === null) throw new NotFoundError(
+      'No recipes found for tag ', 
+      { 
+        tag: tags,
+        response, 
+        location: 'recipesController.getPublicRecipes' 
+      }, 
+      ErrorCode.PUBLIC_RECIPES_MISSING
+    );
+
+    zodValidationWrapper(z.array(FeRecipeSchema), response, 'recipesController.getRecipeCollections');
+    res.status(200).json(response);
   }
 
   public updateRecipe = async (req: Request,res: Response,): Promise<void> => {
