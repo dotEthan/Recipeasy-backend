@@ -80,11 +80,11 @@ export class RecipeController {
         ? req.query.tags as string[]
         : [req.query.tags as string];
     }
-    
+      console.log('tags: ', tags)
     const response = await this.recipeService.getCollectionRecipes(visibility, limit, tags);
 
     if (response === null) throw new NotFoundError(
-      'No recipes found for tag ', 
+      'No recipes found for this tag', 
       { 
         tag: tags,
         response, 

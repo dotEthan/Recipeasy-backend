@@ -9,7 +9,8 @@ import {
     FindCursor,
     UpdateFilter,
     WithoutId,
-    InsertOneResult
+    InsertOneResult,
+    PipelineStage
 } from "mongodb";
 import { Database } from "../../config/database";
 import { IBaseRepository } from "./baseRepository.interface";
@@ -106,7 +107,7 @@ export abstract class BaseRepository<T extends Document> implements IBaseReposit
         return await this.collection.countDocuments(findByData);
     }
 
-    async aggregate(pipeline: Document[]): Promise<T[]> {
-        return this.collection.aggregate(pipeline).toArray() as Promise<T[]>;
+    async aggregate<R = T>(pipeline: PipelineStage[]): Promise<R[]> {
+        return this.collection.aggregate(pipeline).toArray() as Promise<R[]>;
     }
 }

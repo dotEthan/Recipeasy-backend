@@ -31,7 +31,6 @@ export class UserService {
         const newUserData = createNewUserUtility(displayName, email, hashedPassword);
         
         zodValidationWrapper(BeCreateUserSchema, newUserData, 'userService.createNewUser');
-        console.log('creating')
         const creationResult = await this.userRepository.createUser(newUserData);
         if (!creationResult.acknowledged || !creationResult.insertedId) throw new ServerError(
             'Create new user failed', 
