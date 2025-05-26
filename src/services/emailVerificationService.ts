@@ -65,7 +65,7 @@ export class EmailVerificationService {
             );
         }
 
-        console.log(`Verification Email sent: ${info.messageId}, code: ${verificationCode}, message response: ${info.response}`);
+        // console.log(`Verification Email sent: ${info.messageId}, code: ${verificationCode}, message response: ${info.response}`);
         return { success: (info.rejected.length === 0)};
     }
 

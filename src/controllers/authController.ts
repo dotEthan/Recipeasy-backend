@@ -128,7 +128,6 @@ export class AuthController {
             ErrorCode.ENV_VAR_MISSING);
 
         const decodedToken = jwt.verify(refreshToken, refreshSecret) as DecodedRefreshToken;
-        console.log('token: ', decodedToken);
         if (!refreshToken) throw new BadRequestError('User Already Logged Out', { location: 'authController.logUserOut' }, ErrorCode.USER_ALREADY_LOGGED_OUT);
 
         this.tokenService.deleteOldTokenIfExists(decodedToken.tokenId);
