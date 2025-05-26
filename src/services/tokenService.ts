@@ -80,11 +80,9 @@ export class TokenService {
      * await this.tokenService.deleteOldTokenIfExists("12324");
      */  
     public async deleteOldTokenIfExists(tokenId: string): Promise<void> {
-        console.log('tokenId: ', tokenId)
         if (!tokenId) throw new BadRequestError('Decoded refreshToken malformed', { location: 'tokenService.deleteOldTokenIfExists' }, ErrorCode.TOKEN_TO_DELETE_MALFORMED);
         const deletedToken = await this.authTokenRepository.findAndDeleteToken(tokenId);
 
-        console.log('tokenId: ', tokenId)
         if (!deletedToken) throw new LogOnlyError(
             'Token already revoked or deleted', 
             { location: 'tokenService.deleteOldToken' },

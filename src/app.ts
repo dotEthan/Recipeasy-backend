@@ -40,8 +40,6 @@ app.use(helmet({
 
 const corsOrigin = process.env.CORS_ORIGIN || ['https://localhost:5173'];
 
-console.log('Configured CORS origins:', corsOrigin);
-
 app.use(cors({
   origin: corsOrigin,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
@@ -110,7 +108,6 @@ app.use(passport.initialize());
 // app.use(passport.session());
 
 app.get('/health', (req: Request, res: Response) => {
-  console.log('Health check request from:', req.ip, req.headers['user-agent']);
   if (process.env.NODE_ENV === 'production' && 
       !req.ip?.startsWith('10.') && 
       !req.get('user-agent')?.includes('Render')) {

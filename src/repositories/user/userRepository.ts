@@ -93,7 +93,6 @@ export class UserRepository extends BaseRepository<UserDocument> implements IUse
     // TODO - post - combine these three? updateUserObject
     async addToUsersRecipesArray(_id: ObjectId, usersRecipesObject: UsersRecipeData): Promise<UpdateResult | null> {
         zodValidationWrapper(IsObjectIdSchema, { _id }, 'userRepository.addToUsersRecipesArray');
-        console.log('updating array: ', _id)
         return await this.updateByMergeOneNoDupe(
             {_id}, 
             {
