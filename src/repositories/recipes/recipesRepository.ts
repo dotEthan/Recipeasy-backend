@@ -3,7 +3,7 @@ import { PaginationOptions } from "../../types/express";
 import { FeRecipeOmitId, Recipe, RecipeDocument } from "../../types/recipe";
 import { CreatedDataResponse } from "../../types/responses";
 import { BaseRepository } from "../base/baseRepository";
-import { Filter, InsertOneResult, ObjectId, WithId } from "mongodb";
+import { Filter, InsertOneResult, ObjectId, PipelineStage, WithId } from "mongodb";
 import { IRecipeRepository } from "./recipeRepository.interface";
 import { zodValidationWrapper } from "../../util/zodParseWrapper";
 
@@ -40,4 +40,13 @@ export class RecipesRepository extends BaseRepository<RecipeDocument> implements
             { createdAt: 0, internalState: 0 }
         );
     };
+    
+    async findWithProjection(pipeline: PipelineStage[], projection: { [key: string]: 0 | 1 | boolean }): Promise<RecipeDocument[]> {
+        const projectedPipeline = [
+            ...pipeline,
+            { $project: projection }
+        ];
+        
+        return this.aggregate(projectedPipeline);
+    }
 }

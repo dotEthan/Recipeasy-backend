@@ -23,7 +23,7 @@ export const RecipeInfoSchema = z.object({
 }).strict();
 
 export const RatingsItemSchema = z.object({
-    userId: z.string(),
+    userId: ObjectIdSchema,
     rating: z.number(),
     timestamp: z.coerce.date(),
 }).strict();

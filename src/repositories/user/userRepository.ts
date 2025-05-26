@@ -1,4 +1,4 @@
-import { DeleteResult, InsertOneResult, ObjectId, UpdateResult } from "mongodb";
+import { DeleteResult, InsertOneResult, ObjectId, PipelineStage, UpdateResult } from "mongodb";
 
 import { BaseRepository } from "../base/baseRepository";
 
@@ -7,6 +7,7 @@ import { MongoDbUserProjection, PreviousPasssword, UserDocument, UsersRecipeData
 import { Recipe } from "../../types/recipe";
 import { IUserRepository } from "./userRepository.interface";
 import { zodValidationWrapper } from "../../util/zodParseWrapper";
+import { Visibility } from "../../types/enums";
 
 /**
  * 'users' Collection specific Mongodb Related calls
@@ -131,5 +132,35 @@ export class UserRepository extends BaseRepository<UserDocument> implements IUse
     async deleteUser(_id: ObjectId): Promise<DeleteResult> {
         zodValidationWrapper(IsObjectIdSchema, { _id }, 'userRepository.deleteUser');
         return await this.delete({_id})
+    }
+
+    async findEthanFavorites(limit: number, visibility?: Visibility): Promise<Recipe[]> {
+        const pipeline: PipelineStage[] = [
+            { $match: { email: 'estrauss@gmail.com' } },
+            { $unwind: '$ratings' },
+            {
+                $group: {
+                    _id: '$ratings.recipeId',
+                    maxRating: { $max: '$ratings.rating' },
+                    latestTimestamp: { $max: '$ratings.timestamp' }
+                }
+            },
+            { $sort: { maxRating: -1, latestTimestamp: -1 } },
+            {
+                $lookup: {
+                from: 'recipes',
+                localField: '_id',
+                foreignField: '_id',
+                as: 'recipe'
+                }
+            },
+            { $unwind: '$recipe' },
+            { $match: { 'recipe.visibility': visibility } },
+            { $replaceRoot: { newRoot: '$recipe' } },
+            { $project: { createdAt: 0, internalState: 0 } },
+            { $limit: limit }
+        ];
+        
+        return this.aggregate<Recipe>(pipeline);
     }
 }

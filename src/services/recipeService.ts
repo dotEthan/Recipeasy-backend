@@ -1,4 +1,4 @@
-import { Filter, ObjectId } from "mongodb";
+import { Filter, ObjectId, PipelineStage } from "mongodb";
 import { RecipesRepository } from "../repositories/recipes/recipesRepository";
 import { UserRepository } from "../repositories/user/userRepository";
 import { Recipe, RecipeDocument } from "../types/recipe";
@@ -165,7 +165,7 @@ export class RecipeService {
         tags: string[],
         tagMode: string = 'all'
     ): Promise<Recipe[]> {
-        const query: Filter<Recipe> = {
+        const query: Filter<Document | undefined> = {
             "internalState.isDeleted": { $ne: true } 
         };
 
@@ -174,30 +174,29 @@ export class RecipeService {
         }
 
         
-        // const pipeline: Document[] = [{ $match: query }];
+        const pipeline: PipelineStage[] = [{ $match: query }];
 
-        // if (tags.includes('popular')) {
-        //     // Popular recipes pipeline
-        //     pipeline.push(
-        //         { $sort: { 'ratings.averageRating': -1 } },
-        //         { $limit: limit }
-        //     );
-        // } else {
-        //     // Normal tagged recipes pipeline
-        //     if (tags && tags.length > 0) {
-        //         if (tagMode === 'all') {
-        //             query.tags = { $all: tags };
-        //         } else {
-        //             query.tags = { $in: tags };
-        //         }
-        //     }
-        //     pipeline.push(
-        //         { $sample: { size: limit } }
-        //     );
-        // }
-        
-        // const recipes = await this.recipesRepository.aggregate(pipeline);
-        const recipes = [] as Recipe[];
+        if (tags.includes('popular')) {
+            pipeline.push(
+                { $sort: { 'ratings.averageRating': -1 } },
+                { $limit: limit }
+            );
+        } else if (tags.includes('ethansFavourites')) {
+            const recipeRes = await this.userRepository.findEthanFavorites(limit, visibility);
+            return recipeRes;
+        } else {
+            if (tags && tags.length > 0) {
+                if (tagMode === 'all') {
+                    query.tags = { $all: tags };
+                } else {
+                    query.tags = { $in: tags };
+                }
+            }
+            pipeline.push(
+                { $sample: { size: limit } }
+            );
+        }
+        const recipes = await this.recipesRepository.findWithProjection(pipeline, { createdAt: 0, internalState: 0 } );
         return  recipes;
     }
 
@@ -242,7 +241,7 @@ export class RecipeService {
             const alterations = this.findRecipeAlterations(originalRecipe, recipe);
             zodValidationWrapper(PartialRecipeSchema, alterations, 'recipeService.updateRecipe');
             const updateResponse = await this.userRepository.updateAlterationsOnUserRecipes(ensureObjectId(userId), recipeId, alterations);
-            console.log('updateResponse:', updateResponse)
+
             if (updateResponse.matchedCount === 0 ) throw new BadRequestError(
                 'updateRecipe - No user matched userId', 
                 { userId },
@@ -396,28 +395,5 @@ export class RecipeService {
             }
         }
         return changes;
-    }
-
-    
-    /**   
-     * Get highest rated recipes for "Popular" collection
-     * @group Recipe Management - retrieval
-     * @param {Visibility} visibility - 'public'/'private'
-     * @param {number} limit - recipes needed (5/6)
-     * @return {Recipe[]} - succes, message, recipe, error
-     * @example
-     * const recipeService = useRecipeService();
-     * await recipeService.getPopularRecipeCollection(Visibility.PUBLIC, 5);
-     */  
-    private async getPopularRecipeCollection(baseQuery: Filter<Recipe>, limit: number): Promise<Recipe[]> {
-        return this.recipesRepository.paginatedFindByIndex(
-            baseQuery, 
-            { 
-            skip: 0,
-            limit, 
-            sort: { 'ratings.averageRating': -1 },
-            projection: { createdAt: 0, internalState: 0 } 
-            }
-        );
     }
 }

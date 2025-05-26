@@ -24,7 +24,8 @@ export const PreferencesSchema = z.object({
 
 export const UserRatingsSchema = z.object({
     recipeId: ObjectIdSchema,
-    rating: z.number()
+    rating: z.number(),
+    timestamp: z.coerce.date(),
 }).strict();
 
 export const CopyDetailsSchema = z.object({
@@ -71,14 +72,14 @@ export const BeUserSchema = z
     verified: z.boolean().default(false),
     recipes: z.array(UserRecipesIdSchema.optional()),
     shoppingLists: z.array(ShoppingListSchema),
-    userRatings: UserRatingsSchema.optional(),
+    ratings: z.array(UserRatingsSchema).optional(),
     preferences: PreferencesSchema.optional(),
     role: z.string(),
     password: z.string(),
     passwordResetData: PasswordResetDataSchema.optional(),
     previousPasswords: z.array(PreviousPasswordSchema).optional(),
     createdAt: z.coerce.date(),
-    updatedAt: z.coerce.date()
+    updatedAt: z.coerce.date(),
 }).strict();
 
 export const BeCreateUserSchema = BeUserSchema.omit({ _id: true}).strict();

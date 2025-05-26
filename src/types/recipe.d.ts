@@ -69,7 +69,7 @@ export type RecipeRatings = {
 }
 
 export type RatingItem = {
-  userId: string; 
+  userId: ObjectId; 
   rating: number; 
   timestamp: Date; 
 }
